@@ -156,5 +156,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to save duty assignments' }, { status: 500 });
   }
 }
-
-export { VALID_STATUSES };
