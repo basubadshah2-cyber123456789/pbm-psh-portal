@@ -436,28 +436,38 @@ export default function StandalonePSHAdmissionWebsite() {
                   </p>
                 </div>
 
-                {/* Section 1: Category */}
+                {/* Section 1: Enrollment Type */}
                 <div className="p-3 rounded-lg border border-emerald-300 bg-emerald-50/50 flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div>
-                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">1. CATEGORY</span>
+                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">1. ENROLLMENT TYPE</span>
                     <span className="font-extrabold text-slate-900 text-sm">
-                      {psh?.category?.type || 'Orphan'}
+                      {psh?.enrollmentType?.type || 'New Enrollment'}
                     </span>
                   </div>
-                  {psh?.category?.replacedRegistrationNo && (
+                  {psh?.enrollmentType?.replacedRegistrationNo && (
                     <div className="text-right">
                       <span className="text-[10px] text-amber-800 font-bold block">Replaced Registration No</span>
                       <span className="font-bold text-amber-950 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
-                        {psh.category.replacedRegistrationNo}
+                        {psh.enrollmentType.replacedRegistrationNo}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Section 2: Basic Info */}
+                {/* Section 2: Category */}
+                <div className="p-3 rounded-lg border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">2. CATEGORY</span>
+                    <span className="font-extrabold text-slate-900 text-sm">
+                      {psh?.category?.type || 'Orphan'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Section 3: Basic Info */}
                 <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider">2. BASIC INFO</span>
+                    <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider">3. BASIC INFO</span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-[#0D5C3A]">
                       Status: {selectedDossierChild.status}
                     </span>

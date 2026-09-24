@@ -177,9 +177,12 @@ function SectionHeading({ title }: { title: string }) {
 export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
   const generateAdmissionNo = () => `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
 
-  // ================= 1. CATEGORY =================
-  const [category, setCategory] = useState<string>('');
+  // ================= 1. ENROLLMENT TYPE =================
+  const [enrollmentType, setEnrollmentType] = useState<string>('New Enrollment');
   const [replacedRegistrationNo, setReplacedRegistrationNo] = useState<string>('');
+
+  // ================= 2. CATEGORY =================
+  const [category, setCategory] = useState<string>('Orphan');
 
   // ================= 2. BASIC INFO =================
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
@@ -469,8 +472,9 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
   const handleAutoFillDemo = () => {
-    setCategory('Orphan');
+    setEnrollmentType('New Enrollment');
     setReplacedRegistrationNo('');
+    setCategory('Orphan');
 
     const adm = `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
     setRegistrationNo(adm);
@@ -634,9 +638,12 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
       }
 
       const fullPshDossier = {
+        enrollmentType: {
+          type: enrollmentType || 'New Enrollment',
+          replacedRegistrationNo: enrollmentType === 'Replace' ? replacedRegistrationNo : null,
+        },
         category: {
           type: category || 'Orphan',
-          replacedRegistrationNo: category === 'Replace' ? replacedRegistrationNo : null,
         },
         basicInfo: {
           registrationNo,
@@ -821,7 +828,31 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
         </div>
       )}
 
-      {/* ================= 1. CATEGORY ================= */}
+      {/* ================= 1. ENROLLMENT TYPE ================= */}
+      <div>
+        <SectionHeading title="Enrollment Type" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+          <FormSelect
+            label="Enrollment Type"
+            value={enrollmentType}
+            onChange={(e) => setEnrollmentType(e.target.value)}
+            options={['New Enrollment', 'Replace']}
+          />
+
+          {enrollmentType === 'Replace' ? (
+            <FormInput
+              placeholder="Registration Number"
+              value={replacedRegistrationNo}
+              onChange={(e) => setReplacedRegistrationNo(e.target.value)}
+              required
+            />
+          ) : (
+            <div />
+          )}
+        </div>
+      </div>
+
+      {/* ================= 2. CATEGORY ================= */}
       <div>
         <SectionHeading title="Category" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
@@ -834,21 +865,8 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
               'Divorce',
               'Posthumous',
               'Poorest of the Poor',
-              'Replace',
-              'New Enrollment',
             ]}
           />
-
-          {category === 'Replace' ? (
-            <FormInput
-              placeholder="Registration Number"
-              value={replacedRegistrationNo}
-              onChange={(e) => setReplacedRegistrationNo(e.target.value)}
-              required
-            />
-          ) : (
-            <div />
-          )}
         </div>
       </div>
 
