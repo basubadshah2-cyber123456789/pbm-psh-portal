@@ -1750,7 +1750,7 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
         <SectionHeading title="Report" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-3.5">
           <FormSelect
-            label="Report Category"
+            label="Complain Type"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
             options={['Discipline', 'Behavior', 'Academic', 'Islamic']}

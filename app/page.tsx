@@ -723,7 +723,7 @@ export default function StandalonePSHAdmissionWebsite() {
 
                   <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs">
                     <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">12. REPORT</span>
-                    <div><span className="text-slate-400">Category:</span> <span className="font-semibold">{psh?.reports?.category || 'Academic'}</span></div>
+                    <div><span className="text-slate-400">Complain Type:</span> <span className="font-semibold">{psh?.reports?.category || 'Academic'}</span></div>
                     <div><span className="text-slate-400">Details:</span> <span className="italic">{psh?.reports?.details || 'Standard routine report recorded.'}</span></div>
                   </div>
                 </div>
