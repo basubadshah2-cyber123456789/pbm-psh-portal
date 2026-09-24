@@ -68,6 +68,7 @@ export interface SubjectResultRow {
 interface AddPSHFormProps {
   onSuccess: (savedChild?: any) => void;
   onCancel: () => void;
+  initialChild?: any;
   classes?: { id: string; name: string }[];
   beds?: { id: string; bedNumber: string; roomNumber: string }[];
   motherMaids?: { id: string; fullName: string }[];
@@ -174,7 +175,7 @@ function SectionHeading({ title }: { title: string }) {
   );
 }
 
-export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
+export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProps) {
   const generateAdmissionNo = () => `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
 
   // ================= 1. ENROLLMENT TYPE =================
@@ -471,7 +472,640 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
-  const handleAutoFillDemo = () => {
+  // Load existing child data for editing
+  useEffect(() => {
+    if (initialChild) {
+      let psh: any = null;
+      try {
+        psh = typeof initialChild.notes === 'string' ? JSON.parse(initialChild.notes) : initialChild.notes;
+      } catch {
+        psh = null;
+      }
+
+      setRegistrationNo(initialChild.admissionNo || generateAdmissionNo());
+      setAdmissionDate(initialChild.admissionDate || new Date().toISOString().split('T')[0]);
+      setFullName(initialChild.fullName || '');
+      setBFormNo(initialChild.bFormNo || '');
+      setDateOfBirth(initialChild.dateOfBirth || '2016-01-15');
+      setGender(initialChild.gender || 'MALE');
+      setStatus(initialChild.status || 'Active');
+      setBloodGroup(initialChild.bloodGroup || 'B+');
+
+      if (psh) {
+        if (psh.category?.type) setCategory(psh.category.type);
+        if (psh.enrollmentType?.type) setEnrollmentType(psh.enrollmentType.type);
+        if (psh.enrollmentType?.replacedRegistrationNo) setReplacedRegistrationNo(psh.enrollmentType.replacedRegistrationNo);
+
+        if (psh.basicInfo) {
+          setFamilyCast(psh.basicInfo.familyCast || '');
+          setMotherLanguage(psh.basicInfo.motherLanguage || '');
+          setBirthDistrict(psh.basicInfo.birthDistrict || '');
+          setIdentificationMark(psh.basicInfo.identificationMark || '');
+          setNextOfKin(psh.basicInfo.nextOfKin || '');
+          setIsSponsored(psh.basicInfo.isSponsored || '');
+          setSponsorshipAmount(psh.basicInfo.sponsorshipAmount || '');
+          setDateOfStatus(psh.basicInfo.dateOfStatus || new Date().toISOString().split('T')[0]);
+          setStatusRemarks(psh.basicInfo.statusRemarks || '');
+        }
+
+        if (psh.healthInfo) {
+          setIsDisable(psh.healthInfo.isDisable || 'No');
+          setMentalHealth(psh.healthInfo.mentalHealth || 'Normal');
+          setPhysicalHealth(psh.healthInfo.physicalHealth || 'Good');
+          setVaccinationDetail(psh.healthInfo.vaccinationDetail || 'Complete');
+          setSpecialNeedDisease(psh.healthInfo.specialNeedDisease || 'None');
+        }
+
+        if (psh.fatherInfo) {
+          setFatherName(psh.fatherInfo.name || '');
+          setFatherCnic(psh.fatherInfo.cnic || '');
+          setFatherContact(psh.fatherInfo.contact || '');
+          setFatherIsAlive(psh.fatherInfo.isAlive || '');
+          setFatherDob(psh.fatherInfo.dob || '');
+          setFatherDod(psh.fatherInfo.dod || '');
+          setFatherQualification(psh.fatherInfo.qualification || '');
+          setFatherProfession(psh.fatherInfo.profession || '');
+          setFatherDistrict(psh.fatherInfo.district || '');
+          setFatherTehsil(psh.fatherInfo.tehsil || '');
+          setFatherStreetNumber(psh.fatherInfo.streetNumber || '');
+          setFatherHouseNumber(psh.fatherInfo.houseNumber || '');
+          setFatherUcNumber(psh.fatherInfo.ucNumber || '');
+          setFatherAddress(psh.fatherInfo.address || '');
+        }
+
+        if (psh.motherInfo) {
+          setMotherName(psh.motherInfo.name || '');
+          setMotherCnic(psh.motherInfo.cnic || '');
+          setMotherContact(psh.motherInfo.contact || '');
+          setMotherIsAlive(psh.motherInfo.isAlive || '');
+          setMotherDob(psh.motherInfo.dob || '');
+          setMotherDod(psh.motherInfo.dod || '');
+          setMotherQualification(psh.motherInfo.qualification || '');
+          setMotherProfession(psh.motherInfo.profession || '');
+          setMotherDistrict(psh.motherInfo.district || '');
+          setMotherTehsil(psh.motherInfo.tehsil || '');
+          setMotherStreetNumber(psh.motherInfo.streetNumber || '');
+          setMotherHouseNumber(psh.motherInfo.houseNumber || '');
+          setMotherUcNumber(psh.motherInfo.ucNumber || '');
+          setMotherAddress(psh.motherInfo.address || '');
+        }
+
+        if (psh.guardianInfo) {
+          setGuardianName(psh.guardianInfo.name || initialChild.guardianName || '');
+          setGuardianRelation(psh.guardianInfo.relation || initialChild.guardianRelation || '');
+          setGuardianContact(psh.guardianInfo.contact || initialChild.guardianContact || '');
+          setGuardianCnic(psh.guardianInfo.cnic || '');
+          setGuardianQualification(psh.guardianInfo.qualification || '');
+          setGuardianProfession(psh.guardianInfo.profession || '');
+          setGuardianAddress(psh.guardianInfo.address || initialChild.address || '');
+        }
+
+        if (Array.isArray(psh.meetingPersons) && psh.meetingPersons.length > 0) {
+          setMeetingPersons(psh.meetingPersons);
+        }
+        if (Array.isArray(psh.siblings) && psh.siblings.length > 0) {
+          setSiblings(psh.siblings);
+        }
+        if (Array.isArray(psh.witnesses) && psh.witnesses.length > 0) {
+          setWitnesses(psh.witnesses);
+        }
+
+        if (psh.resultInfo) {
+          setResultSchool(psh.resultInfo.school || '');
+          setResultClass(psh.resultInfo.gradeClass || '');
+          setResultExamDate(psh.resultInfo.examDate || '');
+          setResultExamType(psh.resultInfo.examType || '');
+          setResultPassingScore(psh.resultInfo.passingScore || '');
+          if (Array.isArray(psh.resultInfo.subjectResults) && psh.resultInfo.subjectResults.length > 0) {
+            setSubjectResults(psh.resultInfo.subjectResults);
+          }
+        }
+
+        if (psh.healthCare) {
+          setCheckFrequency(psh.healthCare.checkFrequency || '');
+          setMedicineDetails(psh.healthCare.medicineDetails || '');
+          setAntibioticMedicine(psh.healthCare.antibioticMedicine || '');
+        }
+
+        if (psh.reports) {
+          setReportCategory(psh.reports.category || '');
+          setReportDetails(psh.reports.details || '');
+        }
+
+        if (psh.areaOfInterest) {
+          setAreaOfInterest(psh.areaOfInterest);
+        }
+      }
+    }
+  }, [initialChild]);
+
+  const handleClearForm = () => {
+    setEnrollmentType('New Enrollment');
+    setReplacedRegistrationNo('');
+    setCategory('Orphan');
+    setRegistrationNo(generateAdmissionNo());
+    setAdmissionDate(new Date().toISOString().split('T')[0]);
+    setFullName('');
+    setBFormNo('');
+    setDateOfBirth('2016-01-15');
+    setGender('');
+    setFamilyCast('');
+    setMotherLanguage('');
+    setBirthDistrict('');
+    setIdentificationMark('');
+    setNextOfKin('');
+    setIsSponsored('');
+    setSponsorshipAmount('');
+    setStatus('Active');
+    setDateOfStatus(new Date().toISOString().split('T')[0]);
+    setStatusRemarks('');
+    setIsDisable('No');
+    setBloodGroup('');
+    setMentalHealth('');
+    setPhysicalHealth('');
+    setVaccinationDetail('');
+    setSpecialNeedDisease('');
+    setFatherName('');
+    setFatherCnic('');
+    setFatherContact('');
+    setFatherIsAlive('');
+    setFatherDob('');
+    setFatherDod('');
+    setFatherQualification('');
+    setFatherProfession('');
+    setFatherDistrict('');
+    setFatherTehsil('');
+    setFatherStreetNumber('');
+    setFatherHouseNumber('');
+    setFatherUcNumber('');
+    setFatherAddress('');
+    setMotherName('');
+    setMotherCnic('');
+    setMotherContact('');
+    setMotherIsAlive('');
+    setMotherDob('');
+    setMotherDod('');
+    setMotherQualification('');
+    setMotherProfession('');
+    setMotherDistrict('');
+    setMotherTehsil('');
+    setMotherStreetNumber('');
+    setMotherHouseNumber('');
+    setMotherUcNumber('');
+    setMotherAddress('');
+    setGuardianName('');
+    setGuardianRelation('');
+    setGuardianContact('');
+    setGuardianCnic('');
+    setGuardianQualification('');
+    setGuardianProfession('');
+    setGuardianAddress('');
+    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', address: '' }]);
+    setResultSchool('');
+    setResultClass('');
+    setResultExamDate('');
+    setResultExamType('');
+    setResultPassingScore('');
+    setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
+    setCheckFrequency('');
+    setMedicineDetails('');
+    setAntibioticMedicine('');
+    setReportCategory('');
+    setReportDetails('');
+    setAreaOfInterest('');
+  };
+
+  const handleAutoFillDemo = (profileType: 'orphan' | 'poor' | 'replace' | 'posthumous' = 'orphan') => {
+    if (profileType === 'poor') {
+      setEnrollmentType('New Enrollment');
+      setReplacedRegistrationNo('');
+      setCategory('Poorest of the Poor');
+
+      const adm = `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+      setRegistrationNo(adm);
+      setAdmissionDate('2026-09-10');
+      setFullName('Fatima Zahra');
+      setBFormNo('31201-7654321-2');
+      setDateOfBirth('2017-06-18');
+      setGender('FEMALE');
+      setFamilyCast('Arain');
+      setMotherLanguage('Saraiki');
+      setBirthDistrict('Bahawalpur');
+      setIdentificationMark('Birthmark on left arm');
+      setNextOfKin('Ghulam Rasool (Father)');
+      setIsSponsored('Yes');
+      setSponsorshipAmount('12000');
+      setStatus('Active');
+      setDateOfStatus('2026-09-10');
+      setStatusRemarks('Poorest of the poor stipend program');
+
+      setIsDisable('No');
+      setBloodGroup('O+');
+      setMentalHealth('Active & Creative');
+      setPhysicalHealth('Healthy');
+      setVaccinationDetail('Complete');
+      setSpecialNeedDisease('None');
+
+      setFatherName('Ghulam Rasool');
+      setFatherCnic('31201-1122334-1');
+      setFatherContact('0302-9988776');
+      setFatherIsAlive('Yes');
+      setFatherDob('1984-05-12');
+      setFatherDod('');
+      setFatherQualification('Middle');
+      setFatherProfession('Daily Wage Worker');
+      setFatherDistrict('Bahawalpur');
+      setFatherTehsil('Ahmedpur East');
+      setFatherStreetNumber('Street 03');
+      setFatherHouseNumber('House 18');
+      setFatherUcNumber('UC-08');
+      setFatherAddress('Basti Noor, Bahawalpur');
+
+      setMotherName('Shamim Akhtar');
+      setMotherCnic('31201-9988776-2');
+      setMotherContact('0302-9988776');
+      setMotherIsAlive('Yes');
+      setMotherDob('1989-11-04');
+      setMotherDod('');
+      setMotherQualification('None');
+      setMotherProfession('Housewife');
+      setMotherDistrict('Bahawalpur');
+      setMotherTehsil('Ahmedpur East');
+      setMotherStreetNumber('Street 03');
+      setMotherHouseNumber('House 18');
+      setMotherUcNumber('UC-08');
+      setMotherAddress('Basti Noor, Bahawalpur');
+
+      setGuardianName('Ghulam Rasool');
+      setGuardianRelation('Father');
+      setGuardianContact('0302-9988776');
+      setGuardianCnic('31201-1122334-1');
+      setGuardianQualification('Middle');
+      setGuardianProfession('Daily Wage Worker');
+      setGuardianAddress('Basti Noor, Bahawalpur');
+
+      setMeetingPersons([
+        {
+          id: '1',
+          name: 'Ghulam Rasool',
+          relation: 'Father',
+          cnic: '31201-1122334-1',
+          contact: '0302-9988776',
+          qualification: 'Middle',
+          profession: 'Laborer',
+          dateTime: '2026-09-12T11:00',
+          startDateTime: '2026-09-12T11:00',
+          endDateTime: '2026-09-12T12:00',
+          district: 'Bahawalpur',
+          tehsil: 'Ahmedpur East',
+          ucNumber: 'UC-08',
+          streetNumber: 'Street 03',
+          houseNumber: 'House 18',
+          address: 'Basti Noor, Bahawalpur',
+        },
+      ]);
+
+      setSiblings([
+        {
+          id: '1',
+          name: 'Zainab Bibi',
+          gender: 'Female',
+          age: '6',
+          qualification: 'Prep',
+          institution: 'Govt Girls Primary School',
+          gradeClass: 'Class 1',
+          maritalStatus: 'Single',
+          district: 'Bahawalpur',
+          tehsil: 'Ahmedpur East',
+          ucNumber: 'UC-08',
+          streetNumber: 'Street 03',
+          houseNumber: 'House 18',
+          address: 'Basti Noor, Bahawalpur',
+        },
+      ]);
+
+      setWitnesses([
+        {
+          id: '1',
+          name: 'Muhammad Aslam',
+          cnic: '31201-5544332-1',
+          fatherName: 'Allah Yar',
+          contact: '0305-1122334',
+          address: 'Main Bazaar, Bahawalpur',
+          qualification: 'Matric',
+          profession: 'Local Counselor / Social Worker',
+        },
+      ]);
+
+      setResultSchool('Govt Girls Primary School Bahawalpur');
+      setResultClass('Class 3');
+      setResultExamDate('2026-03-15');
+      setResultExamType('Mid-Term Examination');
+      setResultPassingScore('88% (A+ Grade)');
+      setSubjectResults([
+        { id: '1', subject: 'Urdu', obtainedMarks: '90', totalMarks: '100' },
+        { id: '2', subject: 'English', obtainedMarks: '84', totalMarks: '100' },
+        { id: '3', subject: 'Mathematics', obtainedMarks: '92', totalMarks: '100' },
+        { id: '4', subject: 'General Knowledge', obtainedMarks: '86', totalMarks: '100' },
+      ]);
+
+      setCheckFrequency('Monthly');
+      setMedicineDetails('Calcium & Vitamin Supplements');
+      setAntibioticMedicine('None');
+      setReportCategory('Academic');
+      setReportDetails('Top student in class 3. Very obedient and highly interested in drawing.');
+      setAreaOfInterest('Art, Drawing, and Story Writing.');
+      return;
+    }
+
+    if (profileType === 'replace') {
+      setEnrollmentType('Replace');
+      setReplacedRegistrationNo('ADM-2024-882');
+      setCategory('Orphan');
+
+      const adm = `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+      setRegistrationNo(adm);
+      setAdmissionDate('2026-09-15');
+      setFullName('Bilal Ahmed');
+      setBFormNo('36302-9988112-3');
+      setDateOfBirth('2015-08-24');
+      setGender('MALE');
+      setFamilyCast('Sheikh');
+      setMotherLanguage('Urdu');
+      setBirthDistrict('Multan');
+      setIdentificationMark('Scar on forehead');
+      setNextOfKin('Nasreen Bibi (Mother)');
+      setIsSponsored('No');
+      setSponsorshipAmount('');
+      setStatus('Active');
+      setDateOfStatus('2026-09-15');
+      setStatusRemarks('Replacement against vacant seat ADM-2024-882');
+
+      setIsDisable('No');
+      setBloodGroup('A+');
+      setMentalHealth('Normal');
+      setPhysicalHealth('Athletic');
+      setVaccinationDetail('Complete Schedule');
+      setSpecialNeedDisease('None');
+
+      setFatherName('Ahmed Din (Late)');
+      setFatherCnic('36302-3344556-1');
+      setFatherContact('0301-4455667');
+      setFatherIsAlive('No');
+      setFatherDob('1980-02-14');
+      setFatherDod('2021-08-10');
+      setFatherQualification('Matric');
+      setFatherProfession('Driver');
+      setFatherDistrict('Multan');
+      setFatherTehsil('Multan Cantt');
+      setFatherStreetNumber('Street 07');
+      setFatherHouseNumber('House 42');
+      setFatherUcNumber('UC-22');
+      setFatherAddress('Shamsabad, Multan');
+
+      setMotherName('Nasreen Bibi');
+      setMotherCnic('36302-7788990-2');
+      setMotherContact('0301-4455667');
+      setMotherIsAlive('Yes');
+      setMotherDob('1986-04-18');
+      setMotherDod('');
+      setMotherQualification('Primary');
+      setMotherProfession('Seamstress / Tailor');
+      setMotherDistrict('Multan');
+      setMotherTehsil('Multan Cantt');
+      setMotherStreetNumber('Street 07');
+      setMotherHouseNumber('House 42');
+      setMotherUcNumber('UC-22');
+      setMotherAddress('Shamsabad, Multan');
+
+      setGuardianName('Nasreen Bibi');
+      setGuardianRelation('Mother');
+      setGuardianContact('0301-4455667');
+      setGuardianCnic('36302-7788990-2');
+      setGuardianQualification('Primary');
+      setGuardianProfession('Tailor');
+      setGuardianAddress('Shamsabad, Multan');
+
+      setMeetingPersons([
+        {
+          id: '1',
+          name: 'Nasreen Bibi',
+          relation: 'Mother',
+          cnic: '36302-7788990-2',
+          contact: '0301-4455667',
+          qualification: 'Primary',
+          profession: 'Tailor',
+          dateTime: '2026-09-18T15:00',
+          startDateTime: '2026-09-18T15:00',
+          endDateTime: '2026-09-18T16:00',
+          district: 'Multan',
+          tehsil: 'Multan Cantt',
+          ucNumber: 'UC-22',
+          streetNumber: 'Street 07',
+          houseNumber: 'House 42',
+          address: 'Shamsabad, Multan',
+        },
+      ]);
+
+      setSiblings([
+        {
+          id: '1',
+          name: 'Hamza Ahmed',
+          gender: 'Male',
+          age: '13',
+          qualification: 'Middle',
+          institution: 'Govt High School Multan',
+          gradeClass: 'Class 8',
+          maritalStatus: 'Single',
+          district: 'Multan',
+          tehsil: 'Multan Cantt',
+          ucNumber: 'UC-22',
+          streetNumber: 'Street 07',
+          houseNumber: 'House 42',
+          address: 'Shamsabad, Multan',
+        },
+      ]);
+
+      setWitnesses([
+        {
+          id: '1',
+          name: 'Tariq Mehmood',
+          cnic: '36302-8877665-1',
+          fatherName: 'Abdul Ghafoor',
+          contact: '0300-8899001',
+          address: 'Near Chowk Shaheedan, Multan',
+          qualification: 'BA',
+          profession: 'Trader',
+        },
+      ]);
+
+      setResultSchool('Govt Comprehensive School Multan');
+      setResultClass('Class 5');
+      setResultExamDate('2026-03-22');
+      setResultExamType('Final Term Examination');
+      setResultPassingScore('80% (A Grade)');
+      setSubjectResults([
+        { id: '1', subject: 'Mathematics', obtainedMarks: '85', totalMarks: '100' },
+        { id: '2', subject: 'English', obtainedMarks: '78', totalMarks: '100' },
+        { id: '3', subject: 'Urdu', obtainedMarks: '82', totalMarks: '100' },
+        { id: '4', subject: 'Science', obtainedMarks: '81', totalMarks: '100' },
+        { id: '5', subject: 'Social Studies', obtainedMarks: '76', totalMarks: '100' },
+      ]);
+
+      setCheckFrequency('Monthly');
+      setMedicineDetails('General health checkup normal');
+      setAntibioticMedicine('None');
+      setReportCategory('Behavior');
+      setReportDetails('Active sports participant, well behaved and cooperative.');
+      setAreaOfInterest('Football, Science & Technology, and Naat Recitation.');
+      return;
+    }
+
+    if (profileType === 'posthumous') {
+      setEnrollmentType('New Enrollment');
+      setReplacedRegistrationNo('');
+      setCategory('Posthumous');
+
+      const adm = `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+      setRegistrationNo(adm);
+      setAdmissionDate('2026-09-18');
+      setFullName('Hamza Tariq');
+      setBFormNo('32304-4455667-1');
+      setDateOfBirth('2018-11-12');
+      setGender('MALE');
+      setFamilyCast('Qureshi');
+      setMotherLanguage('Urdu');
+      setBirthDistrict('Muzaffargarh');
+      setIdentificationMark('Small scar on right eyebrow');
+      setNextOfKin('Kalsoom Akhtar (Mother)');
+      setIsSponsored('Yes');
+      setSponsorshipAmount('12000');
+      setStatus('Active');
+      setDateOfStatus('2026-09-18');
+      setStatusRemarks('Posthumous welfare admission quota');
+
+      setIsDisable('No');
+      setBloodGroup('AB+');
+      setMentalHealth('Sharp & Attentive');
+      setPhysicalHealth('Active');
+      setVaccinationDetail('Complete');
+      setSpecialNeedDisease('None');
+
+      setFatherName('Tariq Aziz (Martyr/Late)');
+      setFatherCnic('32304-1122998-1');
+      setFatherContact('0304-7766554');
+      setFatherIsAlive('No');
+      setFatherDob('1983-07-15');
+      setFatherDod('2024-01-10');
+      setFatherQualification('Graduation');
+      setFatherProfession('Security Personnel');
+      setFatherDistrict('Muzaffargarh');
+      setFatherTehsil('Alipur');
+      setFatherStreetNumber('Gali No 5');
+      setFatherHouseNumber('House 19');
+      setFatherUcNumber('UC-02');
+      setFatherAddress('Alipur Main Road, Muzaffargarh');
+
+      setMotherName('Kalsoom Akhtar');
+      setMotherCnic('32304-8877665-2');
+      setMotherContact('0304-7766554');
+      setMotherIsAlive('Yes');
+      setMotherDob('1988-09-25');
+      setMotherDod('');
+      setMotherQualification('Matric');
+      setMotherProfession('Housewife');
+      setMotherDistrict('Muzaffargarh');
+      setMotherTehsil('Alipur');
+      setMotherStreetNumber('Gali No 5');
+      setMotherHouseNumber('House 19');
+      setMotherUcNumber('UC-02');
+      setMotherAddress('Alipur Main Road, Muzaffargarh');
+
+      setGuardianName('Kalsoom Akhtar');
+      setGuardianRelation('Mother');
+      setGuardianContact('0304-7766554');
+      setGuardianCnic('32304-8877665-2');
+      setGuardianQualification('Matric');
+      setGuardianProfession('Housewife');
+      setGuardianAddress('Alipur Main Road, Muzaffargarh');
+
+      setMeetingPersons([
+        {
+          id: '1',
+          name: 'Kalsoom Akhtar',
+          relation: 'Mother',
+          cnic: '32304-8877665-2',
+          contact: '0304-7766554',
+          qualification: 'Matric',
+          profession: 'Housewife',
+          dateTime: '2026-09-20T10:30',
+          startDateTime: '2026-09-20T10:30',
+          endDateTime: '2026-09-20T11:30',
+          district: 'Muzaffargarh',
+          tehsil: 'Alipur',
+          ucNumber: 'UC-02',
+          streetNumber: 'Gali No 5',
+          houseNumber: 'House 19',
+          address: 'Alipur Main Road, Muzaffargarh',
+        },
+      ]);
+
+      setSiblings([
+        {
+          id: '1',
+          name: 'Ayesha Tariq',
+          gender: 'Female',
+          age: '5',
+          qualification: 'Nursery',
+          institution: 'Govt Primary School',
+          gradeClass: 'Nursery',
+          maritalStatus: 'Single',
+          district: 'Muzaffargarh',
+          tehsil: 'Alipur',
+          ucNumber: 'UC-02',
+          streetNumber: 'Gali No 5',
+          houseNumber: 'House 19',
+          address: 'Alipur Main Road, Muzaffargarh',
+        },
+      ]);
+
+      setWitnesses([
+        {
+          id: '1',
+          name: 'Malik Zafar Iqbal',
+          cnic: '32304-9988112-1',
+          fatherName: 'Malik Khuda Bakhsh',
+          contact: '0300-4455889',
+          address: 'Civil Lines, Muzaffargarh',
+          qualification: 'MA',
+          profession: 'Advocate',
+        },
+      ]);
+
+      setResultSchool('Govt Primary Model School Muzaffargarh');
+      setResultClass('Class 1');
+      setResultExamDate('2026-03-25');
+      setResultExamType('Annual Assessment');
+      setResultPassingScore('92% (A+ Grade)');
+      setSubjectResults([
+        { id: '1', subject: 'Urdu', obtainedMarks: '94', totalMarks: '100' },
+        { id: '2', subject: 'English', obtainedMarks: '90', totalMarks: '100' },
+        { id: '3', subject: 'Mathematics', obtainedMarks: '95', totalMarks: '100' },
+        { id: '4', subject: 'General Knowledge', obtainedMarks: '89', totalMarks: '100' },
+      ]);
+
+      setCheckFrequency('Monthly');
+      setMedicineDetails('Routine vitamins');
+      setAntibioticMedicine('None');
+      setReportCategory('Academic');
+      setReportDetails('Extremely quick learner, disciplined and actively participates in recitation.');
+      setAreaOfInterest('Reading, Drawing, and Quran Memorization (Hifz).');
+      return;
+    }
+
+    // Default Profile: Orphan (Muhammad Ali Khan)
     setEnrollmentType('New Enrollment');
     setReplacedRegistrationNo('');
     setCategory('Orphan');
@@ -611,7 +1245,6 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
 
     setReportCategory('Academic');
     setReportDetails('The child shows strong potential in science and mathematics. Good discipline and respectful behavior.');
-
     setAreaOfInterest('Cricket, Computer Studies, and Islamic Studies.');
   };
 
@@ -741,7 +1374,7 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
       };
 
       const payload = {
-        id: `demo-${Date.now()}`,
+        id: initialChild?.id || `demo-${Date.now()}`,
         fullName: fullName || 'Child Admission',
         fatherGuardianName: fatherName || guardianName || 'Father / Guardian',
         dateOfBirth: dateOfBirth || '2016-01-15',
@@ -753,7 +1386,7 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
         guardianRelation,
         guardianContact,
         address: fatherAddress || motherAddress || guardianAddress || 'Sweet Home Multan, Punjab',
-        photo: photoUrl,
+        photo: photoUrl || initialChild?.photo || null,
         status: status || 'ACTIVE',
         bloodGroup: bloodGroup || 'B+',
         allergies: 'None',
@@ -784,10 +1417,14 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
         console.warn('Server API sync skipped in standalone demo mode:', apiErr);
       }
 
-      setFormSuccess('Child enrolled into Pakistan Sweet Home Multan successfully!');
+      setFormSuccess(
+        initialChild
+          ? `Record for ${payload.fullName} (${payload.admissionNo}) updated successfully!`
+          : `Child ${payload.fullName} enrolled into Pakistan Sweet Home Multan successfully!`
+      );
       setTimeout(() => {
         onSuccess(payload);
-      }, 1000);
+      }, 900);
     } catch (err) {
       console.error('Submission error:', err);
       setFormError(err instanceof Error ? err.message : 'Network error during child admission');
@@ -798,19 +1435,77 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-slate-800">
-      {/* Top Banner with Auto-Fill Demo Button */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 border border-slate-200 p-3 rounded-lg">
-        <div className="text-xs text-slate-600">
-          <span className="font-bold text-slate-900">Pakistan Sweet Home Official Admission Form</span> (14 Sections)
+      {/* Top Banner with Multi-Profile Auto-Fill Demo Buttons & Edit Info */}
+      <div className="bg-slate-50 border border-slate-200 p-3 sm:p-4 rounded-xl space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs text-slate-700">
+            {initialChild ? (
+              <span className="font-extrabold text-[#0D5C3A] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Editing Admitted Record: <span className="font-mono">{initialChild.admissionNo}</span>
+              </span>
+            ) : (
+              <span className="font-bold text-slate-900">
+                Official Child Admission Dossier (15 Institutional Sections)
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {initialChild && onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-2.5 py-1 text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md cursor-pointer transition-colors"
+              >
+                ✕ Cancel Edit
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleClearForm}
+              className="px-2.5 py-1 text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 rounded-md cursor-pointer transition-colors"
+              title="Reset all form fields"
+            >
+              🧹 Clear Form
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={handleAutoFillDemo}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-xs font-bold transition-all shadow-xs cursor-pointer"
-          title="Auto-fill form with realistic demo child data"
-        >
-          <span>⚡ Auto-Fill Demo Data</span>
-        </button>
+
+        {/* 1-Click Multi Profile Quick Presets */}
+        <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            1-Click Demo Profiles:
+          </span>
+          <button
+            type="button"
+            onClick={() => handleAutoFillDemo('orphan')}
+            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+          >
+            <span>⚡ Orphan (Ali Khan)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleAutoFillDemo('poor')}
+            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+          >
+            <span>⚡ Poorest of Poor (Fatima)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleAutoFillDemo('replace')}
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+          >
+            <span>⚡ Replaced Seat (Bilal)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleAutoFillDemo('posthumous')}
+            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+          >
+            <span>⚡ Posthumous (Hamza)</span>
+          </button>
+        </div>
       </div>
 
       {/* Top Banner Feedback */}
