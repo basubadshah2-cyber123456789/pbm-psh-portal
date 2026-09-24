@@ -1480,28 +1480,28 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <button
             type="button"
             onClick={() => handleAutoFillDemo('orphan')}
-            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
           >
             <span>⚡ Orphan (Ali Khan)</span>
           </button>
           <button
             type="button"
             onClick={() => handleAutoFillDemo('poor')}
-            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
           >
             <span>⚡ Poorest of Poor (Fatima)</span>
           </button>
           <button
             type="button"
             onClick={() => handleAutoFillDemo('replace')}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
           >
             <span>⚡ Replaced Seat (Bilal)</span>
           </button>
           <button
             type="button"
             onClick={() => handleAutoFillDemo('posthumous')}
-            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
           >
             <span>⚡ Posthumous (Hamza)</span>
           </button>
@@ -2539,16 +2539,23 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         <button
           type="button"
           onClick={onCancel}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-xs sm:text-sm font-semibold hover:bg-slate-100 transition-colors cursor-pointer"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-xs sm:text-sm font-semibold hover:bg-slate-100 transition-all cursor-pointer hover:scale-105 active:scale-95"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[#0D5C3A] hover:bg-[#0b4d30] text-white text-xs sm:text-sm font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+          className="w-full sm:w-auto px-7 py-2.5 rounded-lg bg-[#0D5C3A] hover:bg-[#0b4d30] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 hover:scale-105 active:scale-95 shimmer-badge flex items-center justify-center gap-2"
         >
-          {isSubmitting ? 'Submitting...' : 'Save'}
+          {isSubmitting ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>Saving Dossier...</span>
+            </>
+          ) : (
+            <span>💾 Save Child Dossier</span>
+          )}
         </button>
       </div>
     </form>
