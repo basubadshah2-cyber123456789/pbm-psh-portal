@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   Trash2,
   AlertCircle,
   CheckCircle2,
   Upload,
+  Sparkles,
+  Award,
 } from 'lucide-react';
 import { ChildPhotoPicker } from './ChildPhotoPicker';
 
@@ -166,12 +168,33 @@ function FormSelect({
   );
 }
 
-// Section Header with Warm Orange/Terracotta Color
-function SectionHeading({ title }: { title: string }) {
+// Section Header with Warm Orange/Terracotta Color and Animated Status Badge
+function SectionHeading({
+  title,
+  step,
+  isCompleted,
+}: {
+  title: string;
+  step?: number;
+  isCompleted?: boolean;
+}) {
   return (
-    <h3 className="text-[#C86A28] font-semibold text-sm sm:text-base mt-6 mb-3 tracking-normal">
-      {title}
-    </h3>
+    <div className="flex items-center gap-2 mt-6 mb-3">
+      {typeof step === 'number' && (
+        <span
+          className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black transition-all duration-300 ${
+            isCompleted
+              ? 'bg-emerald-600 text-white shadow-xs scale-105 ring-2 ring-emerald-300'
+              : 'bg-slate-200 text-slate-700'
+          }`}
+        >
+          {isCompleted ? '✓' : step}
+        </span>
+      )}
+      <h3 className="text-[#C86A28] font-bold text-sm sm:text-base tracking-normal">
+        {title}
+      </h3>
+    </div>
   );
 }
 
@@ -471,6 +494,93 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  // Real-Time Form Completion Score across all 15 official PBM/PSH Sections
+  const completionStats = useMemo(() => {
+    let filled = 0;
+    const total = 15;
+
+    // 1. Category
+    if (category) filled++;
+    // 2. Category 2 (Enrollment Type)
+    if (enrollmentType) filled++;
+    // 3. Basic Info
+    if (fullName && (bFormNo || dateOfBirth) && gender) filled++;
+    // 4. Health Info
+    if (bloodGroup || mentalHealth || physicalHealth) filled++;
+    // 5. Father Info
+    if (fatherName || fatherIsAlive) filled++;
+    // 6. Mother Info
+    if (motherName || motherIsAlive) filled++;
+    // 7. Guardian Info
+    if (guardianName || guardianRelation) filled++;
+    // 8. Meeting Persons Info
+    if (meetingPersons.some((p) => !!p.name.trim())) filled++;
+    // 9. Sibling Info
+    if (siblings.some((s) => !!s.name.trim())) filled++;
+    // 10. Witness Info
+    if (witnesses.some((w) => !!w.name.trim())) filled++;
+    // 11. Result Info
+    if (resultSchool || subjectResults.some((s) => !!s.subject.trim())) filled++;
+    // 12. Health Care
+    if (checkFrequency || medicineDetails) filled++;
+    // 13. Report
+    if (reportCategory || reportDetails) filled++;
+    // 14. Area of Interest
+    if (areaOfInterest.trim()) filled++;
+    // 15. Attachments
+    if (profilePhotoFile || Object.values(attachments).some((a) => a.file !== null)) filled++;
+
+    const percent = Math.round((filled / total) * 100);
+    return {
+      filled,
+      total,
+      percent,
+      isCat1Complete: !!category,
+      isCat2Complete: !!enrollmentType,
+      isBasicComplete: !!(fullName && (bFormNo || dateOfBirth) && gender),
+      isHealthComplete: !!(bloodGroup || mentalHealth || physicalHealth),
+      isFatherComplete: !!(fatherName || fatherIsAlive),
+      isMotherComplete: !!(motherName || motherIsAlive),
+      isGuardianComplete: !!(guardianName || guardianRelation),
+      isMeetingComplete: meetingPersons.some((p) => !!p.name.trim()),
+      isSiblingComplete: siblings.some((s) => !!s.name.trim()),
+      isWitnessComplete: witnesses.some((w) => !!w.name.trim()),
+      isResultComplete: !!(resultSchool || subjectResults.some((s) => !!s.subject.trim())),
+      isHealthCareComplete: !!(checkFrequency || medicineDetails),
+      isReportComplete: !!(reportCategory || reportDetails),
+      isInterestComplete: !!areaOfInterest.trim(),
+      isAttachmentsComplete: !!(profilePhotoFile || Object.values(attachments).some((a) => a.file !== null)),
+    };
+  }, [
+    category,
+    enrollmentType,
+    fullName,
+    bFormNo,
+    dateOfBirth,
+    gender,
+    bloodGroup,
+    mentalHealth,
+    physicalHealth,
+    fatherName,
+    fatherIsAlive,
+    motherName,
+    motherIsAlive,
+    guardianName,
+    guardianRelation,
+    meetingPersons,
+    siblings,
+    witnesses,
+    resultSchool,
+    subjectResults,
+    checkFrequency,
+    medicineDetails,
+    reportCategory,
+    reportDetails,
+    areaOfInterest,
+    profilePhotoFile,
+    attachments,
+  ]);
 
   // Load existing child data for editing
   useEffect(() => {
@@ -1508,6 +1618,37 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
+      {/* Dynamic Animated Form Completion Progress Meter */}
+      <div className="bg-gradient-to-r from-emerald-50/80 via-slate-50 to-amber-50/80 border border-emerald-200/70 rounded-xl p-4 shadow-xs transition-all">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-2 font-bold">
+          <span className="flex items-center gap-2 text-slate-800">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+            <span className="text-[#0D5C3A]">Live Dossier Completion Meter:</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-white border border-emerald-300 text-[#0D5C3A] font-mono text-xs font-black shadow-xs">
+              {completionStats.filled} / {completionStats.total} Sections Filled
+            </span>
+            <span className={`px-2.5 py-0.5 rounded-full text-white font-mono text-xs font-black shadow-xs transition-all ${
+              completionStats.percent === 100 
+                ? 'bg-emerald-600 animate-pulse' 
+                : completionStats.percent > 50 
+                ? 'bg-[#0D5C3A]' 
+                : 'bg-amber-600'
+            }`}>
+              {completionStats.percent}%
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full bg-slate-200/90 h-3 rounded-full overflow-hidden p-0.5 border border-slate-300">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-500 ease-out shadow-xs"
+            style={{ width: `${Math.max(5, completionStats.percent)}%` }}
+          />
+        </div>
+      </div>
+
       {/* Top Banner Feedback */}
       {formError && (
         <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
@@ -1525,7 +1666,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 1. CATEGORY ================= */}
       <div>
-        <SectionHeading title="Category" />
+        <SectionHeading step={1} title="Category" isCompleted={completionStats.isCat1Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Category"
@@ -1543,7 +1684,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 2. CATEGORY 2 ================= */}
       <div>
-        <SectionHeading title="Category 2" />
+        <SectionHeading step={2} title="Category 2 (Enrollment Type)" isCompleted={completionStats.isCat2Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Category 2"
@@ -1565,10 +1706,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 2. BASIC INFO ================= */}
+      {/* ================= 3. BASIC INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading title="Basic Info" />
+          <SectionHeading step={3} title="Basic Info" isCompleted={completionStats.isBasicComplete} />
           <div className="mb-2">
             <ChildPhotoPicker
               onFileSelected={(file) => setProfilePhotoFile(file)}
@@ -1688,9 +1829,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 3. HEALTH INFO ================= */}
+      {/* ================= 4. HEALTH INFO ================= */}
       <div>
-        <SectionHeading title="Health Info" />
+        <SectionHeading step={4} title="Health Info" isCompleted={completionStats.isHealthComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormSelect
@@ -1730,9 +1871,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 4. FATHER INFO ================= */}
+      {/* ================= 5. FATHER INFO ================= */}
       <div>
-        <SectionHeading title="Father Info" />
+        <SectionHeading step={5} title="Father Info" isCompleted={completionStats.isFatherComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -1824,9 +1965,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 5. MOTHER INFO ================= */}
+      {/* ================= 6. MOTHER INFO ================= */}
       <div>
-        <SectionHeading title="Mother Info" />
+        <SectionHeading step={6} title="Mother Info" isCompleted={completionStats.isMotherComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -1918,9 +2059,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 6. GUARDIAN INFO ================= */}
+      {/* ================= 7. GUARDIAN INFO ================= */}
       <div>
-        <SectionHeading title="Guardian Info" />
+        <SectionHeading step={7} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -1966,10 +2107,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 7. MEETING PERSON INFO ================= */}
+      {/* ================= 8. MEETING PERSON INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading title="Meeting Person Info" />
+          <SectionHeading step={8} title="Meeting Person Info" isCompleted={completionStats.isMeetingComplete} />
           <button
             type="button"
             onClick={addMeetingPerson}
@@ -2091,10 +2232,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 8. SIBLINGS INFO ================= */}
+      {/* ================= 9. SIBLINGS INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading title="Siblings Info" />
+          <SectionHeading step={9} title="Siblings Info" isCompleted={completionStats.isSiblingComplete} />
           <button
             type="button"
             onClick={addSibling}
@@ -2206,10 +2347,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 9. WITNESS INFO ================= */}
+      {/* ================= 10. WITNESS INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading title="Witness Info" />
+          <SectionHeading step={10} title="Witness Info" isCompleted={completionStats.isWitnessComplete} />
           <button
             type="button"
             onClick={addWitness}
@@ -2285,9 +2426,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 10. RESULT INFO ================= */}
+      {/* ================= 11. RESULT INFO ================= */}
       <div>
-        <SectionHeading title="Result Info" />
+        <SectionHeading step={11} title="Result Info" isCompleted={completionStats.isResultComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-4">
           <FormInput
             placeholder="School"
@@ -2393,9 +2534,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 11. NEW HEALTH SECTION ================= */}
+      {/* ================= 12. HEALTH CARE SECTION ================= */}
       <div>
-        <SectionHeading title="Health" />
+        <SectionHeading step={12} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Check Frequency"
@@ -2440,9 +2581,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 12. NEW REPORT SECTION ================= */}
+      {/* ================= 13. REPORT SECTION ================= */}
       <div>
-        <SectionHeading title="Report" />
+        <SectionHeading step={13} title="Behavioral & Academic Report" isCompleted={completionStats.isReportComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-3.5">
           <FormSelect
             label="Complain Type"
@@ -2489,9 +2630,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 13. AREA OF INTEREST – CHILD ================= */}
+      {/* ================= 14. AREA OF INTEREST – CHILD ================= */}
       <div>
-        <SectionHeading title="Area of Interest – Child" />
+        <SectionHeading step={14} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
         <div className="relative">
           <textarea
             rows={3}
@@ -2503,9 +2644,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 14. ATTACHMENTS (FINAL SECTION) ================= */}
+      {/* ================= 15. ATTACHMENTS (FINAL SECTION) ================= */}
       <div>
-        <SectionHeading title="Attachments" />
+        <SectionHeading step={15} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {Object.entries(attachments).map(([key, item]) => (
             <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2">

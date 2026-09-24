@@ -782,6 +782,76 @@ function BrandIntroSplash({ onComplete }: { onComplete: () => void }) {
   );
 }
 
+// ================= REAL CONFETTI BURST CELEBRATION ANIMATION =================
+function ConfettiBurst() {
+  const pieces = useMemo(() => {
+    const colors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#14B8A6', '#F43F5E', '#10b981', '#fbbf24'];
+    return Array.from({ length: 42 }).map((_, i) => ({
+      id: i,
+      left: `${(i * 2.3 + Math.random() * 3) % 98}%`,
+      delay: `${(i % 14) * 0.08}s`,
+      duration: `${1.8 + (i % 6) * 0.25}s`,
+      color: colors[i % colors.length],
+      size: `${6 + (i % 5) * 2.5}px`,
+      shape: i % 3 === 0 ? 'rounded-full' : i % 3 === 1 ? 'rounded-xs' : 'rotate-45',
+    }));
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
+      {pieces.map((p) => (
+        <div
+          key={p.id}
+          className={`absolute top-0 animate-confetti-particle ${p.shape}`}
+          style={{
+            left: p.left,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+            backgroundColor: p.color,
+            width: p.size,
+            height: p.size,
+            boxShadow: `0 0 8px ${p.color}`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ================= ANIMATED NUMBER COUNTER =================
+function AnimatedCounter({ end, duration = 800, prefix = '', suffix = '' }: { end: number; duration?: number; prefix?: string; suffix?: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const startValue = 0;
+    const endValue = end;
+
+    if (endValue === 0) {
+      setCount(0);
+      return;
+    }
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.floor(startValue + eased * (endValue - startValue)));
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        setCount(endValue);
+      }
+    };
+
+    const animId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(animId);
+  }, [end, duration]);
+
+  return <span>{prefix}{count.toLocaleString()}{suffix}</span>;
+}
+
 // ================= MAIN STANDALONE PORTAL =================
 export default function StandalonePSHAdmissionWebsite() {
   const [showIntro, setShowIntro] = useState(true);
@@ -1101,7 +1171,14 @@ export default function StandalonePSHAdmissionWebsite() {
       {/* Intro Brand Splash Animation */}
       {showIntro && <BrandIntroSplash onComplete={() => setShowIntro(false)} />}
 
-      <div className="min-h-screen bg-[#F4F6F8] text-slate-800 flex flex-col antialiased">
+      <div className="min-h-screen bg-[#F4F6F8] text-slate-800 flex flex-col antialiased relative overflow-x-hidden">
+        {/* Ambient Floating Aurora Glowing Orbs */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40">
+          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-500/15 blur-3xl animate-aurora-1" />
+          <div className="absolute top-1/3 -right-32 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl animate-aurora-2" />
+          <div className="absolute -bottom-32 left-1/3 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl animate-aurora-1" />
+        </div>
+
         {/* Floating Toast Notification */}
         {toastMessage && (
           <div className="fixed bottom-5 right-5 z-50 bg-[#0D5C3A] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-bold border border-emerald-400 animate-bounce">
@@ -1170,10 +1247,13 @@ export default function StandalonePSHAdmissionWebsite() {
         </header>
 
         {/* Main Container */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6 relative z-10">
           {/* ================= SUCCESS SUBMISSION VIEW ================= */}
           {justSubmittedChild ? (
             <div className="max-w-3xl mx-auto my-8 bg-white rounded-2xl border border-slate-200 shadow-xl p-6 sm:p-10 text-center space-y-6 animate-scale-in relative overflow-hidden">
+              {/* Real Animated Confetti Burst */}
+              <ConfettiBurst />
+
               {/* Floating Confetti / Celebration Particles */}
               <div className="absolute top-4 left-10 text-xl select-none animate-celebrate-1">✨</div>
               <div className="absolute top-6 right-12 text-2xl select-none animate-celebrate-2">🎉</div>
@@ -1308,7 +1388,9 @@ export default function StandalonePSHAdmissionWebsite() {
                     </span>
                   </div>
                   <div className="mt-2">
-                    <div className="text-2xl font-black text-slate-900 group-hover:text-[#0D5C3A] transition-colors">{stats.total}</div>
+                    <div className="text-2xl font-black text-slate-900 group-hover:text-[#0D5C3A] transition-colors">
+                      <AnimatedCounter end={stats.total} />
+                    </div>
                     <div className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                       <span>Sweet Home Multan</span>
@@ -1331,7 +1413,7 @@ export default function StandalonePSHAdmissionWebsite() {
                   </div>
                   <div className="mt-2">
                     <div className="text-2xl font-black text-amber-600">
-                      {stats.orphans} <span className="text-xs font-normal text-slate-400">({stats.total > 0 ? Math.round((stats.orphans / stats.total) * 100) : 0}%)</span>
+                      <AnimatedCounter end={stats.orphans} /> <span className="text-xs font-normal text-slate-400">({stats.total > 0 ? Math.round((stats.orphans / stats.total) * 100) : 0}%)</span>
                     </div>
                     <div className="text-[10px] text-slate-500 font-medium">PBM Priority Quota</div>
                   </div>
@@ -1351,7 +1433,9 @@ export default function StandalonePSHAdmissionWebsite() {
                     </span>
                   </div>
                   <div className="mt-2">
-                    <div className="text-2xl font-black text-emerald-700">{stats.poorest}</div>
+                    <div className="text-2xl font-black text-emerald-700">
+                      <AnimatedCounter end={stats.poorest} />
+                    </div>
                     <div className="text-[10px] text-slate-500 font-medium">Deserving Families</div>
                   </div>
                 </div>
@@ -1371,7 +1455,7 @@ export default function StandalonePSHAdmissionWebsite() {
                   </div>
                   <div className="mt-2">
                     <div className="text-xl font-black text-blue-700">
-                      Rs. {stats.totalSponsorshipPKR.toLocaleString()}
+                      <AnimatedCounter end={stats.totalSponsorshipPKR} prefix="Rs. " />
                     </div>
                     <div className="text-[10px] text-slate-500 font-medium">{stats.sponsoredCount} Children Sponsored</div>
                   </div>
@@ -1387,7 +1471,7 @@ export default function StandalonePSHAdmissionWebsite() {
                   </div>
                   <div className="mt-2">
                     <div className="text-base font-bold text-slate-800">
-                      👦 {stats.boys} Boys • 👧 {stats.girls} Girls
+                      👦 <AnimatedCounter end={stats.boys} /> Boys • 👧 <AnimatedCounter end={stats.girls} /> Girls
                     </div>
                     <div className="text-[10px] text-slate-500 font-medium">Resident Capacity</div>
                   </div>
