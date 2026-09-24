@@ -828,12 +828,30 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
         </div>
       )}
 
-      {/* ================= 1. ENROLLMENT TYPE ================= */}
+      {/* ================= 1. CATEGORY ================= */}
       <div>
-        <SectionHeading title="Enrollment Type" />
+        <SectionHeading title="Category" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
-            label="Enrollment Type"
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            options={[
+              'Orphan',
+              'Divorce',
+              'Posthumous',
+              'Poorest of the Poor',
+            ]}
+          />
+        </div>
+      </div>
+
+      {/* ================= 2. CATEGORY 2 ================= */}
+      <div>
+        <SectionHeading title="Category 2" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+          <FormSelect
+            label="Category 2"
             value={enrollmentType}
             onChange={(e) => setEnrollmentType(e.target.value)}
             options={['New Enrollment', 'Replace']}
@@ -849,24 +867,6 @@ export function AddPSHForm({ onSuccess, onCancel }: AddPSHFormProps) {
           ) : (
             <div />
           )}
-        </div>
-      </div>
-
-      {/* ================= 2. CATEGORY ================= */}
-      <div>
-        <SectionHeading title="Category" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
-          <FormSelect
-            label="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            options={[
-              'Orphan',
-              'Divorce',
-              'Posthumous',
-              'Poorest of the Poor',
-            ]}
-          />
         </div>
       </div>
 

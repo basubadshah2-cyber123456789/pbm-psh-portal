@@ -436,10 +436,20 @@ export default function StandalonePSHAdmissionWebsite() {
                   </p>
                 </div>
 
-                {/* Section 1: Enrollment Type */}
+                {/* Section 1: Category */}
                 <div className="p-3 rounded-lg border border-emerald-300 bg-emerald-50/50 flex flex-wrap items-center justify-between gap-3 text-xs">
                   <div>
-                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">1. ENROLLMENT TYPE</span>
+                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">1. CATEGORY</span>
+                    <span className="font-extrabold text-slate-900 text-sm">
+                      {psh?.category?.type || 'Orphan'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Section 2: Category 2 */}
+                <div className="p-3 rounded-lg border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">2. CATEGORY 2</span>
                     <span className="font-extrabold text-slate-900 text-sm">
                       {psh?.enrollmentType?.type || 'New Enrollment'}
                     </span>
@@ -452,16 +462,6 @@ export default function StandalonePSHAdmissionWebsite() {
                       </span>
                     </div>
                   )}
-                </div>
-
-                {/* Section 2: Category */}
-                <div className="p-3 rounded-lg border border-slate-200 bg-white flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-[#0D5C3A] uppercase tracking-wider block">2. CATEGORY</span>
-                    <span className="font-extrabold text-slate-900 text-sm">
-                      {psh?.category?.type || 'Orphan'}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Section 3: Basic Info */}
