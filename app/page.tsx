@@ -785,7 +785,7 @@ function BrandIntroSplash({ onComplete }: { onComplete: () => void }) {
 // ================= MAIN STANDALONE PORTAL =================
 export default function StandalonePSHAdmissionWebsite() {
   const [showIntro, setShowIntro] = useState(true);
-  const [activeTab, setActiveTab] = useState<'form' | 'records'>('records');
+  const [activeTab, setActiveTab] = useState<'form' | 'records'>('form');
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [beds, setBeds] = useState<{ id: string; bedNumber: string; roomNumber: string }[]>([]);
   const [motherMaids, setMotherMaids] = useState<{ id: string; fullName: string }[]>([]);
@@ -1134,6 +1134,23 @@ export default function StandalonePSHAdmissionWebsite() {
                 type="button"
                 onClick={() => {
                   setJustSubmittedChild(null);
+                  setEditingChild(null);
+                  setActiveTab('form');
+                }}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === 'form' && !justSubmittedChild
+                    ? 'bg-white text-[#0D5C3A] shadow-xs'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>{editingChild ? 'Edit Dossier' : 'New Admission Form'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setJustSubmittedChild(null);
                   setActiveTab('records');
                 }}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -1147,23 +1164,6 @@ export default function StandalonePSHAdmissionWebsite() {
                 <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[#C86A28] text-white font-black">
                   {enrolledChildren.length}
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setJustSubmittedChild(null);
-                  setEditingChild(null);
-                  setActiveTab('form');
-                }}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'form' && !justSubmittedChild
-                    ? 'bg-white text-[#0D5C3A] shadow-xs'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>{editingChild ? 'Edit Dossier' : 'New Admission'}</span>
               </button>
             </div>
           </div>
