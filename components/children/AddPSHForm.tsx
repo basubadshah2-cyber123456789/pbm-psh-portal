@@ -563,7 +563,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
   // ================= 14. ATTACHMENTS =================
   const [attachments, setAttachments] = useState<Record<string, { file: File | null; title: string }>>({
-    profilePic: { file: null, title: 'Profile Pic' },
+    fatherCnicFront: { file: null, title: 'Father CNIC Front' },
+    fatherCnicBack: { file: null, title: 'Father CNIC Back' },
     motherCnic: { file: null, title: 'Mother CNIC' },
     cnicBack: { file: null, title: 'CNIC (Back)' },
     guardianCnic: { file: null, title: 'Guardian CNIC' },
@@ -580,6 +581,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       [key]: { ...prev[key], file },
     }));
   };
+
+  const getSavedDocument = (documentType: string) => (
+    Array.isArray(initialChild?.documents)
+      ? initialChild.documents
+          .filter((document: any) => document.documentType === documentType)
+          .sort((a: any, b: any) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0] || null
+      : null
+  );
 
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -698,6 +707,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setBFormNo(initialChild.bFormNo || '');
       setBFormFrontFile(null);
       setBFormBackFile(null);
+      setAttachments((current) =>
+        Object.fromEntries(Object.entries(current).map(([key, item]) => [key, { ...item, file: null }]))
+      );
       setDateOfBirth(initialChild.dateOfBirth || '2016-01-15');
       setGender(initialChild.gender || 'MALE');
       setStatus(initialChild.status || 'Active');
@@ -896,6 +908,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setBFormNo('');
     setBFormFrontFile(null);
     setBFormBackFile(null);
+    setAttachments((current) =>
+      Object.fromEntries(Object.entries(current).map(([key, item]) => [key, { ...item, file: null }]))
+    );
     setDateOfBirth('2016-01-15');
     setGender('');
     setFamilyCast('');
@@ -1735,7 +1750,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         attachmentsSummary: Object.keys(attachments).map((k) => ({
           slot: k,
           title: attachments[k].title,
-          attached: !!attachments[k].file,
+          attached: !!attachments[k].file || (
+            (k === 'fatherCnicFront' && !!getSavedDocument('FATHER_CNIC_FRONT')) ||
+            (k === 'fatherCnicBack' && !!getSavedDocument('FATHER_CNIC_BACK'))
+          ),
         })),
       };
 
@@ -1805,6 +1823,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       const documentsToUpload = [
         { file: bFormFrontFile, title: 'B-Form Front', documentType: 'B_FORM_FRONT' },
         { file: bFormBackFile, title: 'B-Form Back', documentType: 'B_FORM_BACK' },
+        ...([
+          ['fatherCnicFront', 'FATHER_CNIC_FRONT'],
+          ['fatherCnicBack', 'FATHER_CNIC_BACK'],
+        ] as const).map(([key, documentType]) => ({
+          file: attachments[key].file,
+          title: attachments[key].title,
+          documentType,
+        })),
         ...(enrollmentType === 'Replace' && schoolLeavingCertificateFile
           ? [{
               file: schoolLeavingCertificateFile,
@@ -3338,12 +3364,34 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           {Object.entries(attachments).map(([key, item]) => (
             <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2 shadow-xs">
               <span className="text-xs font-bold text-slate-800">{item.title}</span>
+              {(() => {
+                const documentType = key === 'fatherCnicFront'
+                  ? 'FATHER_CNIC_FRONT'
+                  : key === 'fatherCnicBack'
+                    ? 'FATHER_CNIC_BACK'
+                    : null;
+                const savedDocument = documentType ? getSavedDocument(documentType) : null;
+
+                return !item.file && savedDocument && initialChild?.id ? (
+                  <a
+                    href={`/api/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold text-indigo-700 hover:underline"
+                  >
+                    View saved file: {savedDocument.title}
+                  </a>
+                ) : null;
+              })()}
 
               <div className="flex items-center justify-between pt-1 gap-1">
                 {item.file ? (
                   <span className="text-xs text-emerald-700 font-semibold truncate max-w-[110px]">
                     ✓ {item.file.name}
                   </span>
+                ) : (key === 'fatherCnicFront' && getSavedDocument('FATHER_CNIC_FRONT')) ||
+                  (key === 'fatherCnicBack' && getSavedDocument('FATHER_CNIC_BACK')) ? (
+                  <span className="text-xs text-emerald-700 font-semibold">✓ Saved</span>
                 ) : (
                   <span className="text-[11px] text-slate-400">No file chosen</span>
                 )}
@@ -3355,16 +3403,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                       type="file"
                       accept="image/*,.pdf"
                       className="hidden"
+                      disabled={isSubmitting}
                       onChange={(e) => handleAttachmentUpload(key, e.target.files?.[0] || null)}
                     />
                   </label>
                   <button
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => {
                       setActiveAttachmentKey(key);
                       setActiveCameraModal('attachment');
                     }}
-                    className="p-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs transition-colors cursor-pointer"
+                    className="p-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs transition-colors cursor-pointer disabled:opacity-50"
                     title={`Snap photo of ${item.title}`}
                   >
                     <Camera className="w-3.5 h-3.5" />
