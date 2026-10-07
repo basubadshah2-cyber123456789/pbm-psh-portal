@@ -1820,10 +1820,22 @@ export default function StandalonePSHAdmissionWebsite() {
                       onClick={() => {
                         if (typeof window !== 'undefined') window.print();
                       }}
-                      className="px-4 py-2 bg-[#0D5C3A] hover:bg-[#0b4d30] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                      title="Save as PDF using Print dialog"
+                    >
+                      <Download className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Download PDF</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== 'undefined') window.print();
+                      }}
+                      className="px-4 py-2 bg-[#0D5C3A] hover:bg-[#0b4d30] text-white rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                     >
                       <Printer className="w-4 h-4" />
-                      <span>Print Official Dossier</span>
+                      <span>Print Dossier</span>
                     </button>
                     <button
                       type="button"
@@ -1837,26 +1849,56 @@ export default function StandalonePSHAdmissionWebsite() {
 
                 {/* Printable Document Body */}
                 <div className="pt-6 space-y-5 text-slate-900 print:pt-0">
-                  {/* 1. Header with Government / PBM Seal */}
-                  <div className="text-center border-b-2 border-[#0D5C3A] pb-4 relative">
-                    {/* Official Verification Watermark Badge */}
-                    <div className="absolute top-0 right-0 border border-slate-300 p-1 rounded text-[9px] font-mono text-slate-400 text-right uppercase">
-                      <div>VERIFIED PORTAL RECORD</div>
-                      <div className="font-bold text-slate-700">{selectedDossierChild.admissionNo}</div>
+                  {/* 1. Header with Government / PBM Seal & Security QR Code */}
+                  <div className="border-b-2 border-[#0D5C3A] pb-4 relative flex items-center justify-between gap-4">
+                    <div className="text-left flex items-center gap-3">
+                      <div className="p-2.5 rounded-full bg-emerald-50 border border-emerald-300">
+                        <Shield className="w-8 h-8 text-[#0D5C3A]" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-[#0D5C3A]">
+                          GOVERNMENT OF PAKISTAN • PAKISTAN BAIT-UL-MAL
+                        </div>
+                        <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900">
+                          Pakistan Sweet Home Multan
+                        </h2>
+                        <h3 className="text-xs font-bold text-[#C86A28] uppercase">
+                          Resident Child Permanent Institutional Dossier & Admission Record
+                        </h3>
+                      </div>
                     </div>
 
-                    <div className="inline-block p-2 rounded-full bg-emerald-50 border border-emerald-300 mb-2">
-                      <Shield className="w-8 h-8 text-[#0D5C3A] mx-auto" />
+                    {/* Official Security QR Code Verification Emblem */}
+                    <div className="shrink-0 flex flex-col items-center border border-slate-300 bg-slate-50 p-2 rounded-xl text-center shadow-xs">
+                      {/* SVG Verifiable QR Pattern */}
+                      <div className="w-16 h-16 bg-white p-1 rounded border border-slate-200 flex items-center justify-center">
+                        <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900 fill-current">
+                          {/* Top-left corner */}
+                          <rect x="5" y="5" width="30" height="30" rx="4" />
+                          <rect x="10" y="10" width="20" height="20" fill="white" />
+                          <rect x="15" y="15" width="10" height="10" />
+                          {/* Top-right corner */}
+                          <rect x="65" y="5" width="30" height="30" rx="4" />
+                          <rect x="70" y="10" width="20" height="20" fill="white" />
+                          <rect x="75" y="15" width="10" height="10" />
+                          {/* Bottom-left corner */}
+                          <rect x="5" y="65" width="30" height="30" rx="4" />
+                          <rect x="10" y="70" width="20" height="20" fill="white" />
+                          <rect x="15" y="75" width="10" height="10" />
+                          {/* Data points */}
+                          <rect x="42" y="10" width="8" height="8" />
+                          <rect x="52" y="20" width="8" height="8" />
+                          <rect x="42" y="42" width="16" height="16" />
+                          <rect x="68" y="45" width="8" height="8" />
+                          <rect x="80" y="55" width="8" height="8" />
+                          <rect x="45" y="70" width="8" height="8" />
+                          <rect x="65" y="75" width="15" height="15" />
+                        </svg>
+                      </div>
+                      <span className="text-[8px] font-mono font-bold text-[#0D5C3A] mt-1 tracking-wider">
+                        VERIFIED: {selectedDossierChild.admissionNo}
+                      </span>
                     </div>
-                    <h2 className="text-xl font-extrabold uppercase tracking-tight text-slate-900">
-                      PAKISTAN BAIT-UL-MAL
-                    </h2>
-                    <h3 className="text-sm font-bold text-[#0D5C3A] uppercase tracking-wide">
-                      SWEET HOME MULTAN • RESIDENT CHILD OFFICIAL DOSSIER
-                    </h3>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Near Eidgah, LMQ Road, Multan, Punjab, Pakistan | Institutional Welfare File & Permanent Record
-                    </p>
                   </div>
 
                   {/* Section 1 & 2: Category & Enrollment Type */}
@@ -1876,15 +1918,15 @@ export default function StandalonePSHAdmissionWebsite() {
                         <span className="font-extrabold text-slate-900 text-sm">
                           {psh?.enrollmentType?.type || 'New Enrollment'}
                         </span>
+                        {psh?.enrollmentType?.type === 'Replace' && (
+                          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+                            <div><span className="text-slate-400">Registration No.:</span> <span className="font-bold">{psh.enrollmentType.replacedRegistrationNo || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">Class:</span> <span>{psh.enrollmentType.class || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">School Name:</span> <span>{psh.enrollmentType.schoolName || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">School Leaving Certificate:</span> <span>{psh.enrollmentType.schoolLeavingCertificate?.fileName || psh.enrollmentType.schoolLeavingCertificate || 'N/A'}</span></div>
+                          </div>
+                        )}
                       </div>
-                      {psh?.enrollmentType?.replacedRegistrationNo && (
-                        <div className="text-right">
-                          <span className="text-[10px] text-amber-800 font-bold block">Replaced Seat</span>
-                          <span className="font-bold text-amber-950 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
-                            {psh.enrollmentType.replacedRegistrationNo}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -1980,6 +2022,26 @@ export default function StandalonePSHAdmissionWebsite() {
                     </div>
                   </div>
 
+                  {psh?.appearance && (
+                    <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
+                      <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-2">APPEARANCE</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Height:</span>
+                          <span className="font-semibold text-slate-800">{psh.appearance.height || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Weight:</span>
+                          <span className="font-semibold text-slate-800">{psh.appearance.weight || 'N/A'}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Age:</span>
+                          <span className="font-semibold text-slate-800">{psh.appearance.age || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Section 5 & 6: Parents Info */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Father Info */}
@@ -2013,8 +2075,34 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">CNIC:</span> <span>{psh?.guardianInfo?.cnic || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.guardianInfo?.profession || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Address:</span> <span>{psh?.guardianInfo?.address || selectedDossierChild.address || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">District:</span> <span>{psh?.guardianInfo?.district || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Tehsil:</span> <span>{psh?.guardianInfo?.tehsil || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Union Council No.:</span> <span>{psh?.guardianInfo?.ucNumber || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Street No.:</span> <span>{psh?.guardianInfo?.streetNumber || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">House No.:</span> <span>{psh?.guardianInfo?.houseNumber || 'N/A'}</span></div>
                     </div>
                   </div>
+                  {Array.isArray(psh?.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
+                    <div key={guardian.id || index} className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs">
+                      <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">
+                        Additional Guardian #{index + 1}
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div><span className="text-slate-400">Name:</span> <span className="font-bold">{guardian.name || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Relation:</span> <span>{guardian.relation || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Contact:</span> <span>{guardian.contact || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">CNIC:</span> <span>{guardian.cnic || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Qualification:</span> <span>{guardian.qualification || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Profession:</span> <span>{guardian.profession || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Address:</span> <span>{guardian.address || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">District:</span> <span>{guardian.district || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Tehsil:</span> <span>{guardian.tehsil || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Union Council No.:</span> <span>{guardian.ucNumber || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Street No.:</span> <span>{guardian.streetNumber || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">House No.:</span> <span>{guardian.houseNumber || 'N/A'}</span></div>
+                      </div>
+                    </div>
+                  ))}
 
                   {/* Section 8: Meeting Persons */}
                   {psh?.meetingPersons && psh.meetingPersons.length > 0 && (
@@ -2086,6 +2174,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th>Father Name</th>
                             <th>Contact</th>
                             <th>Profession</th>
+                            <th>Address Details</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2096,6 +2185,11 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{w.fatherName || 'N/A'}</td>
                               <td>{w.contact || 'N/A'}</td>
                               <td>{w.profession || 'N/A'}</td>
+                              <td>
+                                {[w.address, w.district && `District: ${w.district}`, w.tehsil && `Tehsil: ${w.tehsil}`, w.ucNumber && `UC No.: ${w.ucNumber}`, w.streetNumber && `Street No.: ${w.streetNumber}`, w.houseNumber && `House No.: ${w.houseNumber}`]
+                                  .filter(Boolean)
+                                  .join(' · ') || 'N/A'}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -2143,6 +2237,10 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">Frequency:</span> <span className="font-semibold">{psh?.healthCare?.checkFrequency || 'Monthly'}</span></div>
                       <div><span className="text-slate-400">Medicines:</span> <span>{psh?.healthCare?.medicineDetails || 'None'}</span></div>
                       <div><span className="text-slate-400">Antibiotics:</span> <span>{psh?.healthCare?.antibioticMedicine || 'None'}</span></div>
+                      <div><span className="text-slate-400">Doctor Name:</span> <span>{psh?.healthCare?.doctorName || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Hospital Name:</span> <span>{psh?.healthCare?.hospitalName || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Hospital Type:</span> <span>{psh?.healthCare?.hospitalType || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Doctor Contact No.:</span> <span>{psh?.healthCare?.doctorContactNo || 'N/A'}</span></div>
                     </div>
 
                     <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs">

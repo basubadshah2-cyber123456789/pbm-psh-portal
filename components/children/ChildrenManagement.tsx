@@ -985,6 +985,22 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">Profession/Income:</span> <strong>{psh?.guardianInfo?.profession || 'Domestic Work / Sewing'}</strong></div>
                     <div><span className="text-slate-500">Address:</span> <strong>{psh?.guardianInfo?.address || selectedChild.address || 'Multan'}</strong></div>
                   </div>
+                  {Array.isArray(psh?.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
+                    <div key={guardian.id || index} className="mt-3 border-t border-slate-100 pt-3">
+                      <div className="mb-1 font-bold text-slate-700">Additional Guardian #{index + 1}: {guardian.name || 'N/A'}</div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div><span className="text-slate-500">Relation:</span> <strong>{guardian.relation || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">Contact:</span> <strong>{guardian.contact || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">CNIC:</span> <strong>{guardian.cnic || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">Qualification:</span> <strong>{guardian.qualification || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">Profession:</span> <strong>{guardian.profession || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">Address:</span> <strong>{guardian.address || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">District:</span> <strong>{guardian.district || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">Tehsil:</span> <strong>{guardian.tehsil || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">UC / Street / House:</span> <strong>{[guardian.ucNumber, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* 7, 8, 9. SECTION 7: MEETING PERSON INFO, SECTION 8: SIBLINGS, SECTION 9: WITNESS INFO */}

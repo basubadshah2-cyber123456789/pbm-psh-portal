@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Baby, ImagePlus, Trash2 } from 'lucide-react';
+import { Baby, ImagePlus, Trash2, Camera } from 'lucide-react';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
+import { CameraCaptureModal } from '@/components/common/CameraCaptureModal';
 
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -19,6 +20,7 @@ export function ChildPhotoPicker({ currentPhoto, onFileSelected, onRemove, disab
   const [preview, setPreview] = useState<string | null>(childPhotoDisplaySrc(currentPhoto) || currentPhoto || null);
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   useEffect(() => {
     setPreview(childPhotoDisplaySrc(currentPhoto) || currentPhoto || null);
@@ -67,6 +69,10 @@ export function ChildPhotoPicker({ currentPhoto, onFileSelected, onRemove, disab
     setProcessing(false);
   };
 
+  const handleCameraCapture = (file: File) => {
+    handleFile(file);
+  };
+
   const removePhoto = () => {
     setError('');
     if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview);
@@ -77,26 +83,71 @@ export function ChildPhotoPicker({ currentPhoto, onFileSelected, onRemove, disab
   };
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <div className="flex h-24 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-300 bg-white">
-        {preview ? (
-          <img src={preview} alt="Child profile preview" className="h-full w-full object-cover" />
-        ) : (
-          <Baby className="h-10 w-10 text-slate-300" aria-hidden="true" />
-        )}
-      </div>
-      <div className="min-w-0 text-xs">
-        <div className="font-bold text-slate-800">Profile Photo</div>
-        <p className="mt-1 text-[11px] text-slate-500">JPEG, PNG, or WebP up to 4 MB.</p>
-        {error && <p className="mt-1 font-semibold text-red-700" role="alert">{error}</p>}
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" disabled={disabled || processing} onClick={() => inputRef.current?.click()} className="flex items-center gap-1 rounded-md bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50">
-            <ImagePlus className="h-3.5 w-3.5" />{processing ? 'Preparing...' : preview ? 'Replace Photo' : 'Upload Photo'}
-          </button>
-          {preview && <button type="button" disabled={disabled} onClick={removePhoto} className="flex items-center gap-1 rounded-md bg-white px-2.5 py-1.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200 disabled:opacity-50"><Trash2 className="h-3.5 w-3.5" />Remove</button>}
+    <>
+      <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <div className="flex h-24 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-300 bg-white">
+          {preview ? (
+            <img src={preview} alt="Child profile preview" className="h-full w-full object-cover" />
+          ) : (
+            <Baby className="h-10 w-10 text-slate-300" aria-hidden="true" />
+          )}
         </div>
-        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={disabled} onChange={(event) => handleFile(event.target.files?.[0])} />
+        <div className="min-w-0 text-xs">
+          <div className="font-bold text-slate-800">Child Profile Photo</div>
+          <p className="mt-1 text-[11px] text-slate-500">Upload file or take photo using live camera.</p>
+          {error && <p className="mt-1 font-semibold text-red-700" role="alert">{error}</p>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={disabled || processing}
+              onClick={() => inputRef.current?.click()}
+              className="flex items-center gap-1 rounded-md bg-[#0D5C3A] hover:bg-[#09482D] px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50 cursor-pointer transition-colors shadow-xs"
+            >
+              <ImagePlus className="h-3.5 w-3.5" />
+              {processing ? 'Preparing...' : preview ? 'Replace' : 'Upload'}
+            </button>
+
+            <button
+              type="button"
+              disabled={disabled || processing}
+              onClick={() => setIsCameraOpen(true)}
+              className="flex items-center gap-1 rounded-md bg-amber-600 hover:bg-amber-700 px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50 cursor-pointer transition-colors shadow-xs"
+            >
+              <Camera className="h-3.5 w-3.5" />
+              Live Camera
+            </button>
+
+            {preview && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={removePhoto}
+                className="flex items-center gap-1 rounded-md bg-white hover:bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 ring-1 ring-red-200 disabled:opacity-50 cursor-pointer transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remove
+              </button>
+            )}
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            disabled={disabled}
+            onChange={(event) => handleFile(event.target.files?.[0])}
+          />
+        </div>
       </div>
-    </div>
+
+      {/* Live Camera Modal */}
+      <CameraCaptureModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCapture}
+        title="Capture Child Profile Photo"
+        documentType="child_photo"
+      />
+    </>
   );
 }

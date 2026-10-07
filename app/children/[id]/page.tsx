@@ -254,7 +254,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
         </div>
 
         {/* 4, 5, 6: Father, Mother & Guardian Info */}
-        {psh && (psh.fatherInfo || psh.motherInfo || psh.guardianInfo) && (
+        {psh && (psh.fatherInfo || psh.motherInfo || psh.guardianInfo || psh.additionalGuardians?.length > 0) && (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             {psh.fatherInfo && (
               <Section label="SECTION 4: FATHER INFO" title="Father's Particulars" tone="slate">
@@ -341,9 +341,51 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dt className="text-slate-400">Full Address</dt>
                     <dd className="font-semibold">{psh.guardianInfo.address || 'N/A'}</dd>
                   </div>
+                  <div>
+                    <dt className="text-slate-400">District / Tehsil</dt>
+                    <dd className="font-semibold">{[psh.guardianInfo.district, psh.guardianInfo.tehsil].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Union Council / Street / House</dt>
+                    <dd className="font-semibold">
+                      {[psh.guardianInfo.ucNumber, psh.guardianInfo.streetNumber, psh.guardianInfo.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
+                    </dd>
+                  </div>
                 </dl>
               </Section>
             )}
+            {Array.isArray(psh.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
+              <Section key={guardian.id || index} label={`ADDITIONAL GUARDIAN ${index + 1}`} title={guardian.name || 'Guardian Details'} tone="slate">
+                <dl className="space-y-2 text-xs">
+                  <div>
+                    <dt className="text-slate-400">Relationship</dt>
+                    <dd className="font-semibold">{guardian.relation || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">CNIC / Contact</dt>
+                    <dd className="font-semibold">{guardian.cnic || 'N/A'} • {guardian.contact || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Qualification / Profession</dt>
+                    <dd className="font-semibold">{guardian.qualification || 'N/A'} • {guardian.profession || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Full Address</dt>
+                    <dd className="font-semibold">{guardian.address || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">District / Tehsil</dt>
+                    <dd className="font-semibold">{[guardian.district, guardian.tehsil].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Union Council / Street / House</dt>
+                    <dd className="font-semibold">
+                      {[guardian.ucNumber, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
+                    </dd>
+                  </div>
+                </dl>
+              </Section>
+            ))}
           </div>
         )}
 
@@ -398,7 +440,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                       <div className="text-[11px] text-slate-600 mt-0.5">
                         {w.profession || 'Community Elder'} • CNIC: {w.cnic || 'N/A'}
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-1">Contact: {w.contact || 'N/A'} • {w.address || 'Multan'}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        Contact: {w.contact || 'N/A'} • {w.address || 'N/A'} • {[w.district, w.tehsil, w.ucNumber, w.streetNumber, w.houseNumber].filter(Boolean).join(', ')}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -449,8 +493,14 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                 <div className="flex justify-between">
                   <dt className="text-slate-500">Height / Weight</dt>
                   <dd className="font-semibold">
-                    {child.medicalRecord.heightCm ? `${child.medicalRecord.heightCm} cm` : '-'} •{' '}
-                    {child.medicalRecord.weightKg ? `${child.medicalRecord.weightKg} kg` : '-'}
+                    {psh?.appearance?.height || (child.medicalRecord.heightCm ? `${child.medicalRecord.heightCm} cm` : '-')} •{' '}
+                    {psh?.appearance?.weight || (child.medicalRecord.weightKg ? `${child.medicalRecord.weightKg} kg` : '-')}
+                  </dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-slate-500">Age</dt>
+                  <dd className="font-semibold">
+                    {psh?.appearance?.age ? `${psh.appearance.age} years` : `${calculateAge(child.dateOfBirth)} years`}
                   </dd>
                 </div>
                 {psh?.healthCare?.checkFrequency && (
@@ -468,6 +518,30 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                 {psh?.healthCare?.antibioticMedicine && (
                   <div className="p-2 rounded bg-amber-100/80 border border-amber-300 text-[11px] text-amber-900 mt-2">
                     <strong>Separate Antibiotic Track:</strong> {psh.healthCare.antibioticMedicine}
+                  </div>
+                )}
+                {psh?.healthCare?.doctorName && (
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500">Doctor Name</dt>
+                    <dd className="font-semibold">{psh.healthCare.doctorName}</dd>
+                  </div>
+                )}
+                {psh?.healthCare?.hospitalName && (
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500">Hospital Name</dt>
+                    <dd className="font-semibold">{psh.healthCare.hospitalName}</dd>
+                  </div>
+                )}
+                {psh?.healthCare?.hospitalType && (
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500">Hospital Type</dt>
+                    <dd className="font-semibold">{psh.healthCare.hospitalType}</dd>
+                  </div>
+                )}
+                {psh?.healthCare?.doctorContactNo && (
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500">Doctor Contact No.</dt>
+                    <dd className="font-semibold">{psh.healthCare.doctorContactNo}</dd>
                   </div>
                 )}
               </dl>

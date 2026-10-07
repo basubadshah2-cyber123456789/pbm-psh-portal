@@ -9,8 +9,12 @@ import {
   Upload,
   Sparkles,
   Award,
+  Camera,
+  Eye,
 } from 'lucide-react';
 import { ChildPhotoPicker } from './ChildPhotoPicker';
+import { CameraCaptureModal } from '@/components/common/CameraCaptureModal';
+import { formatCNIC, formatPhone } from '@/lib/formatters';
 
 // Interfaces
 export interface MeetingPersonRecord {
@@ -56,8 +60,29 @@ export interface WitnessRecord {
   fatherName: string;
   contact: string;
   address: string;
+  district?: string;
+  tehsil?: string;
+  ucNumber?: string;
+  streetNumber?: string;
+  houseNumber?: string;
   qualification: string;
   profession: string;
+}
+
+export interface AdditionalGuardianRecord {
+  id: string;
+  name: string;
+  relation: string;
+  contact: string;
+  cnic: string;
+  qualification: string;
+  profession: string;
+  address: string;
+  district: string;
+  tehsil: string;
+  ucNumber: string;
+  streetNumber: string;
+  houseNumber: string;
 }
 
 export interface SubjectResultRow {
@@ -87,6 +112,8 @@ function FormInput({
   disabled = false,
   className = '',
   name,
+  min,
+  step,
 }: {
   label?: string;
   placeholder?: string;
@@ -97,11 +124,13 @@ function FormInput({
   disabled?: boolean;
   className?: string;
   name?: string;
+  min?: number;
+  step?: string;
 }) {
   return (
     <div className={`relative ${className}`}>
       {label && (
-        <label className="absolute -top-2.5 left-3 bg-white px-1 text-[11px] sm:text-xs font-bold text-slate-900 z-10 select-none">
+        <label className="absolute -top-2.5 left-3 bg-slate-50 px-1 text-[11px] sm:text-xs font-bold text-slate-700 z-10 select-none">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
@@ -112,8 +141,10 @@ function FormInput({
         onChange={onChange}
         required={required}
         disabled={disabled}
+        min={min}
+        step={step}
         placeholder={placeholder || (label ? '' : undefined)}
-        className="w-full h-10 sm:h-11 px-3.5 py-2 bg-white border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-900 placeholder-slate-500 focus:border-slate-950 focus:outline-hidden focus:ring-1 focus:ring-slate-950 disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-300 disabled:cursor-not-allowed transition-colors"
+        className="w-full h-12 sm:h-11 px-3.5 py-2 bg-slate-50/90 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.02)] focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed transition-all duration-200"
       />
     </div>
   );
@@ -142,7 +173,7 @@ function FormSelect({
   return (
     <div className={`relative ${className}`}>
       {label && (
-        <label className="absolute -top-2.5 left-3 bg-white px-1 text-[11px] sm:text-xs font-bold text-slate-900 z-10 select-none">
+        <label className="absolute -top-2.5 left-3 bg-slate-50 px-1 text-[11px] sm:text-xs font-bold text-slate-700 z-10 select-none">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
@@ -151,7 +182,7 @@ function FormSelect({
         onChange={onChange}
         required={required}
         disabled={disabled}
-        className="w-full h-10 sm:h-11 px-3.5 py-2 bg-white border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-900 focus:border-slate-950 focus:outline-hidden focus:ring-1 focus:ring-slate-950 disabled:bg-slate-50 disabled:text-slate-400 disabled:border-slate-300 disabled:cursor-not-allowed transition-colors"
+        className="w-full h-12 sm:h-11 px-3.5 py-2 bg-slate-50/90 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed transition-all duration-200 appearance-none"
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((opt) => {
@@ -179,19 +210,19 @@ function SectionHeading({
   isCompleted?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 mt-6 mb-3">
+    <div className="flex items-center gap-3 mt-6 mb-3">
       {typeof step === 'number' && (
         <span
-          className={`flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black transition-all duration-300 ${
+          className={`flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-black transition-all duration-300 ${
             isCompleted
-              ? 'bg-emerald-600 text-white shadow-xs scale-105 ring-2 ring-emerald-300'
-              : 'bg-slate-200 text-slate-700'
+              ? 'bg-emerald-600 text-white shadow-md scale-105 ring-2 ring-emerald-200'
+              : 'bg-gradient-to-br from-indigo-100 to-sky-100 text-indigo-700 ring-1 ring-indigo-200'
           }`}
         >
           {isCompleted ? '✓' : step}
         </span>
       )}
-      <h3 className="text-[#C86A28] font-bold text-sm sm:text-base tracking-normal">
+      <h3 className="text-slate-900 font-bold text-sm sm:text-base tracking-tight">
         {title}
       </h3>
     </div>
@@ -204,6 +235,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   // ================= 1. ENROLLMENT TYPE =================
   const [enrollmentType, setEnrollmentType] = useState<string>('New Enrollment');
   const [replacedRegistrationNo, setReplacedRegistrationNo] = useState<string>('');
+  const [replacedClass, setReplacedClass] = useState<string>('');
+  const [replacedSchoolName, setReplacedSchoolName] = useState<string>('');
+  const [schoolLeavingCertificateFile, setSchoolLeavingCertificateFile] = useState<File | null>(null);
+  const [savedSchoolLeavingCertificateName, setSavedSchoolLeavingCertificateName] = useState<string>('');
 
   // ================= 2. CATEGORY =================
   const [category, setCategory] = useState<string>('Orphan');
@@ -214,6 +249,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [admissionDate, setAdmissionDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [fullName, setFullName] = useState<string>('');
   const [bFormNo, setBFormNo] = useState<string>('');
+  const [bFormFrontFile, setBFormFrontFile] = useState<File | null>(null);
+  const [bFormBackFile, setBFormBackFile] = useState<File | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<string>('2016-01-15');
   const [gender, setGender] = useState<string>('');
   const [familyCast, setFamilyCast] = useState<string>('');
@@ -234,6 +271,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [physicalHealth, setPhysicalHealth] = useState<string>('');
   const [vaccinationDetail, setVaccinationDetail] = useState<string>('');
   const [specialNeedDisease, setSpecialNeedDisease] = useState<string>('');
+  const [height, setHeight] = useState<string>('');
+  const [weight, setWeight] = useState<string>('');
+  const [age, setAge] = useState<string>('');
 
   // ================= 4. FATHER INFO =================
   const [fatherName, setFatherName] = useState<string>('');
@@ -242,6 +282,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [fatherIsAlive, setFatherIsAlive] = useState<string>('');
   const [fatherDob, setFatherDob] = useState<string>('');
   const [fatherDod, setFatherDod] = useState<string>('');
+  const [fatherCauseOfDeath, setFatherCauseOfDeath] = useState<string>('');
   const [fatherQualification, setFatherQualification] = useState<string>('');
   const [fatherProfession, setFatherProfession] = useState<string>('');
   const [fatherDistrict, setFatherDistrict] = useState<string>('');
@@ -258,6 +299,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [motherIsAlive, setMotherIsAlive] = useState<string>('');
   const [motherDob, setMotherDob] = useState<string>('');
   const [motherDod, setMotherDod] = useState<string>('');
+  const [motherCauseOfDeath, setMotherCauseOfDeath] = useState<string>('');
   const [motherQualification, setMotherQualification] = useState<string>('');
   const [motherProfession, setMotherProfession] = useState<string>('');
   const [motherDistrict, setMotherDistrict] = useState<string>('');
@@ -275,6 +317,42 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [guardianQualification, setGuardianQualification] = useState<string>('');
   const [guardianProfession, setGuardianProfession] = useState<string>('');
   const [guardianAddress, setGuardianAddress] = useState<string>('');
+  const [guardianDistrict, setGuardianDistrict] = useState<string>('');
+  const [guardianTehsil, setGuardianTehsil] = useState<string>('');
+  const [guardianUcNumber, setGuardianUcNumber] = useState<string>('');
+  const [guardianStreetNumber, setGuardianStreetNumber] = useState<string>('');
+  const [guardianHouseNumber, setGuardianHouseNumber] = useState<string>('');
+  const [additionalGuardians, setAdditionalGuardians] = useState<AdditionalGuardianRecord[]>([]);
+
+  const addGuardian = () => {
+    setAdditionalGuardians((current) => [
+      ...current,
+      {
+        id: `${Date.now()}-${current.length}`,
+        name: '',
+        relation: '',
+        contact: '',
+        cnic: '',
+        qualification: '',
+        profession: '',
+        address: '',
+        district: '',
+        tehsil: '',
+        ucNumber: '',
+        streetNumber: '',
+        houseNumber: '',
+      },
+    ]);
+  };
+
+  const updateGuardian = (id: string, field: keyof AdditionalGuardianRecord, value: string) => {
+    let formattedValue = value;
+    if (field === 'cnic') formattedValue = formatCNIC(value);
+    if (field === 'contact') formattedValue = formatPhone(value);
+    setAdditionalGuardians((current) =>
+      current.map((guardian) => guardian.id === id ? { ...guardian, [field]: formattedValue } : guardian)
+    );
+  };
 
   // ================= 7. MEETING PERSON INFO =================
   const [meetingPersons, setMeetingPersons] = useState<MeetingPersonRecord[]>([
@@ -328,8 +406,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   const updateMeetingPerson = (id: string, field: keyof MeetingPersonRecord, value: string) => {
+    let formattedVal = value;
+    if (field === 'cnic') formattedVal = formatCNIC(value);
+    if (field === 'contact') formattedVal = formatPhone(value);
     setMeetingPersons((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+      prev.map((p) => (p.id === id ? { ...p, [field]: formattedVal } : p))
     );
   };
 
@@ -422,8 +503,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   const updateWitness = (id: string, field: keyof WitnessRecord, value: string) => {
+    let formattedVal = value;
+    if (field === 'cnic') formattedVal = formatCNIC(value);
+    if (field === 'contact') formattedVal = formatPhone(value);
     setWitnesses((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, [field]: value } : w))
+      prev.map((w) => (w.id === id ? { ...w, [field]: formattedVal } : w))
     );
   };
 
@@ -460,6 +544,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [checkFrequency, setCheckFrequency] = useState<string>('');
   const [medicineDetails, setMedicineDetails] = useState<string>('');
   const [antibioticMedicine, setAntibioticMedicine] = useState<string>('');
+  const [doctorName, setDoctorName] = useState<string>('');
+  const [hospitalName, setHospitalName] = useState<string>('');
+  const [doctorContactNo, setDoctorContactNo] = useState<string>('');
+  const [hospitalType, setHospitalType] = useState<string>('');
   const [prescriptionPhotoFile, setPrescriptionPhotoFile] = useState<File | null>(null);
 
   // ================= 12. NEW REPORT SECTION =================
@@ -495,6 +583,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
+  // Live Camera Capture State
+  const [activeCameraModal, setActiveCameraModal] = useState<'none' | 'prescription' | 'report' | 'attachment'>('none');
+  const [activeAttachmentKey, setActiveAttachmentKey] = useState<string | null>(null);
+
   // Real-Time Form Completion Score across all 15 official PBM/PSH Sections
   const completionStats = useMemo(() => {
     let filled = 0;
@@ -513,7 +605,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     // 6. Mother Info
     if (motherName || motherIsAlive) filled++;
     // 7. Guardian Info
-    if (guardianName || guardianRelation) filled++;
+    if (guardianName || guardianRelation || additionalGuardians.some((guardian) => guardian.name || guardian.relation)) filled++;
     // 8. Meeting Persons Info
     if (meetingPersons.some((p) => !!p.name.trim())) filled++;
     // 9. Sibling Info
@@ -523,7 +615,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     // 11. Result Info
     if (resultSchool || subjectResults.some((s) => !!s.subject.trim())) filled++;
     // 12. Health Care
-    if (checkFrequency || medicineDetails) filled++;
+    if (checkFrequency || medicineDetails || doctorName || hospitalName || doctorContactNo || hospitalType) filled++;
     // 13. Report
     if (reportCategory || reportDetails) filled++;
     // 14. Area of Interest
@@ -542,12 +634,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       isHealthComplete: !!(bloodGroup || mentalHealth || physicalHealth),
       isFatherComplete: !!(fatherName || fatherIsAlive),
       isMotherComplete: !!(motherName || motherIsAlive),
-      isGuardianComplete: !!(guardianName || guardianRelation),
+      isGuardianComplete: !!(guardianName || guardianRelation || additionalGuardians.some((guardian) => guardian.name || guardian.relation)),
       isMeetingComplete: meetingPersons.some((p) => !!p.name.trim()),
       isSiblingComplete: siblings.some((s) => !!s.name.trim()),
       isWitnessComplete: witnesses.some((w) => !!w.name.trim()),
       isResultComplete: !!(resultSchool || subjectResults.some((s) => !!s.subject.trim())),
-      isHealthCareComplete: !!(checkFrequency || medicineDetails),
+      isHealthCareComplete: !!(checkFrequency || medicineDetails || doctorName || hospitalName || doctorContactNo || hospitalType),
       isReportComplete: !!(reportCategory || reportDetails),
       isInterestComplete: !!areaOfInterest.trim(),
       isAttachmentsComplete: !!(profilePhotoFile || Object.values(attachments).some((a) => a.file !== null)),
@@ -568,6 +660,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     motherIsAlive,
     guardianName,
     guardianRelation,
+    additionalGuardians,
     meetingPersons,
     siblings,
     witnesses,
@@ -575,6 +668,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     subjectResults,
     checkFrequency,
     medicineDetails,
+    doctorName,
+    hospitalName,
+    doctorContactNo,
+    hospitalType,
     reportCategory,
     reportDetails,
     areaOfInterest,
@@ -596,15 +693,41 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setAdmissionDate(initialChild.admissionDate || new Date().toISOString().split('T')[0]);
       setFullName(initialChild.fullName || '');
       setBFormNo(initialChild.bFormNo || '');
+      setBFormFrontFile(null);
+      setBFormBackFile(null);
       setDateOfBirth(initialChild.dateOfBirth || '2016-01-15');
       setGender(initialChild.gender || 'MALE');
       setStatus(initialChild.status || 'Active');
       setBloodGroup(initialChild.bloodGroup || 'B+');
+      setHeight('');
+      setWeight('');
+      setAge('');
+      setEnrollmentType('New Enrollment');
+      setReplacedRegistrationNo('');
+      setReplacedClass('');
+      setReplacedSchoolName('');
+      setSchoolLeavingCertificateFile(null);
+      setSavedSchoolLeavingCertificateName('');
+      setGuardianDistrict('');
+      setGuardianTehsil('');
+      setGuardianUcNumber('');
+      setGuardianStreetNumber('');
+      setGuardianHouseNumber('');
+      setDoctorName('');
+      setHospitalName('');
+      setDoctorContactNo('');
+      setHospitalType('');
 
       if (psh) {
         if (psh.category?.type) setCategory(psh.category.type);
         if (psh.enrollmentType?.type) setEnrollmentType(psh.enrollmentType.type);
         if (psh.enrollmentType?.replacedRegistrationNo) setReplacedRegistrationNo(psh.enrollmentType.replacedRegistrationNo);
+        setReplacedClass(psh.enrollmentType?.class || '');
+        setReplacedSchoolName(psh.enrollmentType?.schoolName || '');
+        const savedCertificate = psh.enrollmentType?.schoolLeavingCertificate;
+        setSavedSchoolLeavingCertificateName(
+          typeof savedCertificate === 'string' ? savedCertificate : savedCertificate?.fileName || ''
+        );
 
         if (psh.basicInfo) {
           setFamilyCast(psh.basicInfo.familyCast || '');
@@ -625,6 +748,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setVaccinationDetail(psh.healthInfo.vaccinationDetail || 'Complete');
           setSpecialNeedDisease(psh.healthInfo.specialNeedDisease || 'None');
         }
+        if (psh.appearance) {
+          setHeight(psh.appearance.height === null || psh.appearance.height === undefined ? '' : String(psh.appearance.height));
+          setWeight(psh.appearance.weight === null || psh.appearance.weight === undefined ? '' : String(psh.appearance.weight));
+          setAge(psh.appearance.age === null || psh.appearance.age === undefined ? '' : String(psh.appearance.age));
+        }
 
         if (psh.fatherInfo) {
           setFatherName(psh.fatherInfo.name || '');
@@ -633,6 +761,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setFatherIsAlive(psh.fatherInfo.isAlive || '');
           setFatherDob(psh.fatherInfo.dob || '');
           setFatherDod(psh.fatherInfo.dod || '');
+          setFatherCauseOfDeath(psh.fatherInfo.causeOfDeath || '');
           setFatherQualification(psh.fatherInfo.qualification || '');
           setFatherProfession(psh.fatherInfo.profession || '');
           setFatherDistrict(psh.fatherInfo.district || '');
@@ -650,6 +779,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMotherIsAlive(psh.motherInfo.isAlive || '');
           setMotherDob(psh.motherInfo.dob || '');
           setMotherDod(psh.motherInfo.dod || '');
+          setMotherCauseOfDeath(psh.motherInfo.causeOfDeath || '');
           setMotherQualification(psh.motherInfo.qualification || '');
           setMotherProfession(psh.motherInfo.profession || '');
           setMotherDistrict(psh.motherInfo.district || '');
@@ -668,7 +798,32 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setGuardianQualification(psh.guardianInfo.qualification || '');
           setGuardianProfession(psh.guardianInfo.profession || '');
           setGuardianAddress(psh.guardianInfo.address || initialChild.address || '');
+          setGuardianDistrict(psh.guardianInfo.district || '');
+          setGuardianTehsil(psh.guardianInfo.tehsil || '');
+          setGuardianUcNumber(psh.guardianInfo.ucNumber || '');
+          setGuardianStreetNumber(psh.guardianInfo.streetNumber || '');
+          setGuardianHouseNumber(psh.guardianInfo.houseNumber || '');
         }
+        setAdditionalGuardians(
+          Array.isArray(psh.additionalGuardians)
+            ? psh.additionalGuardians.map((guardian: AdditionalGuardianRecord, index: number) => ({
+                ...guardian,
+                id: guardian.id || `saved-${index}`,
+                name: guardian.name || '',
+                relation: guardian.relation || '',
+                contact: guardian.contact || '',
+                cnic: guardian.cnic || '',
+                qualification: guardian.qualification || '',
+                profession: guardian.profession || '',
+                address: guardian.address || '',
+                district: guardian.district || '',
+                tehsil: guardian.tehsil || '',
+                ucNumber: guardian.ucNumber || '',
+                streetNumber: guardian.streetNumber || '',
+                houseNumber: guardian.houseNumber || '',
+              }))
+            : []
+        );
 
         if (Array.isArray(psh.meetingPersons) && psh.meetingPersons.length > 0) {
           setMeetingPersons(psh.meetingPersons);
@@ -677,7 +832,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setSiblings(psh.siblings);
         }
         if (Array.isArray(psh.witnesses) && psh.witnesses.length > 0) {
-          setWitnesses(psh.witnesses);
+          setWitnesses(psh.witnesses.map((w: WitnessRecord) => ({
+            ...w,
+            district: w.district || '',
+            tehsil: w.tehsil || '',
+            ucNumber: w.ucNumber || '',
+            streetNumber: w.streetNumber || '',
+            houseNumber: w.houseNumber || '',
+          })));
         }
 
         if (psh.resultInfo) {
@@ -695,6 +857,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setCheckFrequency(psh.healthCare.checkFrequency || '');
           setMedicineDetails(psh.healthCare.medicineDetails || '');
           setAntibioticMedicine(psh.healthCare.antibioticMedicine || '');
+          setDoctorName(psh.healthCare.doctorName || '');
+          setHospitalName(psh.healthCare.hospitalName || '');
+          setDoctorContactNo(psh.healthCare.doctorContactNo || '');
+          setHospitalType(psh.healthCare.hospitalType || '');
         }
 
         if (psh.reports) {
@@ -712,11 +878,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const handleClearForm = () => {
     setEnrollmentType('New Enrollment');
     setReplacedRegistrationNo('');
+    setReplacedClass('');
+    setReplacedSchoolName('');
+    setSchoolLeavingCertificateFile(null);
+    setSavedSchoolLeavingCertificateName('');
     setCategory('Orphan');
     setRegistrationNo(generateAdmissionNo());
     setAdmissionDate(new Date().toISOString().split('T')[0]);
     setFullName('');
     setBFormNo('');
+    setBFormFrontFile(null);
+    setBFormBackFile(null);
     setDateOfBirth('2016-01-15');
     setGender('');
     setFamilyCast('');
@@ -735,12 +907,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setPhysicalHealth('');
     setVaccinationDetail('');
     setSpecialNeedDisease('');
+    setHeight('');
+    setWeight('');
+    setAge('');
     setFatherName('');
     setFatherCnic('');
     setFatherContact('');
     setFatherIsAlive('');
     setFatherDob('');
     setFatherDod('');
+    setFatherCauseOfDeath('');
     setFatherQualification('');
     setFatherProfession('');
     setFatherDistrict('');
@@ -755,6 +931,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setMotherIsAlive('');
     setMotherDob('');
     setMotherDod('');
+    setMotherCauseOfDeath('');
     setMotherQualification('');
     setMotherProfession('');
     setMotherDistrict('');
@@ -770,6 +947,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setGuardianQualification('');
     setGuardianProfession('');
     setGuardianAddress('');
+    setGuardianDistrict('');
+    setGuardianTehsil('');
+    setGuardianUcNumber('');
+    setGuardianStreetNumber('');
+    setGuardianHouseNumber('');
+    setAdditionalGuardians([]);
     setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
     setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
     setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', address: '' }]);
@@ -782,6 +965,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setCheckFrequency('');
     setMedicineDetails('');
     setAntibioticMedicine('');
+    setDoctorName('');
+    setHospitalName('');
+    setDoctorContactNo('');
+    setHospitalType('');
     setReportCategory('');
     setReportDetails('');
     setAreaOfInterest('');
@@ -1362,6 +1549,30 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     e.preventDefault();
     setFormError(null);
     setFormSuccess(null);
+
+    if (enrollmentType === 'Replace') {
+      const missingFields = [
+        !replacedRegistrationNo.trim() && 'Registration No.',
+        !replacedClass.trim() && 'Class',
+        !replacedSchoolName.trim() && 'School Name',
+        !schoolLeavingCertificateFile && !savedSchoolLeavingCertificateName && 'School Leaving Certificate',
+      ].filter(Boolean);
+
+      if (missingFields.length > 0) {
+        setFormError(`Please complete the Replace fields: ${missingFields.join(', ')}.`);
+        return;
+      }
+    }
+
+    const normalizedDoctorContactNo = doctorContactNo.trim().replace(/[\s-]/g, '');
+    if (
+      normalizedDoctorContactNo &&
+      !/^(?:03\d{9}|\+923\d{9})$/.test(normalizedDoctorContactNo)
+    ) {
+      setFormError('Enter a valid Pakistani doctor contact number, such as 0300-1234567 or +923001234567.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -1384,6 +1595,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         enrollmentType: {
           type: enrollmentType || 'New Enrollment',
           replacedRegistrationNo: enrollmentType === 'Replace' ? replacedRegistrationNo : null,
+          class: enrollmentType === 'Replace' ? replacedClass : null,
+          schoolName: enrollmentType === 'Replace' ? replacedSchoolName : null,
+          schoolLeavingCertificate: enrollmentType === 'Replace'
+            ? {
+                fileName: schoolLeavingCertificateFile?.name || savedSchoolLeavingCertificateName,
+                documentType: 'SCHOOL_LEAVING_CERTIFICATE',
+              }
+            : null,
         },
         category: {
           type: category || 'Orphan',
@@ -1414,13 +1633,19 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           vaccinationDetail,
           specialNeedDisease,
         },
+        appearance: {
+          height,
+          weight,
+          age,
+        },
         fatherInfo: {
           name: fatherName,
           cnic: fatherCnic,
           contact: fatherContact,
           isAlive: fatherIsAlive,
           dob: fatherDob,
-          dod: fatherIsAlive === 'No' ? fatherDod : null,
+          dod: fatherDod,
+          causeOfDeath: fatherCauseOfDeath,
           qualification: fatherQualification,
           profession: fatherProfession,
           district: fatherDistrict,
@@ -1437,6 +1662,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           isAlive: motherIsAlive,
           dob: motherDob,
           dod: motherIsAlive === 'No' ? motherDod : null,
+          causeOfDeath: motherIsAlive === 'No' ? motherCauseOfDeath : null,
           qualification: motherQualification,
           profession: motherProfession,
           district: motherDistrict,
@@ -1454,10 +1680,25 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           qualification: guardianQualification,
           profession: guardianProfession,
           address: guardianAddress,
+          district: guardianDistrict,
+          tehsil: guardianTehsil,
+          ucNumber: guardianUcNumber,
+          streetNumber: guardianStreetNumber,
+          houseNumber: guardianHouseNumber,
         },
+        additionalGuardians: additionalGuardians
+          .filter((guardian) => Object.entries(guardian).some(([key, value]) => key !== 'id' && Boolean(value.trim())))
+          .map(({ id: _id, ...guardian }) => guardian),
         meetingPersons,
         siblings,
-        witnesses,
+        witnesses: witnesses.map((w) => ({
+          ...w,
+          district: w.district || '',
+          tehsil: w.tehsil || '',
+          ucNumber: w.ucNumber || '',
+          streetNumber: w.streetNumber || '',
+          houseNumber: w.houseNumber || '',
+        })),
         resultInfo: {
           school: resultSchool,
           gradeClass: resultClass,
@@ -1470,6 +1711,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           checkFrequency,
           medicineDetails,
           antibioticMedicine,
+          doctorName,
+          hospitalName,
+          doctorContactNo: doctorContactNo.trim() || null,
+          hospitalType,
         },
         reports: {
           category: reportCategory,
@@ -1501,8 +1746,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         bloodGroup: bloodGroup || 'B+',
         allergies: 'None',
         chronicConditions: specialNeedDisease || 'None',
-        heightCm: 135,
-        weightKg: 30,
+        height: height || null,
+        weight: weight || null,
+        age: age || null,
+        heightCm: height.trim() && Number.isFinite(Number(height)) ? Number(height) : 135,
+        weightKg: weight.trim() && Number.isFinite(Number(weight)) ? Number(weight) : 30,
         notes: JSON.stringify(fullPshDossier),
       };
 
@@ -1516,25 +1764,87 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         console.warn('LocalStorage save warning:', lsErr);
       }
 
+      let serverChildId: string | null = null;
+      const documentUploadWarnings: string[] = [];
+
       // Try server API sync if available
       try {
-        await fetch('/api/children', {
-          method: 'POST',
+        const hasPersistedChildId = initialChild?.id &&
+          !String(initialChild.id).startsWith('seed-') &&
+          !String(initialChild.id).startsWith('demo-');
+        const apiResponse = await fetch(
+          hasPersistedChildId ? `/api/children/${initialChild.id}` : '/api/children',
+          {
+          method: hasPersistedChildId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        });
+          }
+        );
+        if (apiResponse.ok) {
+          const result = await apiResponse.json();
+          serverChildId = result.child?.id || (hasPersistedChildId ? String(initialChild.id) : null);
+        } else {
+          const result = await apiResponse.json().catch(() => ({}));
+          console.warn('Server API sync failed:', result.error || apiResponse.statusText);
+        }
       } catch (apiErr) {
         console.warn('Server API sync skipped in standalone demo mode:', apiErr);
       }
 
-      setFormSuccess(
-        initialChild
+      const documentsToUpload = [
+        { file: bFormFrontFile, title: 'B-Form Front', documentType: 'B_FORM_FRONT' },
+        { file: bFormBackFile, title: 'B-Form Back', documentType: 'B_FORM_BACK' },
+        ...(enrollmentType === 'Replace' && schoolLeavingCertificateFile
+          ? [{
+              file: schoolLeavingCertificateFile,
+              title: 'School Leaving Certificate',
+              documentType: 'SCHOOL_LEAVING_CERTIFICATE',
+            }]
+          : []),
+      ];
+
+      for (const document of documentsToUpload) {
+        if (!document.file) continue;
+        if (!serverChildId) {
+          documentUploadWarnings.push(`${document.title} was not saved because the document vault is unavailable.`);
+          continue;
+        }
+
+        try {
+          const documentForm = new FormData();
+          documentForm.append('file', document.file);
+          documentForm.append('title', document.title);
+          documentForm.append('documentType', document.documentType);
+          const uploadResponse = await fetch(`/api/children/${serverChildId}/documents`, {
+            method: 'POST',
+            body: documentForm,
+          });
+          if (!uploadResponse.ok) {
+            const result = await uploadResponse.json().catch(() => ({}));
+            const warning = result.error || `${document.title} could not be uploaded to the document vault.`;
+            documentUploadWarnings.push(warning);
+            console.warn(`${document.title} upload failed:`, warning);
+          }
+        } catch (uploadError) {
+          const warning = uploadError instanceof Error
+            ? uploadError.message
+            : `${document.title} could not be uploaded to the document vault.`;
+          documentUploadWarnings.push(warning);
+          console.warn(`${document.title} upload failed:`, uploadError);
+        }
+      }
+
+      const successMessage = initialChild
           ? `Record for ${payload.fullName} (${payload.admissionNo}) updated successfully!`
-          : `Child ${payload.fullName} enrolled into Pakistan Sweet Home Multan successfully!`
+          : `Child ${payload.fullName} enrolled into Pakistan Sweet Home Multan successfully!`;
+      setFormSuccess(
+        documentUploadWarnings.length > 0
+          ? `${successMessage} Document upload warning: ${documentUploadWarnings.join(' ')}`
+          : successMessage
       );
       setTimeout(() => {
         onSuccess(payload);
-      }, 900);
+      }, documentUploadWarnings.length > 0 ? 4000 : 900);
     } catch (err) {
       console.error('Submission error:', err);
       setFormError(err instanceof Error ? err.message : 'Network error during child admission');
@@ -1545,28 +1855,27 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 text-slate-800">
-      {/* Top Banner with Multi-Profile Auto-Fill Demo Buttons & Edit Info */}
-      <div className="bg-slate-50 border border-slate-200 p-3 sm:p-4 rounded-xl space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs text-slate-700">
+      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-4 sm:p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs sm:text-sm text-slate-700">
             {initialChild ? (
-              <span className="font-extrabold text-[#0D5C3A] flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Editing Admitted Record: <span className="font-mono">{initialChild.admissionNo}</span>
+              <span className="flex items-center gap-2 font-extrabold text-emerald-700">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                Editing Admitted Record: <span className="font-mono text-slate-900">{initialChild.admissionNo}</span>
               </span>
             ) : (
               <span className="font-bold text-slate-900">
-                Official Child Admission Dossier (15 Institutional Sections)
+                Official Child Admission Dossier
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {initialChild && onCancel && (
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-2.5 py-1 text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md cursor-pointer transition-colors"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
               >
                 ✕ Cancel Edit
               </button>
@@ -1574,7 +1883,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             <button
               type="button"
               onClick={handleClearForm}
-              className="px-2.5 py-1 text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 rounded-md cursor-pointer transition-colors"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100"
               title="Reset all form fields"
             >
               🧹 Clear Form
@@ -1582,44 +1891,44 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           </div>
         </div>
 
-        {/* 1-Click Multi Profile Quick Presets */}
-        <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            1-Click Demo Profiles:
-          </span>
-          <button
-            type="button"
-            onClick={() => handleAutoFillDemo('orphan')}
-            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
-          >
-            <span>⚡ Orphan (Ali Khan)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAutoFillDemo('poor')}
-            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
-          >
-            <span>⚡ Poorest of Poor (Fatima)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAutoFillDemo('replace')}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
-          >
-            <span>⚡ Replaced Seat (Bilal)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAutoFillDemo('posthumous')}
-            className="px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-[11px] font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1 hover:scale-105 active:scale-95 shimmer-badge"
-          >
-            <span>⚡ Posthumous (Hamza)</span>
-          </button>
+        <div className="mt-4 border-t border-slate-200 pt-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              Quick Presets:
+            </span>
+            <button
+              type="button"
+              onClick={() => handleAutoFillDemo('orphan')}
+              className="rounded-lg bg-amber-500 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-amber-600"
+            >
+              ⚡ Orphan
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAutoFillDemo('poor')}
+              className="rounded-lg bg-emerald-600 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              ⚡ Poorest of Poor
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAutoFillDemo('replace')}
+              className="rounded-lg bg-sky-600 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-sky-700"
+            >
+              ⚡ Replace Seat
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAutoFillDemo('posthumous')}
+              className="rounded-lg bg-violet-600 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-violet-700"
+            >
+              ⚡ Posthumous
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Dynamic Animated Form Completion Progress Meter */}
-      <div className="bg-gradient-to-r from-emerald-50/80 via-slate-50 to-amber-50/80 border border-emerald-200/70 rounded-xl p-4 shadow-xs transition-all">
+      <div className="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-slate-50 to-indigo-50 p-4 shadow-[0_10px_24px_rgba(16,185,129,0.08)] transition-all">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-2 font-bold">
           <span className="flex items-center gap-2 text-slate-800">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
@@ -1675,7 +1984,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             options={[
               'Orphan',
               'Divorce',
-              'Posthumous',
               'Poorest of the Poor',
             ]}
           />
@@ -1694,14 +2002,76 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           />
 
           {enrollmentType === 'Replace' ? (
-            <FormInput
-              placeholder="Registration Number"
-              value={replacedRegistrationNo}
-              onChange={(e) => setReplacedRegistrationNo(e.target.value)}
-              required
-            />
+            <>
+              <FormInput
+                label="Registration No."
+                placeholder="Registration Number"
+                value={replacedRegistrationNo}
+                onChange={(e) => setReplacedRegistrationNo(e.target.value)}
+                required
+              />
+              <FormInput
+                label="Class"
+                placeholder="Class"
+                value={replacedClass}
+                onChange={(e) => setReplacedClass(e.target.value)}
+                required
+              />
+              <FormInput
+                label="School Name"
+                placeholder="School Name"
+                value={replacedSchoolName}
+                onChange={(e) => setReplacedSchoolName(e.target.value)}
+                required
+              />
+              <div className="md:col-span-3">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5">
+                  School Leaving Certificate <span className="text-red-500">*</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors border border-slate-300 shadow-xs">
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Choose Certificate</span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      className="hidden"
+                      onChange={(e) => setSchoolLeavingCertificateFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  {schoolLeavingCertificateFile || savedSchoolLeavingCertificateName ? (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                      <span className="max-w-[240px] truncate">
+                        ✓ {schoolLeavingCertificateFile?.name || savedSchoolLeavingCertificateName}
+                      </span>
+                      {schoolLeavingCertificateFile && (
+                        <button
+                          type="button"
+                          onClick={() => setSchoolLeavingCertificateFile(null)}
+                          className="text-red-500 hover:text-red-700 ml-1 font-bold cursor-pointer"
+                          aria-label="Remove selected school leaving certificate"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400">No certificate attached</span>
+                  )}
+                </div>
+              </div>
+            </>
           ) : (
-            <div />
+            <div className="relative flex items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3 text-center">
+              <div className="space-y-1">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                  New Enrollment
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Fresh admission record. No replacement registration is required.
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -1746,7 +2116,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <FormInput
             placeholder="B-Form/CNIC No *"
             value={bFormNo}
-            onChange={(e) => setBFormNo(e.target.value)}
+            onChange={(e) => setBFormNo(formatCNIC(e.target.value))}
             required
           />
           <FormInput
@@ -1827,6 +2197,63 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             className="md:col-span-2"
           />
         </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+          <h3 className="mb-3 text-xs font-bold text-slate-800">B-Form / Child Registration Document</h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {[
+              {
+                title: 'B-Form Front',
+                documentType: 'B_FORM_FRONT',
+                file: bFormFrontFile,
+                setFile: setBFormFrontFile,
+              },
+              {
+                title: 'B-Form Back',
+                documentType: 'B_FORM_BACK',
+                file: bFormBackFile,
+                setFile: setBFormBackFile,
+              },
+            ].map((document) => {
+              const savedDocument = Array.isArray(initialChild?.documents)
+                ? initialChild.documents
+                    .filter((item: any) => item.documentType === document.documentType)
+                    .sort((a: any, b: any) =>
+                      new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+                    )[0]
+                : null;
+
+              return (
+                <div key={document.documentType} className="space-y-2">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    {document.title}
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      disabled={isSubmitting}
+                      onChange={(event) => document.setFile(event.target.files?.[0] || null)}
+                      className="mt-1.5 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-indigo-700"
+                    />
+                  </label>
+                  {document.file ? (
+                    <p className="text-[11px] text-slate-600">Selected: {document.file.name}</p>
+                  ) : savedDocument ? (
+                    <a
+                      href={`/api/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex text-[11px] font-semibold text-indigo-700 hover:underline"
+                    >
+                      View saved {document.title}
+                    </a>
+                  ) : (
+                    <p className="text-[11px] text-slate-400">Optional — no file selected</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* ================= 4. HEALTH INFO ================= */}
@@ -1871,6 +2298,40 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
+      {/* ================= APPEARANCE ================= */}
+      <div>
+        <SectionHeading title="Appearance" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+          <FormInput
+            label="Height"
+            name="height"
+            type="number"
+            min={0}
+            step="any"
+            value={height}
+            onChange={(e) => setHeight(e.target.value)}
+          />
+          <FormInput
+            label="Weight"
+            name="weight"
+            type="number"
+            min={0}
+            step="any"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
+          <FormInput
+            label="Age"
+            name="age"
+            type="number"
+            min={0}
+            step="1"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+          />
+        </div>
+      </div>
+
       {/* ================= 5. FATHER INFO ================= */}
       <div>
         <SectionHeading step={5} title="Father Info" isCompleted={completionStats.isFatherComplete} />
@@ -1884,12 +2345,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <FormInput
             placeholder="Father CNIC"
             value={fatherCnic}
-            onChange={(e) => setFatherCnic(e.target.value)}
+            onChange={(e) => setFatherCnic(formatCNIC(e.target.value))}
           />
           <FormInput
             placeholder="Father Contact"
             value={fatherContact}
-            onChange={(e) => setFatherContact(e.target.value)}
+            onChange={(e) => setFatherContact(formatPhone(e.target.value))}
           />
 
           {/* Row 2 */}
@@ -1905,15 +2366,20 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={fatherDob}
             onChange={(e) => setFatherDob(e.target.value)}
           />
-          {fatherIsAlive === 'No' ? (
-            <FormInput
-              label="Date of Death"
-              type="date"
-              value={fatherDod}
-              onChange={(e) => setFatherDod(e.target.value)}
-            />
-          ) : (
-            <div />
+          {fatherIsAlive === 'No' && (
+            <>
+              <FormInput
+                placeholder="Cause of Death"
+                value={fatherCauseOfDeath}
+                onChange={(e) => setFatherCauseOfDeath(e.target.value)}
+              />
+              <FormInput
+                label="Date of Death"
+                type="date"
+                value={fatherDod}
+                onChange={(e) => setFatherDod(e.target.value)}
+              />
+            </>
           )}
 
           {/* Row 3 */}
@@ -1978,12 +2444,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <FormInput
             placeholder="Mother CNIC"
             value={motherCnic}
-            onChange={(e) => setMotherCnic(e.target.value)}
+            onChange={(e) => setMotherCnic(formatCNIC(e.target.value))}
           />
           <FormInput
             placeholder="Mother Contact"
             value={motherContact}
-            onChange={(e) => setMotherContact(e.target.value)}
+            onChange={(e) => setMotherContact(formatPhone(e.target.value))}
           />
 
           {/* Row 2 */}
@@ -1999,15 +2465,20 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={motherDob}
             onChange={(e) => setMotherDob(e.target.value)}
           />
-          {motherIsAlive === 'No' ? (
-            <FormInput
-              label="Date of Death"
-              type="date"
-              value={motherDod}
-              onChange={(e) => setMotherDod(e.target.value)}
-            />
-          ) : (
-            <div />
+          {motherIsAlive === 'No' && (
+            <>
+              <FormInput
+                placeholder="Cause of Death"
+                value={motherCauseOfDeath}
+                onChange={(e) => setMotherCauseOfDeath(e.target.value)}
+              />
+              <FormInput
+                label="Date of Death"
+                type="date"
+                value={motherDod}
+                onChange={(e) => setMotherDod(e.target.value)}
+              />
+            </>
           )}
 
           {/* Row 3 */}
@@ -2061,7 +2532,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 7. GUARDIAN INFO ================= */}
       <div>
-        <SectionHeading step={7} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
+        <div className="flex items-center justify-between">
+          <SectionHeading step={7} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
+          <button
+            type="button"
+            onClick={addGuardian}
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0D5C3A] text-white rounded-lg text-xs font-semibold hover:bg-[#0b4d30] transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -2077,14 +2559,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <FormInput
             placeholder="Guardian Contact"
             value={guardianContact}
-            onChange={(e) => setGuardianContact(e.target.value)}
+            onChange={(e) => setGuardianContact(formatPhone(e.target.value))}
           />
 
           {/* Row 2 */}
           <FormInput
             placeholder="Guardian CNIC"
             value={guardianCnic}
-            onChange={(e) => setGuardianCnic(e.target.value)}
+            onChange={(e) => setGuardianCnic(formatCNIC(e.target.value))}
           />
           <FormInput
             placeholder="Qualification"
@@ -2099,12 +2581,117 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
           {/* Row 3 */}
           <FormInput
-            placeholder="Address"
+            label="Address"
             value={guardianAddress}
             onChange={(e) => setGuardianAddress(e.target.value)}
             className="md:col-span-3"
           />
+          <FormInput
+            label="District"
+            value={guardianDistrict}
+            onChange={(e) => setGuardianDistrict(e.target.value)}
+          />
+          <FormInput
+            label="Tehsil"
+            value={guardianTehsil}
+            onChange={(e) => setGuardianTehsil(e.target.value)}
+          />
+          <FormInput
+            label="Union Council No."
+            value={guardianUcNumber}
+            onChange={(e) => setGuardianUcNumber(e.target.value)}
+          />
+          <FormInput
+            label="Street No."
+            value={guardianStreetNumber}
+            onChange={(e) => setGuardianStreetNumber(e.target.value)}
+          />
+          <FormInput
+            label="House No."
+            value={guardianHouseNumber}
+            onChange={(e) => setGuardianHouseNumber(e.target.value)}
+          />
         </div>
+
+        {additionalGuardians.map((guardian, index) => (
+          <div key={guardian.id} className="mt-4 space-y-3 border-t border-slate-200 pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700">Additional Guardian #{index + 1}</span>
+              <button
+                type="button"
+                onClick={() => setAdditionalGuardians((current) => current.filter((item) => item.id !== guardian.id))}
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+              <FormInput
+                placeholder="Guardian Name"
+                value={guardian.name}
+                onChange={(event) => updateGuardian(guardian.id, 'name', event.target.value)}
+              />
+              <FormInput
+                placeholder="Relation"
+                value={guardian.relation}
+                onChange={(event) => updateGuardian(guardian.id, 'relation', event.target.value)}
+              />
+              <FormInput
+                placeholder="Guardian Contact"
+                value={guardian.contact}
+                onChange={(event) => updateGuardian(guardian.id, 'contact', event.target.value)}
+              />
+              <FormInput
+                placeholder="Guardian CNIC"
+                value={guardian.cnic}
+                onChange={(event) => updateGuardian(guardian.id, 'cnic', event.target.value)}
+              />
+              <FormInput
+                placeholder="Qualification"
+                value={guardian.qualification}
+                onChange={(event) => updateGuardian(guardian.id, 'qualification', event.target.value)}
+              />
+              <FormInput
+                placeholder="Profession"
+                value={guardian.profession}
+                onChange={(event) => updateGuardian(guardian.id, 'profession', event.target.value)}
+              />
+              <FormInput
+                label="Address"
+                value={guardian.address}
+                onChange={(event) => updateGuardian(guardian.id, 'address', event.target.value)}
+                className="md:col-span-3"
+              />
+              <FormInput
+                label="District"
+                value={guardian.district}
+                onChange={(event) => updateGuardian(guardian.id, 'district', event.target.value)}
+              />
+              <FormInput
+                label="Tehsil"
+                value={guardian.tehsil}
+                onChange={(event) => updateGuardian(guardian.id, 'tehsil', event.target.value)}
+              />
+              <FormInput
+                label="Union Council No."
+                value={guardian.ucNumber}
+                onChange={(event) => updateGuardian(guardian.id, 'ucNumber', event.target.value)}
+              />
+              <FormInput
+                label="Street No."
+                value={guardian.streetNumber}
+                onChange={(event) => updateGuardian(guardian.id, 'streetNumber', event.target.value)}
+              />
+              <FormInput
+                label="House No."
+                value={guardian.houseNumber}
+                onChange={(event) => updateGuardian(guardian.id, 'houseNumber', event.target.value)}
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ================= 8. MEETING PERSON INFO ================= */}
@@ -2413,12 +3000,37 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   onChange={(e) => updateWitness(w.id, 'profession', e.target.value)}
                 />
 
-                {/* Row 3 */}
+                {/* Address */}
                 <FormInput
-                  placeholder="Address"
+                  label="Address"
                   value={w.address}
                   onChange={(e) => updateWitness(w.id, 'address', e.target.value)}
                   className="md:col-span-3"
+                />
+                <FormInput
+                  label="District"
+                  value={w.district || ''}
+                  onChange={(e) => updateWitness(w.id, 'district', e.target.value)}
+                />
+                <FormInput
+                  label="Tehsil"
+                  value={w.tehsil || ''}
+                  onChange={(e) => updateWitness(w.id, 'tehsil', e.target.value)}
+                />
+                <FormInput
+                  label="Union Council No."
+                  value={w.ucNumber || ''}
+                  onChange={(e) => updateWitness(w.id, 'ucNumber', e.target.value)}
+                />
+                <FormInput
+                  label="Street No."
+                  value={w.streetNumber || ''}
+                  onChange={(e) => updateWitness(w.id, 'streetNumber', e.target.value)}
+                />
+                <FormInput
+                  label="House No."
+                  value={w.houseNumber || ''}
+                  onChange={(e) => updateWitness(w.id, 'houseNumber', e.target.value)}
                 />
               </div>
             </div>
@@ -2554,42 +3166,83 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={antibioticMedicine}
             onChange={(e) => setAntibioticMedicine(e.target.value)}
           />
+          <FormInput
+            placeholder="Enter doctor name"
+            value={doctorName}
+            onChange={(e) => setDoctorName(e.target.value)}
+          />
+          <FormInput
+            placeholder="Enter hospital name"
+            value={hospitalName}
+            onChange={(e) => setHospitalName(e.target.value)}
+          />
+          <FormSelect
+            label="Hospital Type"
+            value={hospitalType}
+            onChange={(e) => setHospitalType(e.target.value)}
+            options={['Government', 'Private']}
+            placeholder="Select hospital type"
+          />
+          <FormInput
+            type="tel"
+            placeholder="Enter doctor contact number"
+            value={doctorContactNo}
+            onChange={(e) => setDoctorContactNo(e.target.value)}
+          />
 
           <div className="md:col-span-3">
-            <label className="block text-xs font-medium text-slate-700 mb-1">
-              Prescription Photo Upload
+            <label className="block text-xs font-bold text-slate-800 mb-1.5">
+              Prescription Photo / Medical Document
             </label>
-            <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors border border-slate-300">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors border border-slate-300 shadow-xs">
                 <Upload className="w-3.5 h-3.5 text-slate-500" />
                 <span>Choose Prescription File</span>
                 <input
                   type="file"
+                  accept="image/*,.pdf"
                   className="hidden"
                   onChange={(e) => setPrescriptionPhotoFile(e.target.files?.[0] || null)}
                 />
               </label>
+
+              <button
+                type="button"
+                onClick={() => setActiveCameraModal('prescription')}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-xs hover:scale-105 active:scale-95"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>📷 Live Camera Snap</span>
+              </button>
+
               {prescriptionPhotoFile ? (
-                <span className="text-xs text-emerald-700 font-semibold truncate max-w-xs">
-                  {prescriptionPhotoFile.name}
-                </span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                  <span>✓ {prescriptionPhotoFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPrescriptionPhotoFile(null)}
+                    className="text-red-500 hover:text-red-700 ml-1 font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
               ) : (
-                <span className="text-xs text-slate-400">No file chosen</span>
+                <span className="text-xs text-slate-400">No document attached</span>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ================= 13. REPORT SECTION ================= */}
+      {/* ================= 13. REPORT / COMPLAINT SECTION ================= */}
       <div>
-        <SectionHeading step={13} title="Behavioral & Academic Report" isCompleted={completionStats.isReportComplete} />
+        <SectionHeading step={13} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-3.5">
           <FormSelect
             label="Complain Type"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
-            options={['Discipline', 'Behavior', 'Academic', 'Islamic']}
+            options={['Discipline', 'Behavior', 'Academic', 'Islamic', 'Psychological']}
           />
         </div>
 
@@ -2605,25 +3258,43 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
-              Written Report Upload
+            <label className="block text-xs font-bold text-slate-800 mb-1.5">
+              Written Report / Complaint Document Photo
             </label>
-            <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors border border-slate-300">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <label className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold cursor-pointer transition-colors border border-slate-300 shadow-xs">
                 <Upload className="w-3.5 h-3.5 text-slate-500" />
-                <span>Choose Written Report File</span>
+                <span>Choose Written File</span>
                 <input
                   type="file"
+                  accept="image/*,.pdf"
                   className="hidden"
                   onChange={(e) => setWrittenReportFile(e.target.files?.[0] || null)}
                 />
               </label>
+
+              <button
+                type="button"
+                onClick={() => setActiveCameraModal('report')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#0D5C3A] hover:bg-[#09482D] text-white rounded-lg text-xs font-black transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95 shimmer-badge"
+              >
+                <Camera className="w-4 h-4 text-amber-400" />
+                <span>📷 Live Camera Photo Snap</span>
+              </button>
+
               {writtenReportFile ? (
-                <span className="text-xs text-emerald-700 font-semibold truncate max-w-xs">
-                  {writtenReportFile.name}
-                </span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                  <span>✓ {writtenReportFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setWrittenReportFile(null)}
+                    className="text-red-500 hover:text-red-700 ml-1 font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
               ) : (
-                <span className="text-xs text-slate-400">No file chosen</span>
+                <span className="text-xs text-slate-400">No report file attached</span>
               )}
             </div>
           </div>
@@ -2649,26 +3320,40 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         <SectionHeading step={15} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {Object.entries(attachments).map(([key, item]) => (
-            <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2">
-              <span className="text-xs font-medium text-slate-800">{item.title}</span>
+            <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2 shadow-xs">
+              <span className="text-xs font-bold text-slate-800">{item.title}</span>
 
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between pt-1 gap-1">
                 {item.file ? (
-                  <span className="text-xs text-emerald-700 font-semibold truncate max-w-[140px]">
-                    {item.file.name}
+                  <span className="text-xs text-emerald-700 font-semibold truncate max-w-[110px]">
+                    ✓ {item.file.name}
                   </span>
                 ) : (
                   <span className="text-[11px] text-slate-400">No file chosen</span>
                 )}
 
-                <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-medium cursor-pointer transition-colors shrink-0">
-                  <span>Browse</span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => handleAttachmentUpload(key, e.target.files?.[0] || null)}
-                  />
-                </label>
+                <div className="flex items-center gap-1 shrink-0">
+                  <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-medium cursor-pointer transition-colors">
+                    <span>Browse</span>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => handleAttachmentUpload(key, e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveAttachmentKey(key);
+                      setActiveCameraModal('attachment');
+                    }}
+                    className="p-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs transition-colors cursor-pointer"
+                    title={`Snap photo of ${item.title}`}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -2699,6 +3384,38 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           )}
         </button>
       </div>
+
+      {/* Live Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={activeCameraModal !== 'none'}
+        onClose={() => {
+          setActiveCameraModal('none');
+          setActiveAttachmentKey(null);
+        }}
+        onCapture={(capturedFile) => {
+          if (activeCameraModal === 'prescription') {
+            setPrescriptionPhotoFile(capturedFile);
+          } else if (activeCameraModal === 'report') {
+            setWrittenReportFile(capturedFile);
+          } else if (activeCameraModal === 'attachment' && activeAttachmentKey) {
+            handleAttachmentUpload(activeAttachmentKey, capturedFile);
+          }
+        }}
+        title={
+          activeCameraModal === 'report'
+            ? 'Capture Written Report / Complaint Document'
+            : activeCameraModal === 'prescription'
+            ? 'Capture Medical Prescription'
+            : `Capture Document: ${activeAttachmentKey ? attachments[activeAttachmentKey]?.title : 'Attachment'}`
+        }
+        documentType={
+          activeCameraModal === 'report'
+            ? 'complaint_report'
+            : activeCameraModal === 'prescription'
+            ? 'prescription'
+            : activeAttachmentKey || 'document'
+        }
+      />
     </form>
   );
 }
