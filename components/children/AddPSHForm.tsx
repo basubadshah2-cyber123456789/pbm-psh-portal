@@ -42,6 +42,7 @@ export interface SiblingRecord {
   gender: string;
   age: string;
   qualification: string;
+  profession: string;
   institution: string;
   gradeClass: string;
   maritalStatus: string;
@@ -422,6 +423,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       gender: '',
       age: '',
       qualification: '',
+      profession: '',
       institution: '',
       gradeClass: '',
       maritalStatus: '',
@@ -443,6 +445,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         gender: '',
         age: '',
         qualification: '',
+        profession: '',
         institution: '',
         gradeClass: '',
         maritalStatus: '',
@@ -829,7 +832,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMeetingPersons(psh.meetingPersons);
         }
         if (Array.isArray(psh.siblings) && psh.siblings.length > 0) {
-          setSiblings(psh.siblings);
+          setSiblings(psh.siblings.map((sibling: SiblingRecord, index: number) => ({
+            ...sibling,
+            id: sibling.id || `saved-${index}`,
+            profession: sibling.profession || '',
+          })));
         }
         if (Array.isArray(psh.witnesses) && psh.witnesses.length > 0) {
           setWitnesses(psh.witnesses.map((w: WitnessRecord) => ({
@@ -954,7 +961,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setGuardianHouseNumber('');
     setAdditionalGuardians([]);
     setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
     setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', address: '' }]);
     setResultSchool('');
     setResultClass('');
@@ -1071,6 +1078,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           gender: 'Female',
           age: '6',
           qualification: 'Prep',
+          profession: '',
           institution: 'Govt Girls Primary School',
           gradeClass: 'Class 1',
           maritalStatus: 'Single',
@@ -1213,6 +1221,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           gender: 'Male',
           age: '13',
           qualification: 'Middle',
+          profession: '',
           institution: 'Govt High School Multan',
           gradeClass: 'Class 8',
           maritalStatus: 'Single',
@@ -1356,6 +1365,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           gender: 'Female',
           age: '5',
           qualification: 'Nursery',
+          profession: '',
           institution: 'Govt Primary School',
           gradeClass: 'Nursery',
           maritalStatus: 'Single',
@@ -1498,6 +1508,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         gender: 'Female',
         age: '8',
         qualification: 'Primary',
+        profession: '',
         institution: 'Govt Girls Primary School',
         gradeClass: 'Grade 3',
         maritalStatus: 'Single',
@@ -2874,6 +2885,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   placeholder="Qualification"
                   value={s.qualification}
                   onChange={(e) => updateSibling(s.id, 'qualification', e.target.value)}
+                />
+                <FormInput
+                  placeholder="Profession"
+                  value={s.profession}
+                  onChange={(e) => updateSibling(s.id, 'profession', e.target.value)}
                 />
                 <FormInput
                   placeholder="Institution"

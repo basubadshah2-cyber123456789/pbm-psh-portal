@@ -2143,6 +2143,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th className="py-1">Name</th>
                             <th>Gender</th>
                             <th>Age</th>
+                            <th>Profession</th>
                             <th>Grade / Class</th>
                             <th>Institution</th>
                           </tr>
@@ -2153,6 +2154,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td className="py-1 font-bold">{s.name || 'N/A'}</td>
                               <td>{s.gender || 'N/A'}</td>
                               <td>{s.age || 'N/A'}</td>
+                              <td>{s.profession || 'N/A'}</td>
                               <td>{s.gradeClass || 'N/A'}</td>
                               <td>{s.institution || 'N/A'}</td>
                             </tr>

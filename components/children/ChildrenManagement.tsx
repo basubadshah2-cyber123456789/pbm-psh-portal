@@ -1026,7 +1026,7 @@ export function ChildrenManagement() {
                     {(psh?.siblings || [{ name: 'Usman Tariq', gender: 'MALE', age: '8', schoolName: 'Govt School', gradeClass: 'Class 3' }]).map((s: any, i: number) => (
                       <div key={i} className="text-[11px] bg-white p-1.5 rounded border border-emerald-100">
                         <strong>{s.name}</strong> ({s.gender})<br />
-                        <span className="text-[10px] text-slate-500">Age: {s.age || '8'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class 3'})</span>
+                        <span className="text-[10px] text-slate-500">Age: {s.age || '8'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class 3'}) • Profession: {s.profession || 'N/A'}</span>
                       </div>
                     ))}
                   </div>

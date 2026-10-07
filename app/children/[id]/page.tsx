@@ -421,6 +421,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                       <div className="text-[11px] text-slate-600 mt-0.5">
                         Age: {s.age || 'N/A'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class'})
                       </div>
+                      <div className="text-[11px] text-slate-600">Profession: {s.profession || 'N/A'}</div>
                       <div className="text-[10px] text-slate-400 mt-1">Status: {s.maritalStatus || 'Single'}</div>
                     </div>
                   ))}
