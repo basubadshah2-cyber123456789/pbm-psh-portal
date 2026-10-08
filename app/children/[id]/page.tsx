@@ -283,6 +283,10 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dt className="text-slate-400">Native Location</dt>
                     <dd className="font-semibold">{psh.fatherInfo.city}, {psh.fatherInfo.province}</dd>
                   </div>
+                  <div>
+                    <dt className="text-slate-400">Union Council No. / Name</dt>
+                    <dd className="font-semibold">{[psh.fatherInfo.ucNumber, psh.fatherInfo.ucName].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                  </div>
                 </dl>
               </Section>
             )}
@@ -314,6 +318,10 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dt className="text-slate-400">Native Location</dt>
                     <dd className="font-semibold">{psh.motherInfo.address || `${psh.motherInfo.city}, ${psh.motherInfo.province}`}</dd>
                   </div>
+                  <div>
+                    <dt className="text-slate-400">Union Council No. / Name</dt>
+                    <dd className="font-semibold">{[psh.motherInfo.ucNumber, psh.motherInfo.ucName].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                  </div>
                 </dl>
               </Section>
             )}
@@ -342,14 +350,30 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{psh.guardianInfo.address || 'N/A'}</dd>
                   </div>
                   <div>
+                    <dt className="text-slate-400">Permanent Address Type / Post Office / Colony</dt>
+                    <dd className="font-semibold">{[psh.guardianInfo.addressType, psh.guardianInfo.addressType === 'Village' ? psh.guardianInfo.postOffice : psh.guardianInfo.addressType === 'City' ? psh.guardianInfo.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                  </div>
+                  <div>
                     <dt className="text-slate-400">District / Tehsil</dt>
                     <dd className="font-semibold">{[psh.guardianInfo.district, psh.guardianInfo.tehsil].filter(Boolean).join(' / ') || 'N/A'}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Union Council / Street / House</dt>
+                    <dt className="text-slate-400">Union Council No. / Name / Street / House</dt>
                     <dd className="font-semibold">
-                      {[psh.guardianInfo.ucNumber, psh.guardianInfo.streetNumber, psh.guardianInfo.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
+                      {[psh.guardianInfo.ucNumber, psh.guardianInfo.ucName, psh.guardianInfo.streetNumber, psh.guardianInfo.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
                     </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Current / Present Address</dt>
+                    <dd className="font-semibold">{psh.guardianInfo.currentAddress?.address || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Current Address Type / Post Office / Colony</dt>
+                    <dd className="font-semibold">{[psh.guardianInfo.currentAddress?.addressType, psh.guardianInfo.currentAddress?.addressType === 'Village' ? psh.guardianInfo.currentAddress.postOffice : psh.guardianInfo.currentAddress?.addressType === 'City' ? psh.guardianInfo.currentAddress.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-400">Current District / Tehsil / UC No. / UC Name / Street / House</dt>
+                    <dd className="font-semibold">{[psh.guardianInfo.currentAddress?.district, psh.guardianInfo.currentAddress?.tehsil, psh.guardianInfo.currentAddress?.ucNumber, psh.guardianInfo.currentAddress?.ucName, psh.guardianInfo.currentAddress?.streetNumber, psh.guardianInfo.currentAddress?.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</dd>
                   </div>
                 </dl>
               </Section>
@@ -378,9 +402,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{[guardian.district, guardian.tehsil].filter(Boolean).join(' / ') || 'N/A'}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Union Council / Street / House</dt>
+                    <dt className="text-slate-400">Union Council No. / Name / Street / House</dt>
                     <dd className="font-semibold">
-                      {[guardian.ucNumber, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
+                      {[guardian.ucNumber, guardian.ucName, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
                     </dd>
                   </div>
                 </dl>
@@ -403,6 +427,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                         Schedule: {p.visitFrequency} • Timing: {p.visitTiming}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-1">Contact: {p.contact || 'N/A'} • CNIC: {p.cnic || 'N/A'}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">Union Council No. / Name: {[p.ucNumber, p.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
                     </div>
                   ))}
                 </div>
@@ -422,6 +447,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                         Age: {s.age || 'N/A'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class'})
                       </div>
                       <div className="text-[11px] text-slate-600">Profession: {s.profession || 'N/A'}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">Union Council No. / Name: {[s.ucNumber, s.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
                       <div className="text-[10px] text-slate-400 mt-1">Status: {s.maritalStatus || 'Single'}</div>
                     </div>
                   ))}
@@ -442,7 +468,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                         {w.profession || 'Community Elder'} • CNIC: {w.cnic || 'N/A'}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-1">
-                        Contact: {w.contact || 'N/A'} • {w.address || 'N/A'} • {[w.district, w.tehsil, w.ucNumber, w.streetNumber, w.houseNumber].filter(Boolean).join(', ')}
+                        Contact: {w.contact || 'N/A'} • {w.address || 'N/A'} • {[w.district, w.tehsil, w.ucNumber, w.ucName, w.streetNumber, w.houseNumber].filter(Boolean).join(', ')}
                       </div>
                     </div>
                   ))}

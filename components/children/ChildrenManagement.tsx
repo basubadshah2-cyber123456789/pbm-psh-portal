@@ -958,6 +958,7 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">CNIC:</span> {psh?.fatherInfo?.cnic || 'N/A'} • <span className="text-slate-500">Contact:</span> {psh?.fatherInfo?.contact || 'N/A'}</div>
                     <div><span className="text-slate-500">Profession:</span> {psh?.fatherInfo?.profession || 'Daily Wager'} ({psh?.fatherInfo?.qualification || 'Matric'})</div>
                     <div><span className="text-slate-500">Native Address:</span> {psh?.fatherInfo?.address || `${psh?.fatherInfo?.city || 'Multan'}, ${psh?.fatherInfo?.province || 'Punjab'}`}</div>
+                    <div><span className="text-slate-500">Union Council No. / Name:</span> {[psh?.fatherInfo?.ucNumber, psh?.fatherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
                   </div>
 
                   {/* Mother Info */}
@@ -969,6 +970,7 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">CNIC:</span> {psh?.motherInfo?.cnic || 'N/A'} • <span className="text-slate-500">Contact:</span> {psh?.motherInfo?.contact || 'N/A'}</div>
                     <div><span className="text-slate-500">Profession:</span> {psh?.motherInfo?.profession || 'Housewife'} ({psh?.motherInfo?.qualification || 'Primary'})</div>
                     <div><span className="text-slate-500">Native Address:</span> {psh?.motherInfo?.address || `${psh?.motherInfo?.city || 'Multan'}, ${psh?.motherInfo?.province || 'Punjab'}`}</div>
+                    <div><span className="text-slate-500">Union Council No. / Name:</span> {[psh?.motherInfo?.ucNumber, psh?.motherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
                   </div>
                 </div>
 
@@ -984,6 +986,12 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">CNIC:</span> <strong>{psh?.guardianInfo?.cnic || '36302-XXXXXXX-X'}</strong></div>
                     <div><span className="text-slate-500">Profession/Income:</span> <strong>{psh?.guardianInfo?.profession || 'Domestic Work / Sewing'}</strong></div>
                     <div><span className="text-slate-500">Address:</span> <strong>{psh?.guardianInfo?.address || selectedChild.address || 'Multan'}</strong></div>
+                    <div><span className="text-slate-500">Permanent Type / Post Office / Colony:</span> <strong>{[psh?.guardianInfo?.addressType, psh?.guardianInfo?.addressType === 'Village' ? psh.guardianInfo.postOffice : psh?.guardianInfo?.addressType === 'City' ? psh.guardianInfo.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                    <div><span className="text-slate-500">Union Council No. / Name:</span> <strong>{[psh?.guardianInfo?.ucNumber, psh?.guardianInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                    <div><span className="text-slate-500">Current / Present Address:</span> <strong>{psh?.guardianInfo?.currentAddress?.address || 'N/A'}</strong></div>
+                    <div><span className="text-slate-500">Current Address Type / Post Office / Colony:</span> <strong>{[psh?.guardianInfo?.currentAddress?.addressType, psh?.guardianInfo?.currentAddress?.addressType === 'Village' ? psh.guardianInfo.currentAddress.postOffice : psh?.guardianInfo?.currentAddress?.addressType === 'City' ? psh.guardianInfo.currentAddress.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                    <div><span className="text-slate-500">Current Union Council No. / Name:</span> <strong>{[psh?.guardianInfo?.currentAddress?.ucNumber, psh?.guardianInfo?.currentAddress?.ucName].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                    <div><span className="text-slate-500">Current District / Tehsil / Street / House:</span> <strong>{[psh?.guardianInfo?.currentAddress?.district, psh?.guardianInfo?.currentAddress?.tehsil, psh?.guardianInfo?.currentAddress?.streetNumber, psh?.guardianInfo?.currentAddress?.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
                   </div>
                   {Array.isArray(psh?.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
                     <div key={guardian.id || index} className="mt-3 border-t border-slate-100 pt-3">
@@ -997,7 +1005,7 @@ export function ChildrenManagement() {
                         <div><span className="text-slate-500">Address:</span> <strong>{guardian.address || 'N/A'}</strong></div>
                         <div><span className="text-slate-500">District:</span> <strong>{guardian.district || 'N/A'}</strong></div>
                         <div><span className="text-slate-500">Tehsil:</span> <strong>{guardian.tehsil || 'N/A'}</strong></div>
-                        <div><span className="text-slate-500">UC / Street / House:</span> <strong>{[guardian.ucNumber, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">UC No. / Name / Street / House:</span> <strong>{[guardian.ucNumber, guardian.ucName, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
                       </div>
                     </div>
                   ))}
@@ -1013,7 +1021,7 @@ export function ChildrenManagement() {
                     {(psh?.meetingPersons || [{ name: 'Maryam Bibi', relation: 'Mother', visitFrequency: '1st & 3rd Sun', visitTiming: '10am-4pm', contact: '0301-7654321' }]).map((p: any, i: number) => (
                       <div key={i} className="text-[11px] bg-white p-1.5 rounded border border-blue-100">
                         <strong>{p.name}</strong> ({p.relation})<br />
-                        <span className="text-[10px] text-slate-500">{p.visitFrequency} • {p.visitTiming} • {p.contact || 'N/A'}</span>
+                        <span className="text-[10px] text-slate-500">{p.visitFrequency} • {p.visitTiming} • {p.contact || 'N/A'} • UC: {[p.ucNumber, p.ucName].filter(Boolean).join(' / ') || 'N/A'}</span>
                       </div>
                     ))}
                   </div>
@@ -1026,7 +1034,7 @@ export function ChildrenManagement() {
                     {(psh?.siblings || [{ name: 'Usman Tariq', gender: 'MALE', age: '8', schoolName: 'Govt School', gradeClass: 'Class 3' }]).map((s: any, i: number) => (
                       <div key={i} className="text-[11px] bg-white p-1.5 rounded border border-emerald-100">
                         <strong>{s.name}</strong> ({s.gender})<br />
-                        <span className="text-[10px] text-slate-500">Age: {s.age || '8'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class 3'}) • Profession: {s.profession || 'N/A'}</span>
+                        <span className="text-[10px] text-slate-500">Age: {s.age || '8'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class 3'}) • Profession: {s.profession || 'N/A'} • UC: {[s.ucNumber, s.ucName].filter(Boolean).join(' / ') || 'N/A'}</span>
                       </div>
                     ))}
                   </div>
@@ -1039,7 +1047,7 @@ export function ChildrenManagement() {
                     {(psh?.witnesses || [{ name: 'Haji Abdul Rasheed', profession: 'Elder / Verifier', cnic: '36302-3344556-7', contact: '0300-3344556' }]).map((w: any, i: number) => (
                       <div key={i} className="text-[11px] bg-white p-1.5 rounded border border-purple-100">
                         <strong>{w.name}</strong> ({w.profession})<br />
-                        <span className="text-[10px] text-slate-500">CNIC: {w.cnic || 'N/A'} • {w.contact || 'N/A'}</span>
+                        <span className="text-[10px] text-slate-500">CNIC: {w.cnic || 'N/A'} • {w.contact || 'N/A'} • UC: {[w.ucNumber, w.ucName].filter(Boolean).join(' / ') || 'N/A'}</span>
                       </div>
                     ))}
                   </div>

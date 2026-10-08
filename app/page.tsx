@@ -2052,6 +2052,7 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">Is Alive:</span> <span className="font-semibold">{psh?.fatherInfo?.isAlive || 'No'} {psh?.fatherInfo?.dod ? `(DOD: ${psh.fatherInfo.dod})` : ''}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.fatherInfo?.profession || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Address:</span> <span>{psh?.fatherInfo?.address || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Union Council No. / Name:</span> <span>{[psh?.fatherInfo?.ucNumber, psh?.fatherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</span></div>
                     </div>
 
                     {/* Mother Info */}
@@ -2062,6 +2063,7 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">Is Alive:</span> <span className="font-semibold">{psh?.motherInfo?.isAlive || 'Yes'} {psh?.motherInfo?.dod ? `(DOD: ${psh.motherInfo.dod})` : ''}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.motherInfo?.profession || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Address:</span> <span>{psh?.motherInfo?.address || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Union Council No. / Name:</span> <span>{[psh?.motherInfo?.ucNumber, psh?.motherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</span></div>
                     </div>
                   </div>
 
@@ -2075,11 +2077,19 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">CNIC:</span> <span>{psh?.guardianInfo?.cnic || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.guardianInfo?.profession || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Address:</span> <span>{psh?.guardianInfo?.address || selectedDossierChild.address || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Permanent Address Type:</span> <span>{psh?.guardianInfo?.addressType || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Post Office / Colony:</span> <span>{psh?.guardianInfo?.addressType === 'Village' ? psh.guardianInfo.postOffice || 'N/A' : psh?.guardianInfo?.addressType === 'City' ? psh.guardianInfo.colony || 'N/A' : 'N/A'}</span></div>
                       <div><span className="text-slate-400">District:</span> <span>{psh?.guardianInfo?.district || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Tehsil:</span> <span>{psh?.guardianInfo?.tehsil || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Union Council No.:</span> <span>{psh?.guardianInfo?.ucNumber || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Union Council Name:</span> <span>{psh?.guardianInfo?.ucName || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Street No.:</span> <span>{psh?.guardianInfo?.streetNumber || 'N/A'}</span></div>
                       <div><span className="text-slate-400">House No.:</span> <span>{psh?.guardianInfo?.houseNumber || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Current / Present Address:</span> <span>{psh?.guardianInfo?.currentAddress?.address || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Current Address Type:</span> <span>{psh?.guardianInfo?.currentAddress?.addressType || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Current Post Office / Colony:</span> <span>{psh?.guardianInfo?.currentAddress?.addressType === 'Village' ? psh.guardianInfo.currentAddress.postOffice || 'N/A' : psh?.guardianInfo?.currentAddress?.addressType === 'City' ? psh.guardianInfo.currentAddress.colony || 'N/A' : 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Current Union Council No. / Name:</span> <span>{[psh?.guardianInfo?.currentAddress?.ucNumber, psh?.guardianInfo?.currentAddress?.ucName].filter(Boolean).join(' / ') || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Current District / Tehsil / Street / House:</span> <span>{[psh?.guardianInfo?.currentAddress?.district, psh?.guardianInfo?.currentAddress?.tehsil, psh?.guardianInfo?.currentAddress?.streetNumber, psh?.guardianInfo?.currentAddress?.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</span></div>
                     </div>
                   </div>
                   {Array.isArray(psh?.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
@@ -2098,6 +2108,7 @@ export default function StandalonePSHAdmissionWebsite() {
                         <div><span className="text-slate-400">District:</span> <span>{guardian.district || 'N/A'}</span></div>
                         <div><span className="text-slate-400">Tehsil:</span> <span>{guardian.tehsil || 'N/A'}</span></div>
                         <div><span className="text-slate-400">Union Council No.:</span> <span>{guardian.ucNumber || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Union Council Name:</span> <span>{guardian.ucName || 'N/A'}</span></div>
                         <div><span className="text-slate-400">Street No.:</span> <span>{guardian.streetNumber || 'N/A'}</span></div>
                         <div><span className="text-slate-400">House No.:</span> <span>{guardian.houseNumber || 'N/A'}</span></div>
                       </div>
@@ -2116,6 +2127,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th>CNIC</th>
                             <th>Contact</th>
                             <th>Schedule</th>
+                            <th>Union Council No. / Name</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2126,6 +2138,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{p.cnic || 'N/A'}</td>
                               <td>{p.contact || 'N/A'}</td>
                               <td>{p.dateTime || 'Scheduled'}</td>
+                              <td>{[p.ucNumber, p.ucName].filter(Boolean).join(' / ') || 'N/A'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2146,6 +2159,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th>Profession</th>
                             <th>Grade / Class</th>
                             <th>Institution</th>
+                            <th>Union Council No. / Name</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2157,6 +2171,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{s.profession || 'N/A'}</td>
                               <td>{s.gradeClass || 'N/A'}</td>
                               <td>{s.institution || 'N/A'}</td>
+                              <td>{[s.ucNumber, s.ucName].filter(Boolean).join(' / ') || 'N/A'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2188,7 +2203,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{w.contact || 'N/A'}</td>
                               <td>{w.profession || 'N/A'}</td>
                               <td>
-                                {[w.address, w.district && `District: ${w.district}`, w.tehsil && `Tehsil: ${w.tehsil}`, w.ucNumber && `UC No.: ${w.ucNumber}`, w.streetNumber && `Street No.: ${w.streetNumber}`, w.houseNumber && `House No.: ${w.houseNumber}`]
+                                {[w.address, w.district && `District: ${w.district}`, w.tehsil && `Tehsil: ${w.tehsil}`, w.ucNumber && `UC No.: ${w.ucNumber}`, w.ucName && `UC Name: ${w.ucName}`, w.streetNumber && `Street No.: ${w.streetNumber}`, w.houseNumber && `House No.: ${w.houseNumber}`]
                                   .filter(Boolean)
                                   .join(' · ') || 'N/A'}
                               </td>

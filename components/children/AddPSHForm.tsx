@@ -31,6 +31,7 @@ export interface MeetingPersonRecord {
   district: string;
   tehsil: string;
   ucNumber: string;
+  ucName?: string;
   streetNumber: string;
   houseNumber: string;
   address: string;
@@ -49,6 +50,7 @@ export interface SiblingRecord {
   district: string;
   tehsil: string;
   ucNumber: string;
+  ucName?: string;
   streetNumber: string;
   houseNumber: string;
   address: string;
@@ -64,6 +66,7 @@ export interface WitnessRecord {
   district?: string;
   tehsil?: string;
   ucNumber?: string;
+  ucName?: string;
   streetNumber?: string;
   houseNumber?: string;
   qualification: string;
@@ -82,6 +85,7 @@ export interface AdditionalGuardianRecord {
   district: string;
   tehsil: string;
   ucNumber: string;
+  ucName?: string;
   streetNumber: string;
   houseNumber: string;
 }
@@ -212,19 +216,15 @@ function SectionHeading({
 }) {
   return (
     <div className="flex items-center gap-3 mt-6 mb-3">
-      {typeof step === 'number' && (
+      {isCompleted && (
         <span
-          className={`flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-black transition-all duration-300 ${
-            isCompleted
-              ? 'bg-emerald-600 text-white shadow-md scale-105 ring-2 ring-emerald-200'
-              : 'bg-gradient-to-br from-indigo-100 to-sky-100 text-indigo-700 ring-1 ring-indigo-200'
-          }`}
+          className="flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-black bg-emerald-600 text-white shadow-md scale-105 ring-2 ring-emerald-200 transition-all duration-300"
         >
-          {isCompleted ? '✓' : step}
+          ✓
         </span>
       )}
       <h3 className="text-slate-900 font-bold text-sm sm:text-base tracking-tight">
-        {title}
+        {typeof step === 'number' ? `Category No. ${step} — ${title}` : title}
       </h3>
     </div>
   );
@@ -291,6 +291,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [fatherStreetNumber, setFatherStreetNumber] = useState<string>('');
   const [fatherHouseNumber, setFatherHouseNumber] = useState<string>('');
   const [fatherUcNumber, setFatherUcNumber] = useState<string>('');
+  const [fatherUcName, setFatherUcName] = useState<string>('');
   const [fatherAddress, setFatherAddress] = useState<string>('');
 
   // ================= 5. MOTHER INFO =================
@@ -308,6 +309,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [motherStreetNumber, setMotherStreetNumber] = useState<string>('');
   const [motherHouseNumber, setMotherHouseNumber] = useState<string>('');
   const [motherUcNumber, setMotherUcNumber] = useState<string>('');
+  const [motherUcName, setMotherUcName] = useState<string>('');
   const [motherAddress, setMotherAddress] = useState<string>('');
 
   // ================= 6. GUARDIAN INFO =================
@@ -321,9 +323,61 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [guardianDistrict, setGuardianDistrict] = useState<string>('');
   const [guardianTehsil, setGuardianTehsil] = useState<string>('');
   const [guardianUcNumber, setGuardianUcNumber] = useState<string>('');
+  const [guardianUcName, setGuardianUcName] = useState<string>('');
   const [guardianStreetNumber, setGuardianStreetNumber] = useState<string>('');
   const [guardianHouseNumber, setGuardianHouseNumber] = useState<string>('');
+  const [guardianAddressType, setGuardianAddressType] = useState('');
+  const [guardianPostOffice, setGuardianPostOffice] = useState('');
+  const [guardianColony, setGuardianColony] = useState('');
+  const [sameAsPermanentAddress, setSameAsPermanentAddress] = useState(false);
+  const [currentGuardianAddress, setCurrentGuardianAddress] = useState({
+    addressType: '',
+    postOffice: '',
+    colony: '',
+    address: '',
+    district: '',
+    tehsil: '',
+    ucNumber: '',
+    ucName: '',
+    streetNumber: '',
+    houseNumber: '',
+  });
   const [additionalGuardians, setAdditionalGuardians] = useState<AdditionalGuardianRecord[]>([]);
+
+  useEffect(() => {
+    if (!sameAsPermanentAddress) return;
+    setCurrentGuardianAddress({
+      addressType: guardianAddressType,
+      postOffice: guardianPostOffice,
+      colony: guardianColony,
+      address: guardianAddress,
+      district: guardianDistrict,
+      tehsil: guardianTehsil,
+      ucNumber: guardianUcNumber,
+      ucName: guardianUcName,
+      streetNumber: guardianStreetNumber,
+      houseNumber: guardianHouseNumber,
+    });
+  }, [
+    sameAsPermanentAddress,
+    guardianAddressType,
+    guardianPostOffice,
+    guardianColony,
+    guardianAddress,
+    guardianDistrict,
+    guardianTehsil,
+    guardianUcNumber,
+    guardianUcName,
+    guardianStreetNumber,
+    guardianHouseNumber,
+  ]);
+
+  const updateCurrentGuardianAddress = (
+    field: keyof typeof currentGuardianAddress,
+    value: string
+  ) => {
+    setCurrentGuardianAddress((current) => ({ ...current, [field]: value }));
+  };
 
   const addGuardian = () => {
     setAdditionalGuardians((current) => [
@@ -340,6 +394,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         district: '',
         tehsil: '',
         ucNumber: '',
+        ucName: '',
         streetNumber: '',
         houseNumber: '',
       },
@@ -371,6 +426,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       district: '',
       tehsil: '',
       ucNumber: '',
+      ucName: '',
       streetNumber: '',
       houseNumber: '',
       address: '',
@@ -394,6 +450,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         district: '',
         tehsil: '',
         ucNumber: '',
+        ucName: '',
         streetNumber: '',
         houseNumber: '',
         address: '',
@@ -430,6 +487,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       district: '',
       tehsil: '',
       ucNumber: '',
+      ucName: '',
       streetNumber: '',
       houseNumber: '',
       address: '',
@@ -452,6 +510,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         district: '',
         tehsil: '',
         ucNumber: '',
+        ucName: '',
         streetNumber: '',
         houseNumber: '',
         address: '',
@@ -784,6 +843,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setFatherStreetNumber(psh.fatherInfo.streetNumber || '');
           setFatherHouseNumber(psh.fatherInfo.houseNumber || '');
           setFatherUcNumber(psh.fatherInfo.ucNumber || '');
+          setFatherUcName(psh.fatherInfo.ucName || '');
           setFatherAddress(psh.fatherInfo.address || '');
         }
 
@@ -802,6 +862,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMotherStreetNumber(psh.motherInfo.streetNumber || '');
           setMotherHouseNumber(psh.motherInfo.houseNumber || '');
           setMotherUcNumber(psh.motherInfo.ucNumber || '');
+          setMotherUcName(psh.motherInfo.ucName || '');
           setMotherAddress(psh.motherInfo.address || '');
         }
 
@@ -816,8 +877,25 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setGuardianDistrict(psh.guardianInfo.district || '');
           setGuardianTehsil(psh.guardianInfo.tehsil || '');
           setGuardianUcNumber(psh.guardianInfo.ucNumber || '');
+          setGuardianUcName(psh.guardianInfo.ucName || '');
           setGuardianStreetNumber(psh.guardianInfo.streetNumber || '');
           setGuardianHouseNumber(psh.guardianInfo.houseNumber || '');
+          setGuardianAddressType(psh.guardianInfo.addressType || '');
+          setGuardianPostOffice(psh.guardianInfo.postOffice || '');
+          setGuardianColony(psh.guardianInfo.colony || '');
+          setSameAsPermanentAddress(Boolean(psh.guardianInfo.sameAsPermanentAddress));
+          setCurrentGuardianAddress({
+            addressType: psh.guardianInfo.currentAddress?.addressType || '',
+            postOffice: psh.guardianInfo.currentAddress?.postOffice || '',
+            colony: psh.guardianInfo.currentAddress?.colony || '',
+            address: psh.guardianInfo.currentAddress?.address || '',
+            district: psh.guardianInfo.currentAddress?.district || '',
+            tehsil: psh.guardianInfo.currentAddress?.tehsil || '',
+            ucNumber: psh.guardianInfo.currentAddress?.ucNumber || '',
+            ucName: psh.guardianInfo.currentAddress?.ucName || '',
+            streetNumber: psh.guardianInfo.currentAddress?.streetNumber || '',
+            houseNumber: psh.guardianInfo.currentAddress?.houseNumber || '',
+          });
         }
         setAdditionalGuardians(
           Array.isArray(psh.additionalGuardians)
@@ -834,6 +912,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 district: guardian.district || '',
                 tehsil: guardian.tehsil || '',
                 ucNumber: guardian.ucNumber || '',
+                ucName: guardian.ucName || '',
                 streetNumber: guardian.streetNumber || '',
                 houseNumber: guardian.houseNumber || '',
               }))
@@ -841,13 +920,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         );
 
         if (Array.isArray(psh.meetingPersons) && psh.meetingPersons.length > 0) {
-          setMeetingPersons(psh.meetingPersons);
+          setMeetingPersons(psh.meetingPersons.map((person: MeetingPersonRecord) => ({
+            ...person,
+            ucName: person.ucName || '',
+          })));
         }
         if (Array.isArray(psh.siblings) && psh.siblings.length > 0) {
           setSiblings(psh.siblings.map((sibling: SiblingRecord, index: number) => ({
             ...sibling,
             id: sibling.id || `saved-${index}`,
             profession: sibling.profession || '',
+            ucName: sibling.ucName || '',
           })));
         }
         if (Array.isArray(psh.witnesses) && psh.witnesses.length > 0) {
@@ -856,6 +939,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             district: w.district || '',
             tehsil: w.tehsil || '',
             ucNumber: w.ucNumber || '',
+            ucName: w.ucName || '',
             streetNumber: w.streetNumber || '',
             houseNumber: w.houseNumber || '',
           })));
@@ -946,6 +1030,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setFatherStreetNumber('');
     setFatherHouseNumber('');
     setFatherUcNumber('');
+    setFatherUcName('');
     setFatherAddress('');
     setMotherName('');
     setMotherCnic('');
@@ -961,6 +1046,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setMotherStreetNumber('');
     setMotherHouseNumber('');
     setMotherUcNumber('');
+    setMotherUcName('');
     setMotherAddress('');
     setGuardianName('');
     setGuardianRelation('');
@@ -972,11 +1058,28 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setGuardianDistrict('');
     setGuardianTehsil('');
     setGuardianUcNumber('');
+    setGuardianUcName('');
     setGuardianStreetNumber('');
     setGuardianHouseNumber('');
+    setGuardianAddressType('');
+    setGuardianPostOffice('');
+    setGuardianColony('');
+    setSameAsPermanentAddress(false);
+    setCurrentGuardianAddress({
+      addressType: '',
+      postOffice: '',
+      colony: '',
+      address: '',
+      district: '',
+      tehsil: '',
+      ucNumber: '',
+      ucName: '',
+      streetNumber: '',
+      houseNumber: '',
+    });
     setAdditionalGuardians([]);
-    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
     setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', address: '' }]);
     setResultSchool('');
     setResultClass('');
@@ -1679,6 +1782,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           streetNumber: fatherStreetNumber,
           houseNumber: fatherHouseNumber,
           ucNumber: fatherUcNumber,
+          ucName: fatherUcName,
           address: fatherAddress,
         },
         motherInfo: {
@@ -1696,6 +1800,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           streetNumber: motherStreetNumber,
           houseNumber: motherHouseNumber,
           ucNumber: motherUcNumber,
+          ucName: motherUcName,
           address: motherAddress,
         },
         guardianInfo: {
@@ -1709,8 +1814,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           district: guardianDistrict,
           tehsil: guardianTehsil,
           ucNumber: guardianUcNumber,
+          ucName: guardianUcName,
           streetNumber: guardianStreetNumber,
           houseNumber: guardianHouseNumber,
+          addressType: guardianAddressType,
+          postOffice: guardianPostOffice,
+          colony: guardianColony,
+          sameAsPermanentAddress,
+          currentAddress: currentGuardianAddress,
         },
         additionalGuardians: additionalGuardians
           .filter((guardian) => Object.entries(guardian).some(([key, value]) => key !== 'id' && Boolean(value.trim())))
@@ -1722,6 +1833,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           district: w.district || '',
           tehsil: w.tehsil || '',
           ucNumber: w.ucNumber || '',
+          ucName: w.ucName || '',
           streetNumber: w.streetNumber || '',
           houseNumber: w.houseNumber || '',
         })),
@@ -2012,7 +2124,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 1. CATEGORY ================= */}
       <div>
-        <SectionHeading step={1} title="Category" isCompleted={completionStats.isCat1Complete} />
+        <SectionHeading title="Category" isCompleted={completionStats.isCat1Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Category"
@@ -2029,7 +2141,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 2. CATEGORY 2 ================= */}
       <div>
-        <SectionHeading step={2} title="Category 2 (Enrollment Type)" isCompleted={completionStats.isCat2Complete} />
+        <SectionHeading title="Category 2 (Enrollment Type)" isCompleted={completionStats.isCat2Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Category 2"
@@ -2116,7 +2228,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 3. BASIC INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={3} title="Basic Info" isCompleted={completionStats.isBasicComplete} />
+          <SectionHeading step={1} title="Basic Info" isCompleted={completionStats.isBasicComplete} />
           <div className="mb-2">
             <ChildPhotoPicker
               onFileSelected={(file) => setProfilePhotoFile(file)}
@@ -2295,7 +2407,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 4. HEALTH INFO ================= */}
       <div>
-        <SectionHeading step={4} title="Health Info" isCompleted={completionStats.isHealthComplete} />
+        <SectionHeading step={2} title="Health Info" isCompleted={completionStats.isHealthComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormSelect
@@ -2371,7 +2483,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 5. FATHER INFO ================= */}
       <div>
-        <SectionHeading step={5} title="Father Info" isCompleted={completionStats.isFatherComplete} />
+        <SectionHeading step={3} title="Father Info" isCompleted={completionStats.isFatherComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -2385,7 +2497,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setFatherCnic(formatCNIC(e.target.value))}
           />
           <FormInput
-            placeholder="Father Contact"
+            placeholder="Father Contact No."
             value={fatherContact}
             onChange={(e) => setFatherContact(formatPhone(e.target.value))}
           />
@@ -2443,9 +2555,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setFatherTehsil(e.target.value)}
           />
           <FormInput
-            placeholder="Union Council Number"
+            placeholder="Union Council No."
             value={fatherUcNumber}
             onChange={(e) => setFatherUcNumber(e.target.value)}
+          />
+          <FormInput
+            placeholder="Union Council Name"
+            value={fatherUcName}
+            onChange={(e) => setFatherUcName(e.target.value)}
           />
           <FormInput
             placeholder="Street Number"
@@ -2470,7 +2587,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 6. MOTHER INFO ================= */}
       <div>
-        <SectionHeading step={6} title="Mother Info" isCompleted={completionStats.isMotherComplete} />
+        <SectionHeading step={4} title="Mother Info" isCompleted={completionStats.isMotherComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -2484,7 +2601,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setMotherCnic(formatCNIC(e.target.value))}
           />
           <FormInput
-            placeholder="Mother Contact"
+            placeholder="Mother Contact No."
             value={motherContact}
             onChange={(e) => setMotherContact(formatPhone(e.target.value))}
           />
@@ -2542,9 +2659,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setMotherTehsil(e.target.value)}
           />
           <FormInput
-            placeholder="Union Council Number"
+            placeholder="Union Council No."
             value={motherUcNumber}
             onChange={(e) => setMotherUcNumber(e.target.value)}
+          />
+          <FormInput
+            placeholder="Union Council Name"
+            value={motherUcName}
+            onChange={(e) => setMotherUcName(e.target.value)}
           />
           <FormInput
             placeholder="Street Number"
@@ -2567,10 +2689,61 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 7. GUARDIAN INFO ================= */}
+      {/* ================= 5. SIBLINGS INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={7} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
+          <SectionHeading step={5} title="Siblings Info" isCompleted={completionStats.isSiblingComplete} />
+          <button
+            type="button"
+            onClick={addSibling}
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0D5C3A] text-white rounded-lg text-xs font-semibold hover:bg-[#0b4d30] transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
+        </div>
+        <div className="space-y-4">
+          {siblings.map((s, idx) => (
+            <div key={s.id} className="pt-2 pb-3 border-b border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Sibling #{idx + 1}</span>
+                {siblings.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSibling(s.id)}
+                    className="text-red-500 hover:text-red-700 text-xs font-medium flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove</span>
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+                <FormInput placeholder="Sibling Name" value={s.name} onChange={(e) => updateSibling(s.id, 'name', e.target.value)} />
+                <FormSelect label="Gender" value={s.gender} onChange={(e) => updateSibling(s.id, 'gender', e.target.value)} options={['Male', 'Female', 'Other']} />
+                <FormInput placeholder="Age" value={s.age} onChange={(e) => updateSibling(s.id, 'age', e.target.value)} />
+                <FormInput placeholder="Qualification" value={s.qualification} onChange={(e) => updateSibling(s.id, 'qualification', e.target.value)} />
+                <FormInput placeholder="Profession" value={s.profession} onChange={(e) => updateSibling(s.id, 'profession', e.target.value)} />
+                <FormInput placeholder="Institution" value={s.institution} onChange={(e) => updateSibling(s.id, 'institution', e.target.value)} />
+                <FormInput placeholder="Grade / Class" value={s.gradeClass} onChange={(e) => updateSibling(s.id, 'gradeClass', e.target.value)} />
+                <FormSelect label="Marital Status" value={s.maritalStatus} onChange={(e) => updateSibling(s.id, 'maritalStatus', e.target.value)} options={['Single', 'Married', 'Divorced', 'Widow']} />
+                <FormInput placeholder="District" value={s.district} onChange={(e) => updateSibling(s.id, 'district', e.target.value)} />
+                <FormInput placeholder="Tehsil" value={s.tehsil} onChange={(e) => updateSibling(s.id, 'tehsil', e.target.value)} />
+                <FormInput placeholder="Union Council No." value={s.ucNumber} onChange={(e) => updateSibling(s.id, 'ucNumber', e.target.value)} />
+                <FormInput placeholder="Union Council Name" value={s.ucName || ''} onChange={(e) => updateSibling(s.id, 'ucName', e.target.value)} />
+                <FormInput placeholder="Street Number" value={s.streetNumber} onChange={(e) => updateSibling(s.id, 'streetNumber', e.target.value)} />
+                <FormInput placeholder="House Number" value={s.houseNumber} onChange={(e) => updateSibling(s.id, 'houseNumber', e.target.value)} />
+                <FormInput placeholder="Address" value={s.address} onChange={(e) => updateSibling(s.id, 'address', e.target.value)} className="md:col-span-3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ================= 6. GUARDIAN INFO ================= */}
+      <div>
+        <div className="flex items-center justify-between">
+          <SectionHeading step={6} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
           <button
             type="button"
             onClick={addGuardian}
@@ -2594,7 +2767,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setGuardianRelation(e.target.value)}
           />
           <FormInput
-            placeholder="Guardian Contact"
+            placeholder="Guardian Contact No."
             value={guardianContact}
             onChange={(e) => setGuardianContact(formatPhone(e.target.value))}
           />
@@ -2617,11 +2790,29 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           />
 
           {/* Row 3 */}
+          <FormSelect
+            label="Permanent Address Type"
+            value={guardianAddressType}
+            onChange={(e) => setGuardianAddressType(e.target.value)}
+            options={['City', 'Village']}
+          />
+          {guardianAddressType === 'Village' ? (
+            <FormInput
+              label="Post Office"
+              value={guardianPostOffice}
+              onChange={(e) => setGuardianPostOffice(e.target.value)}
+            />
+          ) : guardianAddressType === 'City' ? (
+            <FormInput
+              label="Colony"
+              value={guardianColony}
+              onChange={(e) => setGuardianColony(e.target.value)}
+            />
+          ) : null}
           <FormInput
-            label="Address"
+            label="Permanent Address"
             value={guardianAddress}
             onChange={(e) => setGuardianAddress(e.target.value)}
-            className="md:col-span-3"
           />
           <FormInput
             label="District"
@@ -2639,6 +2830,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setGuardianUcNumber(e.target.value)}
           />
           <FormInput
+            label="Union Council Name"
+            value={guardianUcName}
+            onChange={(e) => setGuardianUcName(e.target.value)}
+          />
+          <FormInput
             label="Street No."
             value={guardianStreetNumber}
             onChange={(e) => setGuardianStreetNumber(e.target.value)}
@@ -2648,6 +2844,81 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={guardianHouseNumber}
             onChange={(e) => setGuardianHouseNumber(e.target.value)}
           />
+          <label className="md:col-span-3 inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
+            <input
+              type="checkbox"
+              checked={sameAsPermanentAddress}
+              onChange={(e) => setSameAsPermanentAddress(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            Same as Permanent Address
+          </label>
+          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+            <FormSelect
+              label="Current / Present Address Type"
+              value={currentGuardianAddress.addressType}
+              onChange={(e) => updateCurrentGuardianAddress('addressType', e.target.value)}
+              options={['City', 'Village']}
+              disabled={sameAsPermanentAddress}
+            />
+            {currentGuardianAddress.addressType === 'Village' ? (
+              <FormInput
+                label="Post Office"
+                value={currentGuardianAddress.postOffice}
+                onChange={(e) => updateCurrentGuardianAddress('postOffice', e.target.value)}
+                disabled={sameAsPermanentAddress}
+              />
+            ) : currentGuardianAddress.addressType === 'City' ? (
+              <FormInput
+                label="Colony"
+                value={currentGuardianAddress.colony}
+                onChange={(e) => updateCurrentGuardianAddress('colony', e.target.value)}
+                disabled={sameAsPermanentAddress}
+              />
+            ) : null}
+            <FormInput
+              label="Current / Present Address"
+              value={currentGuardianAddress.address}
+              onChange={(e) => updateCurrentGuardianAddress('address', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+            <FormInput
+              label="District"
+              value={currentGuardianAddress.district}
+              onChange={(e) => updateCurrentGuardianAddress('district', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+            <FormInput
+              label="Tehsil"
+              value={currentGuardianAddress.tehsil}
+              onChange={(e) => updateCurrentGuardianAddress('tehsil', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+            <FormInput
+              label="Union Council No."
+              value={currentGuardianAddress.ucNumber}
+              onChange={(e) => updateCurrentGuardianAddress('ucNumber', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+            <FormInput
+              label="Union Council Name"
+              value={currentGuardianAddress.ucName}
+              onChange={(e) => updateCurrentGuardianAddress('ucName', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+            <FormInput
+              label="Street No."
+              value={currentGuardianAddress.streetNumber}
+              onChange={(e) => updateCurrentGuardianAddress('streetNumber', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+            <FormInput
+              label="House No."
+              value={currentGuardianAddress.houseNumber}
+              onChange={(e) => updateCurrentGuardianAddress('houseNumber', e.target.value)}
+              disabled={sameAsPermanentAddress}
+            />
+          </div>
         </div>
 
         {additionalGuardians.map((guardian, index) => (
@@ -2676,7 +2947,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 onChange={(event) => updateGuardian(guardian.id, 'relation', event.target.value)}
               />
               <FormInput
-                placeholder="Guardian Contact"
+                placeholder="Guardian Contact No."
                 value={guardian.contact}
                 onChange={(event) => updateGuardian(guardian.id, 'contact', event.target.value)}
               />
@@ -2717,6 +2988,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 onChange={(event) => updateGuardian(guardian.id, 'ucNumber', event.target.value)}
               />
               <FormInput
+                label="Union Council Name"
+                value={guardian.ucName || ''}
+                onChange={(event) => updateGuardian(guardian.id, 'ucName', event.target.value)}
+              />
+              <FormInput
                 label="Street No."
                 value={guardian.streetNumber}
                 onChange={(event) => updateGuardian(guardian.id, 'streetNumber', event.target.value)}
@@ -2734,7 +3010,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 8. MEETING PERSON INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={8} title="Meeting Person Info" isCompleted={completionStats.isMeetingComplete} />
+          <SectionHeading step={7} title="Meeting Person Info" isCompleted={completionStats.isMeetingComplete} />
           <button
             type="button"
             onClick={addMeetingPerson}
@@ -2782,7 +3058,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
                 {/* Row 2 */}
                 <FormInput
-                  placeholder="Contact"
+                  placeholder="Contact No."
                   value={p.contact}
                   onChange={(e) => updateMeetingPerson(p.id, 'contact', e.target.value)}
                 />
@@ -2829,9 +3105,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   onChange={(e) => updateMeetingPerson(p.id, 'tehsil', e.target.value)}
                 />
                 <FormInput
-                  placeholder="Union Council Number"
+                  placeholder="Union Council No."
                   value={p.ucNumber}
                   onChange={(e) => updateMeetingPerson(p.id, 'ucNumber', e.target.value)}
+                />
+                <FormInput
+                  placeholder="Union Council Name"
+                  value={p.ucName || ''}
+                  onChange={(e) => updateMeetingPerson(p.id, 'ucName', e.target.value)}
                 />
 
                 {/* Row 5 */}
@@ -2856,130 +3137,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
       </div>
 
-      {/* ================= 9. SIBLINGS INFO ================= */}
+      {/* ================= 8. WITNESS INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={9} title="Siblings Info" isCompleted={completionStats.isSiblingComplete} />
-          <button
-            type="button"
-            onClick={addSibling}
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0D5C3A] text-white rounded-lg text-xs font-semibold hover:bg-[#0b4d30] transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add New</span>
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {siblings.map((s, idx) => (
-            <div key={s.id} className="pt-2 pb-3 border-b border-slate-200 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Sibling #{idx + 1}</span>
-                {siblings.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeSibling(s.id)}
-                    className="text-red-500 hover:text-red-700 text-xs font-medium flex items-center gap-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Remove</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
-                {/* Row 1 */}
-                <FormInput
-                  placeholder="Sibling Name"
-                  value={s.name}
-                  onChange={(e) => updateSibling(s.id, 'name', e.target.value)}
-                />
-                <FormSelect
-                  label="Gender"
-                  value={s.gender}
-                  onChange={(e) => updateSibling(s.id, 'gender', e.target.value)}
-                  options={['Male', 'Female', 'Other']}
-                />
-                <FormInput
-                  placeholder="Age"
-                  value={s.age}
-                  onChange={(e) => updateSibling(s.id, 'age', e.target.value)}
-                />
-
-                {/* Row 2 */}
-                <FormInput
-                  placeholder="Qualification"
-                  value={s.qualification}
-                  onChange={(e) => updateSibling(s.id, 'qualification', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Profession"
-                  value={s.profession}
-                  onChange={(e) => updateSibling(s.id, 'profession', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Institution"
-                  value={s.institution}
-                  onChange={(e) => updateSibling(s.id, 'institution', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Grade / Class"
-                  value={s.gradeClass}
-                  onChange={(e) => updateSibling(s.id, 'gradeClass', e.target.value)}
-                />
-
-                {/* Row 3 */}
-                <FormSelect
-                  label="Marital Status"
-                  value={s.maritalStatus}
-                  onChange={(e) => updateSibling(s.id, 'maritalStatus', e.target.value)}
-                  options={['Single', 'Married', 'Divorced', 'Widow']}
-                />
-                <FormInput
-                  placeholder="District"
-                  value={s.district}
-                  onChange={(e) => updateSibling(s.id, 'district', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Tehsil"
-                  value={s.tehsil}
-                  onChange={(e) => updateSibling(s.id, 'tehsil', e.target.value)}
-                />
-
-                {/* Row 4 */}
-                <FormInput
-                  placeholder="Union Council Number"
-                  value={s.ucNumber}
-                  onChange={(e) => updateSibling(s.id, 'ucNumber', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Street Number"
-                  value={s.streetNumber}
-                  onChange={(e) => updateSibling(s.id, 'streetNumber', e.target.value)}
-                />
-                <FormInput
-                  placeholder="House Number"
-                  value={s.houseNumber}
-                  onChange={(e) => updateSibling(s.id, 'houseNumber', e.target.value)}
-                />
-
-                {/* Row 5 */}
-                <FormInput
-                  placeholder="Address"
-                  value={s.address}
-                  onChange={(e) => updateSibling(s.id, 'address', e.target.value)}
-                  className="md:col-span-3"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ================= 10. WITNESS INFO ================= */}
-      <div>
-        <div className="flex items-center justify-between">
-          <SectionHeading step={10} title="Witness Info" isCompleted={completionStats.isWitnessComplete} />
+          <SectionHeading step={8} title="Witness Info" isCompleted={completionStats.isWitnessComplete} />
           <button
             type="button"
             onClick={addWitness}
@@ -3027,7 +3188,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
                 {/* Row 2 */}
                 <FormInput
-                  placeholder="Contact"
+                  placeholder="Contact No."
                   value={w.contact}
                   onChange={(e) => updateWitness(w.id, 'contact', e.target.value)}
                 />
@@ -3065,6 +3226,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   onChange={(e) => updateWitness(w.id, 'ucNumber', e.target.value)}
                 />
                 <FormInput
+                  label="Union Council Name"
+                  value={w.ucName || ''}
+                  onChange={(e) => updateWitness(w.id, 'ucName', e.target.value)}
+                />
+                <FormInput
                   label="Street No."
                   value={w.streetNumber || ''}
                   onChange={(e) => updateWitness(w.id, 'streetNumber', e.target.value)}
@@ -3082,7 +3248,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 11. RESULT INFO ================= */}
       <div>
-        <SectionHeading step={11} title="Result Info" isCompleted={completionStats.isResultComplete} />
+        <SectionHeading step={9} title="Result Info" isCompleted={completionStats.isResultComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-4">
           <FormInput
             placeholder="School"
@@ -3190,7 +3356,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 12. HEALTH CARE SECTION ================= */}
       <div>
-        <SectionHeading step={12} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
+        <SectionHeading step={10} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Check Frequency"
@@ -3278,7 +3444,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 13. REPORT / COMPLAINT SECTION ================= */}
       <div>
-        <SectionHeading step={13} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
+        <SectionHeading step={11} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-3.5">
           <FormSelect
             label="Complain Type"
@@ -3345,7 +3511,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 14. AREA OF INTEREST – CHILD ================= */}
       <div>
-        <SectionHeading step={14} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
+        <SectionHeading step={12} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
         <div className="relative">
           <textarea
             rows={3}
@@ -3359,7 +3525,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 15. ATTACHMENTS (FINAL SECTION) ================= */}
       <div>
-        <SectionHeading step={15} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
+        <SectionHeading step={13} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {Object.entries(attachments).map(([key, item]) => (
             <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2 shadow-xs">
