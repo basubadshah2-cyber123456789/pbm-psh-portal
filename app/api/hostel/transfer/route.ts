@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { Role } from '@prisma/client';
 import { logAudit } from '@/lib/audit';
-import { redactProfessionalCareerAccount } from '@/lib/professional-career';
+import { redactLegacyCareerAccount } from '@/lib/legacy-career-data';
 
 export async function POST(request: Request) {
   try {
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      child: { ...updatedChild, notes: redactProfessionalCareerAccount(updatedChild.notes) },
+      child: { ...updatedChild, notes: redactLegacyCareerAccount(updatedChild.notes) },
     });
   } catch (error) {
     console.error('Bed transfer error:', error);
