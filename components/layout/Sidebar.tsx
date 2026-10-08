@@ -62,6 +62,7 @@ export function Sidebar({ user, isOpen = false, onClose }: SidebarProps) {
   const navItems: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', module: 'dashboard', icon: LayoutDashboard },
     { name: 'Children Management', href: '/children', module: 'children', icon: Baby },
+    { name: 'Academic', href: '/academic', module: 'academic', icon: GraduationCap },
     { name: 'Add PSH Form (Demo)', href: '/psh-form', module: 'children', icon: FileCheck, badge: '14-Sec' },
     { name: 'Staff & HR', href: '/staff', module: 'staff', icon: Users },
     { name: 'Employee Data', href: '/employees', module: 'staff', icon: ContactRound },
@@ -71,7 +72,6 @@ export function Sidebar({ user, isOpen = false, onClose }: SidebarProps) {
     { name: 'Duty Assignment', href: '/duties', module: 'duties', icon: ClipboardList },
     { name: 'Hostel Management', href: '/hostel', module: 'hostel', icon: Building2 },
     { name: 'Education', href: '/education', module: 'education', icon: GraduationCap },
-    { name: 'Academic', href: '/academic', module: 'academic', icon: GraduationCap },
     { name: 'Inventory & Ration', href: '/inventory', module: 'inventory', icon: Package },
     { name: 'Kitchen & Mess', href: '/mess', module: 'mess', icon: UtensilsCrossed },
     { name: 'Medical & Health', href: '/medical', module: 'medical', icon: HeartPulse },
