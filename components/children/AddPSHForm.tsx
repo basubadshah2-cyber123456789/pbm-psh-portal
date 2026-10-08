@@ -25,6 +25,9 @@ export interface MeetingPersonRecord {
   contact: string;
   qualification: string;
   profession: string;
+  addressType?: string;
+  postOffice?: string;
+  colony?: string;
   dateTime: string;
   startDateTime: string;
   endDateTime: string;
@@ -47,6 +50,9 @@ export interface SiblingRecord {
   institution: string;
   gradeClass: string;
   maritalStatus: string;
+  addressType?: string;
+  postOffice?: string;
+  colony?: string;
   district: string;
   tehsil: string;
   ucNumber: string;
@@ -71,6 +77,8 @@ export interface WitnessRecord {
   houseNumber?: string;
   qualification: string;
   profession: string;
+  addressType?: string;
+  postOffice?: string;
 }
 
 export interface AdditionalGuardianRecord {
@@ -82,6 +90,9 @@ export interface AdditionalGuardianRecord {
   qualification: string;
   profession: string;
   address: string;
+  addressType?: string;
+  postOffice?: string;
+  colony?: string;
   district: string;
   tehsil: string;
   ucNumber: string;
@@ -95,6 +106,100 @@ export interface SubjectResultRow {
   subject: string;
   obtainedMarks: string;
   totalMarks: string;
+}
+
+type AddressRecord = {
+  addressType: string;
+  postOffice: string;
+  colony: string;
+  district: string;
+  tehsil: string;
+  ucNumber: string;
+  ucName: string;
+  streetNumber: string;
+  houseNumber: string;
+  address: string;
+};
+
+type AddressComponentField = keyof Omit<AddressRecord, 'address'>;
+
+const addressComponentFields = new Set<string>([
+  'addressType',
+  'postOffice',
+  'colony',
+  'district',
+  'tehsil',
+  'ucNumber',
+  'ucName',
+  'streetNumber',
+  'houseNumber',
+]);
+
+const composeAddress = (parts: Array<string | null | undefined>) =>
+  parts.map((part) => part?.trim()).filter((part): part is string => Boolean(part)).join(', ');
+
+const composeLocationAddress = (location: Partial<AddressRecord>) => composeAddress([
+  location.addressType,
+  location.addressType === 'Village' ? location.postOffice : location.colony,
+  location.district,
+  location.tehsil,
+  location.ucNumber,
+  location.ucName,
+  location.streetNumber,
+  location.houseNumber,
+]);
+
+function AddressFields({
+  values,
+  onChange,
+  addressLabel = 'Full Address',
+  typeLabel = 'Address Type',
+  disabled = false,
+}: {
+  values: AddressRecord;
+  onChange: (field: keyof AddressRecord, value: string) => void;
+  addressLabel?: string;
+  typeLabel?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <>
+      <FormSelect
+        label={typeLabel}
+        value={values.addressType}
+        onChange={(event) => onChange('addressType', event.target.value)}
+        options={['City', 'Village']}
+        disabled={disabled}
+      />
+      {values.addressType === 'Village' ? (
+        <FormInput
+          label="Post Office"
+          value={values.postOffice}
+          onChange={(event) => onChange('postOffice', event.target.value)}
+          disabled={disabled}
+        />
+      ) : values.addressType === 'City' ? (
+        <FormInput
+          label="Colony"
+          value={values.colony}
+          onChange={(event) => onChange('colony', event.target.value)}
+          disabled={disabled}
+        />
+      ) : <div />}
+      <FormInput label="District" value={values.district} onChange={(event) => onChange('district', event.target.value)} disabled={disabled} />
+      <FormInput label="Tehsil" value={values.tehsil} onChange={(event) => onChange('tehsil', event.target.value)} disabled={disabled} />
+      <FormInput label="Union Council No." value={values.ucNumber} onChange={(event) => onChange('ucNumber', event.target.value)} disabled={disabled} />
+      <FormInput label="Union Council Name" value={values.ucName} onChange={(event) => onChange('ucName', event.target.value)} disabled={disabled} />
+      <FormInput label="Street No." value={values.streetNumber} onChange={(event) => onChange('streetNumber', event.target.value)} disabled={disabled} />
+      <FormInput label="House No." value={values.houseNumber} onChange={(event) => onChange('houseNumber', event.target.value)} disabled={disabled} />
+      <FormInput
+        label={addressLabel}
+        value={values.address}
+        onChange={(event) => onChange('address', event.target.value)}
+        className="md:col-span-3"
+      />
+    </>
+  );
 }
 
 interface AppearanceMeasurement {
@@ -342,6 +447,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [fatherCauseOfDeath, setFatherCauseOfDeath] = useState<string>('');
   const [fatherQualification, setFatherQualification] = useState<string>('');
   const [fatherProfession, setFatherProfession] = useState<string>('');
+  const [fatherAddressType, setFatherAddressType] = useState('');
+  const [fatherPostOffice, setFatherPostOffice] = useState('');
+  const [fatherColony, setFatherColony] = useState('');
   const [fatherDistrict, setFatherDistrict] = useState<string>('');
   const [fatherTehsil, setFatherTehsil] = useState<string>('');
   const [fatherStreetNumber, setFatherStreetNumber] = useState<string>('');
@@ -349,6 +457,61 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [fatherUcNumber, setFatherUcNumber] = useState<string>('');
   const [fatherUcName, setFatherUcName] = useState<string>('');
   const [fatherAddress, setFatherAddress] = useState<string>('');
+
+  const updateParentAddressPart = (
+    parent: 'father' | 'mother',
+    field: AddressComponentField,
+    value: string
+  ) => {
+    if (parent === 'father') {
+      const parts = {
+        addressType: fatherAddressType,
+        postOffice: fatherPostOffice,
+        colony: fatherColony,
+        district: fatherDistrict,
+        tehsil: fatherTehsil,
+        ucNumber: fatherUcNumber,
+        ucName: fatherUcName,
+        streetNumber: fatherStreetNumber,
+        houseNumber: fatherHouseNumber,
+        [field]: value,
+      };
+      if (field === 'addressType') setFatherAddressType(value);
+      if (field === 'postOffice') setFatherPostOffice(value);
+      if (field === 'colony') setFatherColony(value);
+      if (field === 'district') setFatherDistrict(value);
+      if (field === 'tehsil') setFatherTehsil(value);
+      if (field === 'ucNumber') setFatherUcNumber(value);
+      if (field === 'ucName') setFatherUcName(value);
+      if (field === 'streetNumber') setFatherStreetNumber(value);
+      if (field === 'houseNumber') setFatherHouseNumber(value);
+      setFatherAddress(composeLocationAddress(parts));
+      return;
+    }
+
+    const parts = {
+      addressType: motherAddressType,
+      postOffice: motherPostOffice,
+      colony: motherColony,
+      district: motherDistrict,
+      tehsil: motherTehsil,
+      ucNumber: motherUcNumber,
+      ucName: motherUcName,
+      streetNumber: motherStreetNumber,
+      houseNumber: motherHouseNumber,
+      [field]: value,
+    };
+    if (field === 'addressType') setMotherAddressType(value);
+    if (field === 'postOffice') setMotherPostOffice(value);
+    if (field === 'colony') setMotherColony(value);
+    if (field === 'district') setMotherDistrict(value);
+    if (field === 'tehsil') setMotherTehsil(value);
+    if (field === 'ucNumber') setMotherUcNumber(value);
+    if (field === 'ucName') setMotherUcName(value);
+    if (field === 'streetNumber') setMotherStreetNumber(value);
+    if (field === 'houseNumber') setMotherHouseNumber(value);
+    setMotherAddress(composeLocationAddress(parts));
+  };
 
   // ================= 5. MOTHER INFO =================
   const [motherName, setMotherName] = useState<string>('');
@@ -360,6 +523,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [motherCauseOfDeath, setMotherCauseOfDeath] = useState<string>('');
   const [motherQualification, setMotherQualification] = useState<string>('');
   const [motherProfession, setMotherProfession] = useState<string>('');
+  const [motherAddressType, setMotherAddressType] = useState('');
+  const [motherPostOffice, setMotherPostOffice] = useState('');
+  const [motherColony, setMotherColony] = useState('');
   const [motherDistrict, setMotherDistrict] = useState<string>('');
   const [motherTehsil, setMotherTehsil] = useState<string>('');
   const [motherStreetNumber, setMotherStreetNumber] = useState<string>('');
@@ -400,6 +566,34 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   });
   const [additionalGuardians, setAdditionalGuardians] = useState<AdditionalGuardianRecord[]>([]);
 
+  const updatePermanentGuardianAddressPart = (
+    field: AddressComponentField,
+    value: string
+  ) => {
+    const parts = {
+      addressType: guardianAddressType,
+      postOffice: guardianPostOffice,
+      colony: guardianColony,
+      district: guardianDistrict,
+      tehsil: guardianTehsil,
+      ucNumber: guardianUcNumber,
+      ucName: guardianUcName,
+      streetNumber: guardianStreetNumber,
+      houseNumber: guardianHouseNumber,
+      [field]: value,
+    };
+    if (field === 'addressType') setGuardianAddressType(value);
+    if (field === 'postOffice') setGuardianPostOffice(value);
+    if (field === 'colony') setGuardianColony(value);
+    if (field === 'district') setGuardianDistrict(value);
+    if (field === 'tehsil') setGuardianTehsil(value);
+    if (field === 'ucNumber') setGuardianUcNumber(value);
+    if (field === 'ucName') setGuardianUcName(value);
+    if (field === 'streetNumber') setGuardianStreetNumber(value);
+    if (field === 'houseNumber') setGuardianHouseNumber(value);
+    setGuardianAddress(composeLocationAddress(parts));
+  };
+
   useEffect(() => {
     if (!sameAsPermanentAddress) return;
     setCurrentGuardianAddress({
@@ -432,7 +626,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     field: keyof typeof currentGuardianAddress,
     value: string
   ) => {
-    setCurrentGuardianAddress((current) => ({ ...current, [field]: value }));
+    setCurrentGuardianAddress((current) => {
+      const updated = { ...current, [field]: value };
+      if (field === 'address') return updated;
+      return {
+        ...updated,
+        address: composeLocationAddress(updated),
+      };
+    });
   };
 
   const addGuardian = () => {
@@ -447,6 +648,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         qualification: '',
         profession: '',
         address: '',
+        addressType: '',
+        postOffice: '',
+        colony: '',
         district: '',
         tehsil: '',
         ucNumber: '',
@@ -461,9 +665,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     let formattedValue = value;
     if (field === 'cnic') formattedValue = formatCNIC(value);
     if (field === 'contact') formattedValue = formatPhone(value);
-    setAdditionalGuardians((current) =>
-      current.map((guardian) => guardian.id === id ? { ...guardian, [field]: formattedValue } : guardian)
-    );
+    setAdditionalGuardians((current) => current.map((guardian) => {
+      if (guardian.id !== id) return guardian;
+      const updated = { ...guardian, [field]: formattedValue };
+      return addressComponentFields.has(field)
+        ? { ...updated, address: composeLocationAddress(updated) }
+        : updated;
+    }));
   };
 
   // ================= 7. MEETING PERSON INFO =================
@@ -476,6 +684,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       contact: '',
       qualification: '',
       profession: '',
+      addressType: '',
+      postOffice: '',
+      colony: '',
       dateTime: '',
       startDateTime: '',
       endDateTime: '',
@@ -500,6 +711,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         contact: '',
         qualification: '',
         profession: '',
+        addressType: '',
+        postOffice: '',
+        colony: '',
         dateTime: '',
         startDateTime: '',
         endDateTime: '',
@@ -523,9 +737,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     let formattedVal = value;
     if (field === 'cnic') formattedVal = formatCNIC(value);
     if (field === 'contact') formattedVal = formatPhone(value);
-    setMeetingPersons((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: formattedVal } : p))
-    );
+    setMeetingPersons((prev) => prev.map((person) => {
+      if (person.id !== id) return person;
+      const updated = { ...person, [field]: formattedVal };
+      return addressComponentFields.has(field)
+        ? { ...updated, address: composeLocationAddress(updated) }
+        : updated;
+    }));
   };
 
   // ================= 8. SIBLINGS INFO =================
@@ -540,6 +758,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       institution: '',
       gradeClass: '',
       maritalStatus: '',
+      addressType: '',
+      postOffice: '',
+      colony: '',
       district: '',
       tehsil: '',
       ucNumber: '',
@@ -563,6 +784,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         institution: '',
         gradeClass: '',
         maritalStatus: '',
+        addressType: '',
+        postOffice: '',
+        colony: '',
         district: '',
         tehsil: '',
         ucNumber: '',
@@ -580,9 +804,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   const updateSibling = (id: string, field: keyof SiblingRecord, value: string) => {
-    setSiblings((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
-    );
+    setSiblings((prev) => prev.map((sibling) => {
+      if (sibling.id !== id) return sibling;
+      const updated = { ...sibling, [field]: value };
+      return addressComponentFields.has(field)
+        ? { ...updated, address: composeLocationAddress(updated) }
+        : updated;
+    }));
   };
 
   // ================= 9. WITNESS INFO =================
@@ -595,6 +823,15 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       contact: '',
       qualification: '',
       profession: '',
+      addressType: '',
+      postOffice: '',
+      colony: '',
+      district: '',
+      tehsil: '',
+      ucNumber: '',
+      ucName: '',
+      streetNumber: '',
+      houseNumber: '',
       address: '',
     },
   ]);
@@ -610,6 +847,15 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         contact: '',
         qualification: '',
         profession: '',
+        addressType: '',
+        postOffice: '',
+        colony: '',
+        district: '',
+        tehsil: '',
+        ucNumber: '',
+        ucName: '',
+        streetNumber: '',
+        houseNumber: '',
         address: '',
       },
     ]);
@@ -624,9 +870,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     let formattedVal = value;
     if (field === 'cnic') formattedVal = formatCNIC(value);
     if (field === 'contact') formattedVal = formatPhone(value);
-    setWitnesses((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, [field]: formattedVal } : w))
-    );
+    setWitnesses((prev) => prev.map((witness) => {
+      if (witness.id !== id) return witness;
+      const updated = { ...witness, [field]: formattedVal };
+      return addressComponentFields.has(field)
+        ? { ...updated, address: composeLocationAddress(updated) }
+        : updated;
+    }));
   };
 
   // ================= 10. RESULT INFO =================
@@ -963,6 +1213,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setFatherCauseOfDeath(psh.fatherInfo.causeOfDeath || '');
           setFatherQualification(psh.fatherInfo.qualification || '');
           setFatherProfession(psh.fatherInfo.profession || '');
+          setFatherAddressType(psh.fatherInfo.addressType || '');
+          setFatherPostOffice(psh.fatherInfo.postOffice || '');
+          setFatherColony(psh.fatherInfo.colony || '');
           setFatherDistrict(psh.fatherInfo.district || '');
           setFatherTehsil(psh.fatherInfo.tehsil || '');
           setFatherStreetNumber(psh.fatherInfo.streetNumber || '');
@@ -982,6 +1235,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMotherCauseOfDeath(psh.motherInfo.causeOfDeath || '');
           setMotherQualification(psh.motherInfo.qualification || '');
           setMotherProfession(psh.motherInfo.profession || '');
+          setMotherAddressType(psh.motherInfo.addressType || '');
+          setMotherPostOffice(psh.motherInfo.postOffice || '');
+          setMotherColony(psh.motherInfo.colony || '');
           setMotherDistrict(psh.motherInfo.district || '');
           setMotherTehsil(psh.motherInfo.tehsil || '');
           setMotherStreetNumber(psh.motherInfo.streetNumber || '');
@@ -1034,6 +1290,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 qualification: guardian.qualification || '',
                 profession: guardian.profession || '',
                 address: guardian.address || '',
+                addressType: guardian.addressType || '',
+                postOffice: guardian.postOffice || '',
+                colony: guardian.colony || '',
                 district: guardian.district || '',
                 tehsil: guardian.tehsil || '',
                 ucNumber: guardian.ucNumber || '',
@@ -1047,7 +1306,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         if (Array.isArray(psh.meetingPersons) && psh.meetingPersons.length > 0) {
           setMeetingPersons(psh.meetingPersons.map((person: MeetingPersonRecord) => ({
             ...person,
+            addressType: person.addressType || '',
+            postOffice: person.postOffice || '',
+            colony: person.colony || '',
+            district: person.district || '',
+            tehsil: person.tehsil || '',
+            ucNumber: person.ucNumber || '',
             ucName: person.ucName || '',
+            streetNumber: person.streetNumber || '',
+            houseNumber: person.houseNumber || '',
+            address: person.address || '',
           })));
         }
         if (Array.isArray(psh.siblings) && psh.siblings.length > 0) {
@@ -1055,12 +1323,24 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             ...sibling,
             id: sibling.id || `saved-${index}`,
             profession: sibling.profession || '',
+            addressType: sibling.addressType || '',
+            postOffice: sibling.postOffice || '',
+            colony: sibling.colony || '',
+            district: sibling.district || '',
+            tehsil: sibling.tehsil || '',
+            ucNumber: sibling.ucNumber || '',
             ucName: sibling.ucName || '',
+            streetNumber: sibling.streetNumber || '',
+            houseNumber: sibling.houseNumber || '',
+            address: sibling.address || '',
           })));
         }
         if (Array.isArray(psh.witnesses) && psh.witnesses.length > 0) {
           setWitnesses(psh.witnesses.map((w: WitnessRecord) => ({
             ...w,
+            addressType: w.addressType || '',
+            postOffice: w.postOffice || '',
+            colony: w.colony || '',
             district: w.district || '',
             tehsil: w.tehsil || '',
             ucNumber: w.ucNumber || '',
@@ -1177,6 +1457,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setFatherCauseOfDeath('');
     setFatherQualification('');
     setFatherProfession('');
+    setFatherAddressType('');
+    setFatherPostOffice('');
+    setFatherColony('');
     setFatherDistrict('');
     setFatherTehsil('');
     setFatherStreetNumber('');
@@ -1193,6 +1476,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setMotherCauseOfDeath('');
     setMotherQualification('');
     setMotherProfession('');
+    setMotherAddressType('');
+    setMotherPostOffice('');
+    setMotherColony('');
     setMotherDistrict('');
     setMotherTehsil('');
     setMotherStreetNumber('');
@@ -1230,9 +1516,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       houseNumber: '',
     });
     setAdditionalGuardians([]);
-    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', address: '' }]);
+    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', addressType: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', addressType: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', addressType: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
     setResultSchool('');
     setResultClass('');
     setResultExamDate('');
@@ -1944,6 +2230,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           causeOfDeath: fatherCauseOfDeath,
           qualification: fatherQualification,
           profession: fatherProfession,
+          addressType: fatherAddressType,
+          postOffice: fatherPostOffice,
+          colony: fatherColony,
           district: fatherDistrict,
           tehsil: fatherTehsil,
           streetNumber: fatherStreetNumber,
@@ -1962,6 +2251,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           causeOfDeath: motherIsAlive === 'No' ? motherCauseOfDeath : null,
           qualification: motherQualification,
           profession: motherProfession,
+          addressType: motherAddressType,
+          postOffice: motherPostOffice,
+          colony: motherColony,
           district: motherDistrict,
           tehsil: motherTehsil,
           streetNumber: motherStreetNumber,
@@ -2752,46 +3044,26 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={fatherProfession}
             onChange={(e) => setFatherProfession(e.target.value)}
           />
-          <FormInput
-            placeholder="District"
-            value={fatherDistrict}
-            onChange={(e) => setFatherDistrict(e.target.value)}
-          />
-
-          {/* Row 4 */}
-          <FormInput
-            placeholder="Tehsil"
-            value={fatherTehsil}
-            onChange={(e) => setFatherTehsil(e.target.value)}
-          />
-          <FormInput
-            placeholder="Union Council No."
-            value={fatherUcNumber}
-            onChange={(e) => setFatherUcNumber(e.target.value)}
-          />
-          <FormInput
-            placeholder="Union Council Name"
-            value={fatherUcName}
-            onChange={(e) => setFatherUcName(e.target.value)}
-          />
-          <FormInput
-            placeholder="Street Number"
-            value={fatherStreetNumber}
-            onChange={(e) => setFatherStreetNumber(e.target.value)}
-          />
-
-          {/* Row 5 */}
-          <FormInput
-            placeholder="House Number"
-            value={fatherHouseNumber}
-            onChange={(e) => setFatherHouseNumber(e.target.value)}
-          />
-          <FormInput
-            placeholder="Address"
-            value={fatherAddress}
-            onChange={(e) => setFatherAddress(e.target.value)}
-            className="md:col-span-2"
-          />
+          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+            <AddressFields
+              values={{
+                addressType: fatherAddressType,
+                postOffice: fatherPostOffice,
+                colony: fatherColony,
+                district: fatherDistrict,
+                tehsil: fatherTehsil,
+                ucNumber: fatherUcNumber,
+                ucName: fatherUcName,
+                streetNumber: fatherStreetNumber,
+                houseNumber: fatherHouseNumber,
+                address: fatherAddress,
+              }}
+              onChange={(field, value) => {
+                if (field === 'address') setFatherAddress(value);
+                else updateParentAddressPart('father', field, value);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -2856,46 +3128,26 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={motherProfession}
             onChange={(e) => setMotherProfession(e.target.value)}
           />
-          <FormInput
-            placeholder="District"
-            value={motherDistrict}
-            onChange={(e) => setMotherDistrict(e.target.value)}
-          />
-
-          {/* Row 4 */}
-          <FormInput
-            placeholder="Tehsil"
-            value={motherTehsil}
-            onChange={(e) => setMotherTehsil(e.target.value)}
-          />
-          <FormInput
-            placeholder="Union Council No."
-            value={motherUcNumber}
-            onChange={(e) => setMotherUcNumber(e.target.value)}
-          />
-          <FormInput
-            placeholder="Union Council Name"
-            value={motherUcName}
-            onChange={(e) => setMotherUcName(e.target.value)}
-          />
-          <FormInput
-            placeholder="Street Number"
-            value={motherStreetNumber}
-            onChange={(e) => setMotherStreetNumber(e.target.value)}
-          />
-
-          {/* Row 5 */}
-          <FormInput
-            placeholder="House Number"
-            value={motherHouseNumber}
-            onChange={(e) => setMotherHouseNumber(e.target.value)}
-          />
-          <FormInput
-            placeholder="Address"
-            value={motherAddress}
-            onChange={(e) => setMotherAddress(e.target.value)}
-            className="md:col-span-2"
-          />
+          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+            <AddressFields
+              values={{
+                addressType: motherAddressType,
+                postOffice: motherPostOffice,
+                colony: motherColony,
+                district: motherDistrict,
+                tehsil: motherTehsil,
+                ucNumber: motherUcNumber,
+                ucName: motherUcName,
+                streetNumber: motherStreetNumber,
+                houseNumber: motherHouseNumber,
+                address: motherAddress,
+              }}
+              onChange={(field, value) => {
+                if (field === 'address') setMotherAddress(value);
+                else updateParentAddressPart('mother', field, value);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -2937,13 +3189,23 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 <FormInput placeholder="Institution" value={s.institution} onChange={(e) => updateSibling(s.id, 'institution', e.target.value)} />
                 <FormInput placeholder="Grade / Class" value={s.gradeClass} onChange={(e) => updateSibling(s.id, 'gradeClass', e.target.value)} />
                 <FormSelect label="Marital Status" value={s.maritalStatus} onChange={(e) => updateSibling(s.id, 'maritalStatus', e.target.value)} options={['Single', 'Married', 'Divorced', 'Widow']} />
-                <FormInput placeholder="District" value={s.district} onChange={(e) => updateSibling(s.id, 'district', e.target.value)} />
-                <FormInput placeholder="Tehsil" value={s.tehsil} onChange={(e) => updateSibling(s.id, 'tehsil', e.target.value)} />
-                <FormInput placeholder="Union Council No." value={s.ucNumber} onChange={(e) => updateSibling(s.id, 'ucNumber', e.target.value)} />
-                <FormInput placeholder="Union Council Name" value={s.ucName || ''} onChange={(e) => updateSibling(s.id, 'ucName', e.target.value)} />
-                <FormInput placeholder="Street Number" value={s.streetNumber} onChange={(e) => updateSibling(s.id, 'streetNumber', e.target.value)} />
-                <FormInput placeholder="House Number" value={s.houseNumber} onChange={(e) => updateSibling(s.id, 'houseNumber', e.target.value)} />
-                <FormInput placeholder="Address" value={s.address} onChange={(e) => updateSibling(s.id, 'address', e.target.value)} className="md:col-span-3" />
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+                  <AddressFields
+                    values={{
+                      addressType: s.addressType || '',
+                      postOffice: s.postOffice || '',
+                      colony: s.colony || '',
+                      district: s.district,
+                      tehsil: s.tehsil,
+                      ucNumber: s.ucNumber,
+                      ucName: s.ucName || '',
+                      streetNumber: s.streetNumber,
+                      houseNumber: s.houseNumber,
+                      address: s.address,
+                    }}
+                    onChange={(field, value) => updateSibling(s.id, field, value)}
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -3000,60 +3262,28 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           />
 
           {/* Row 3 */}
-          <FormSelect
-            label="Permanent Address Type"
-            value={guardianAddressType}
-            onChange={(e) => setGuardianAddressType(e.target.value)}
-            options={['City', 'Village']}
-          />
-          {guardianAddressType === 'Village' ? (
-            <FormInput
-              label="Post Office"
-              value={guardianPostOffice}
-              onChange={(e) => setGuardianPostOffice(e.target.value)}
+          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+            <AddressFields
+              typeLabel="Permanent Address Type"
+              addressLabel="Permanent Full Address"
+              values={{
+                addressType: guardianAddressType,
+                postOffice: guardianPostOffice,
+                colony: guardianColony,
+                district: guardianDistrict,
+                tehsil: guardianTehsil,
+                ucNumber: guardianUcNumber,
+                ucName: guardianUcName,
+                streetNumber: guardianStreetNumber,
+                houseNumber: guardianHouseNumber,
+                address: guardianAddress,
+              }}
+              onChange={(field, value) => {
+                if (field === 'address') setGuardianAddress(value);
+                else updatePermanentGuardianAddressPart(field, value);
+              }}
             />
-          ) : guardianAddressType === 'City' ? (
-            <FormInput
-              label="Colony"
-              value={guardianColony}
-              onChange={(e) => setGuardianColony(e.target.value)}
-            />
-          ) : null}
-          <FormInput
-            label="Permanent Address"
-            value={guardianAddress}
-            onChange={(e) => setGuardianAddress(e.target.value)}
-          />
-          <FormInput
-            label="District"
-            value={guardianDistrict}
-            onChange={(e) => setGuardianDistrict(e.target.value)}
-          />
-          <FormInput
-            label="Tehsil"
-            value={guardianTehsil}
-            onChange={(e) => setGuardianTehsil(e.target.value)}
-          />
-          <FormInput
-            label="Union Council No."
-            value={guardianUcNumber}
-            onChange={(e) => setGuardianUcNumber(e.target.value)}
-          />
-          <FormInput
-            label="Union Council Name"
-            value={guardianUcName}
-            onChange={(e) => setGuardianUcName(e.target.value)}
-          />
-          <FormInput
-            label="Street No."
-            value={guardianStreetNumber}
-            onChange={(e) => setGuardianStreetNumber(e.target.value)}
-          />
-          <FormInput
-            label="House No."
-            value={guardianHouseNumber}
-            onChange={(e) => setGuardianHouseNumber(e.target.value)}
-          />
+          </div>
           <label className="md:col-span-3 inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
             <input
               type="checkbox"
@@ -3064,68 +3294,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             Same as Permanent Address
           </label>
           <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
-            <FormSelect
-              label="Current / Present Address Type"
-              value={currentGuardianAddress.addressType}
-              onChange={(e) => updateCurrentGuardianAddress('addressType', e.target.value)}
-              options={['City', 'Village']}
-              disabled={sameAsPermanentAddress}
-            />
-            {currentGuardianAddress.addressType === 'Village' ? (
-              <FormInput
-                label="Post Office"
-                value={currentGuardianAddress.postOffice}
-                onChange={(e) => updateCurrentGuardianAddress('postOffice', e.target.value)}
-                disabled={sameAsPermanentAddress}
-              />
-            ) : currentGuardianAddress.addressType === 'City' ? (
-              <FormInput
-                label="Colony"
-                value={currentGuardianAddress.colony}
-                onChange={(e) => updateCurrentGuardianAddress('colony', e.target.value)}
-                disabled={sameAsPermanentAddress}
-              />
-            ) : null}
-            <FormInput
-              label="Current / Present Address"
-              value={currentGuardianAddress.address}
-              onChange={(e) => updateCurrentGuardianAddress('address', e.target.value)}
-              disabled={sameAsPermanentAddress}
-            />
-            <FormInput
-              label="District"
-              value={currentGuardianAddress.district}
-              onChange={(e) => updateCurrentGuardianAddress('district', e.target.value)}
-              disabled={sameAsPermanentAddress}
-            />
-            <FormInput
-              label="Tehsil"
-              value={currentGuardianAddress.tehsil}
-              onChange={(e) => updateCurrentGuardianAddress('tehsil', e.target.value)}
-              disabled={sameAsPermanentAddress}
-            />
-            <FormInput
-              label="Union Council No."
-              value={currentGuardianAddress.ucNumber}
-              onChange={(e) => updateCurrentGuardianAddress('ucNumber', e.target.value)}
-              disabled={sameAsPermanentAddress}
-            />
-            <FormInput
-              label="Union Council Name"
-              value={currentGuardianAddress.ucName}
-              onChange={(e) => updateCurrentGuardianAddress('ucName', e.target.value)}
-              disabled={sameAsPermanentAddress}
-            />
-            <FormInput
-              label="Street No."
-              value={currentGuardianAddress.streetNumber}
-              onChange={(e) => updateCurrentGuardianAddress('streetNumber', e.target.value)}
-              disabled={sameAsPermanentAddress}
-            />
-            <FormInput
-              label="House No."
-              value={currentGuardianAddress.houseNumber}
-              onChange={(e) => updateCurrentGuardianAddress('houseNumber', e.target.value)}
+            <AddressFields
+              typeLabel="Current / Present Address Type"
+              addressLabel="Current / Present Full Address"
+              values={currentGuardianAddress}
+              onChange={(field, value) => updateCurrentGuardianAddress(field, value)}
               disabled={sameAsPermanentAddress}
             />
           </div>
@@ -3176,42 +3349,23 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 value={guardian.profession}
                 onChange={(event) => updateGuardian(guardian.id, 'profession', event.target.value)}
               />
-              <FormInput
-                label="Address"
-                value={guardian.address}
-                onChange={(event) => updateGuardian(guardian.id, 'address', event.target.value)}
-                className="md:col-span-3"
-              />
-              <FormInput
-                label="District"
-                value={guardian.district}
-                onChange={(event) => updateGuardian(guardian.id, 'district', event.target.value)}
-              />
-              <FormInput
-                label="Tehsil"
-                value={guardian.tehsil}
-                onChange={(event) => updateGuardian(guardian.id, 'tehsil', event.target.value)}
-              />
-              <FormInput
-                label="Union Council No."
-                value={guardian.ucNumber}
-                onChange={(event) => updateGuardian(guardian.id, 'ucNumber', event.target.value)}
-              />
-              <FormInput
-                label="Union Council Name"
-                value={guardian.ucName || ''}
-                onChange={(event) => updateGuardian(guardian.id, 'ucName', event.target.value)}
-              />
-              <FormInput
-                label="Street No."
-                value={guardian.streetNumber}
-                onChange={(event) => updateGuardian(guardian.id, 'streetNumber', event.target.value)}
-              />
-              <FormInput
-                label="House No."
-                value={guardian.houseNumber}
-                onChange={(event) => updateGuardian(guardian.id, 'houseNumber', event.target.value)}
-              />
+              <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+                <AddressFields
+                  values={{
+                    addressType: guardian.addressType || '',
+                    postOffice: guardian.postOffice || '',
+                    colony: guardian.colony || '',
+                    district: guardian.district,
+                    tehsil: guardian.tehsil,
+                    ucNumber: guardian.ucNumber,
+                    ucName: guardian.ucName || '',
+                    streetNumber: guardian.streetNumber,
+                    houseNumber: guardian.houseNumber,
+                    address: guardian.address,
+                  }}
+                  onChange={(field, value) => updateGuardian(guardian.id, field, value)}
+                />
+              </div>
             </div>
           </div>
         ))}
@@ -3303,44 +3457,23 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   onChange={(e) => updateMeetingPerson(p.id, 'endDateTime', e.target.value)}
                 />
 
-                {/* Row 4 */}
-                <FormInput
-                  placeholder="District"
-                  value={p.district}
-                  onChange={(e) => updateMeetingPerson(p.id, 'district', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Tehsil"
-                  value={p.tehsil}
-                  onChange={(e) => updateMeetingPerson(p.id, 'tehsil', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Union Council No."
-                  value={p.ucNumber}
-                  onChange={(e) => updateMeetingPerson(p.id, 'ucNumber', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Union Council Name"
-                  value={p.ucName || ''}
-                  onChange={(e) => updateMeetingPerson(p.id, 'ucName', e.target.value)}
-                />
-
-                {/* Row 5 */}
-                <FormInput
-                  placeholder="Street Number"
-                  value={p.streetNumber}
-                  onChange={(e) => updateMeetingPerson(p.id, 'streetNumber', e.target.value)}
-                />
-                <FormInput
-                  placeholder="House Number"
-                  value={p.houseNumber}
-                  onChange={(e) => updateMeetingPerson(p.id, 'houseNumber', e.target.value)}
-                />
-                <FormInput
-                  placeholder="Address"
-                  value={p.address}
-                  onChange={(e) => updateMeetingPerson(p.id, 'address', e.target.value)}
-                />
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+                  <AddressFields
+                    values={{
+                      addressType: p.addressType || '',
+                      postOffice: p.postOffice || '',
+                      colony: p.colony || '',
+                      district: p.district,
+                      tehsil: p.tehsil,
+                      ucNumber: p.ucNumber,
+                      ucName: p.ucName || '',
+                      streetNumber: p.streetNumber,
+                      houseNumber: p.houseNumber,
+                      address: p.address,
+                    }}
+                    onChange={(field, value) => updateMeetingPerson(p.id, field, value)}
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -3413,43 +3546,23 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   onChange={(e) => updateWitness(w.id, 'profession', e.target.value)}
                 />
 
-                {/* Address */}
-                <FormInput
-                  label="Address"
-                  value={w.address}
-                  onChange={(e) => updateWitness(w.id, 'address', e.target.value)}
-                  className="md:col-span-3"
-                />
-                <FormInput
-                  label="District"
-                  value={w.district || ''}
-                  onChange={(e) => updateWitness(w.id, 'district', e.target.value)}
-                />
-                <FormInput
-                  label="Tehsil"
-                  value={w.tehsil || ''}
-                  onChange={(e) => updateWitness(w.id, 'tehsil', e.target.value)}
-                />
-                <FormInput
-                  label="Union Council No."
-                  value={w.ucNumber || ''}
-                  onChange={(e) => updateWitness(w.id, 'ucNumber', e.target.value)}
-                />
-                <FormInput
-                  label="Union Council Name"
-                  value={w.ucName || ''}
-                  onChange={(e) => updateWitness(w.id, 'ucName', e.target.value)}
-                />
-                <FormInput
-                  label="Street No."
-                  value={w.streetNumber || ''}
-                  onChange={(e) => updateWitness(w.id, 'streetNumber', e.target.value)}
-                />
-                <FormInput
-                  label="House No."
-                  value={w.houseNumber || ''}
-                  onChange={(e) => updateWitness(w.id, 'houseNumber', e.target.value)}
-                />
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+                  <AddressFields
+                    values={{
+                      addressType: w.addressType || '',
+                      postOffice: w.postOffice || '',
+                      colony: w.colony || '',
+                      district: w.district || '',
+                      tehsil: w.tehsil || '',
+                      ucNumber: w.ucNumber || '',
+                      ucName: w.ucName || '',
+                      streetNumber: w.streetNumber || '',
+                      houseNumber: w.houseNumber || '',
+                      address: w.address,
+                    }}
+                    onChange={(field, value) => updateWitness(w.id, field, value)}
+                  />
+                </div>
               </div>
             </div>
           ))}
