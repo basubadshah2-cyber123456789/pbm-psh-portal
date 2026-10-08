@@ -571,6 +571,18 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{psh.healthCare.doctorContactNo}</dd>
                   </div>
                 )}
+                {psh?.healthCare?.additionalEntries?.map((entry: any, index: number) => (
+                  <div key={`health-${index}`} className="pt-2 border-t border-red-100 space-y-1">
+                    <strong className="text-red-800">Additional Medical Follow-up {index + 1}</strong>
+                    {entry.checkFrequency && <div>Check Frequency: {entry.checkFrequency}</div>}
+                    {entry.medicineDetails && <div>Medicine: {entry.medicineDetails}</div>}
+                    {entry.antibioticMedicine && <div>Antibiotic Medicine: {entry.antibioticMedicine}</div>}
+                    {entry.doctorName && <div>Doctor: {entry.doctorName}</div>}
+                    {entry.hospitalName && <div>Hospital: {entry.hospitalName}</div>}
+                    {entry.hospitalType && <div>Hospital Type: {entry.hospitalType}</div>}
+                    {entry.doctorContactNo && <div>Doctor Contact No.: {entry.doctorContactNo}</div>}
+                  </div>
+                ))}
               </dl>
             ) : (
               <p className="text-xs text-slate-500">No medical profile recorded.</p>
@@ -596,6 +608,14 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <strong className="text-purple-900 block">Islamic & Moral Character:</strong>
                     <p className="text-slate-700 text-[11px]">{psh.reports.islamic || 'Regular in prayers & Quran'}</p>
                   </div>
+                  {psh.reports.additionalEntries?.map((entry: any, index: number) => (
+                    <div key={`report-${index}`} className="pt-2 border-t border-purple-100">
+                      <strong className="text-purple-900 block">
+                        Additional Report / Complaint {index + 1}{entry.category ? ` — ${entry.category}` : ''}
+                      </strong>
+                      {entry.details && <p className="text-slate-700 text-[11px]">{entry.details}</p>}
+                    </div>
+                  ))}
                 </>
               ) : (
                 <p className="text-xs text-slate-500">No behavioral evaluation report recorded.</p>
@@ -605,10 +625,19 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
 
           <Section label="SECTION 13: INTEREST" title="Area of Interest – Child" tone="amber">
             <div className="space-y-2 text-xs">
-              {psh?.areaOfInterest ? (
-                <p className="text-slate-800 font-medium text-[11px] leading-relaxed">
-                  {psh.areaOfInterest}
-                </p>
+              {psh?.areaOfInterest || psh?.areaOfInterestEntries?.length ? (
+                <>
+                  {psh?.areaOfInterest && (
+                    <p className="text-slate-800 font-medium text-[11px] leading-relaxed">
+                      {psh.areaOfInterest}
+                    </p>
+                  )}
+                  {psh.areaOfInterestEntries?.map((entry: any, index: number) => (
+                    <p key={`interest-${index}`} className="text-slate-800 font-medium text-[11px] leading-relaxed">
+                      {entry.details}
+                    </p>
+                  ))}
+                </>
               ) : (
                 <p className="text-xs text-slate-500">No specific hobbies or career aspirations recorded.</p>
               )}

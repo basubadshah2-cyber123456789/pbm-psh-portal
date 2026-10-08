@@ -104,6 +104,28 @@ interface AppearanceMeasurement {
   age: string;
 }
 
+interface HealthCareEntry {
+  id: string;
+  checkFrequency: string;
+  medicineDetails: string;
+  antibioticMedicine: string;
+  doctorName: string;
+  hospitalName: string;
+  doctorContactNo: string;
+  hospitalType: string;
+}
+
+interface ReportEntry {
+  id: string;
+  category: string;
+  details: string;
+}
+
+interface AreaOfInterestEntry {
+  id: string;
+  details: string;
+}
+
 interface AddPSHFormProps {
   onSuccess: (savedChild?: any) => void;
   onCancel: () => void;
@@ -645,14 +667,65 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [doctorContactNo, setDoctorContactNo] = useState<string>('');
   const [hospitalType, setHospitalType] = useState<string>('');
   const [prescriptionPhotoFile, setPrescriptionPhotoFile] = useState<File | null>(null);
+  const [additionalHealthCareEntries, setAdditionalHealthCareEntries] = useState<HealthCareEntry[]>([]);
+
+  const addHealthCareEntry = () => {
+    setAdditionalHealthCareEntries((current) => [
+      ...current,
+      {
+        id: `${Date.now()}-${current.length}`,
+        checkFrequency: '',
+        medicineDetails: '',
+        antibioticMedicine: '',
+        doctorName: '',
+        hospitalName: '',
+        doctorContactNo: '',
+        hospitalType: '',
+      },
+    ]);
+  };
+
+  const updateHealthCareEntry = (id: string, field: keyof Omit<HealthCareEntry, 'id'>, value: string) => {
+    setAdditionalHealthCareEntries((current) =>
+      current.map((entry) => entry.id === id ? { ...entry, [field]: value } : entry)
+    );
+  };
 
   // ================= 12. NEW REPORT SECTION =================
   const [reportCategory, setReportCategory] = useState<string>('');
   const [reportDetails, setReportDetails] = useState<string>('');
   const [writtenReportFile, setWrittenReportFile] = useState<File | null>(null);
+  const [additionalReportEntries, setAdditionalReportEntries] = useState<ReportEntry[]>([]);
+
+  const addReportEntry = () => {
+    setAdditionalReportEntries((current) => [
+      ...current,
+      { id: `${Date.now()}-${current.length}`, category: '', details: '' },
+    ]);
+  };
+
+  const updateReportEntry = (id: string, field: keyof Omit<ReportEntry, 'id'>, value: string) => {
+    setAdditionalReportEntries((current) =>
+      current.map((entry) => entry.id === id ? { ...entry, [field]: value } : entry)
+    );
+  };
 
   // ================= 13. AREA OF INTEREST – CHILD =================
   const [areaOfInterest, setAreaOfInterest] = useState<string>('');
+  const [additionalAreaOfInterestEntries, setAdditionalAreaOfInterestEntries] = useState<AreaOfInterestEntry[]>([]);
+
+  const addAreaOfInterestEntry = () => {
+    setAdditionalAreaOfInterestEntries((current) => [
+      ...current,
+      { id: `${Date.now()}-${current.length}`, details: '' },
+    ]);
+  };
+
+  const updateAreaOfInterestEntry = (id: string, details: string) => {
+    setAdditionalAreaOfInterestEntries((current) =>
+      current.map((entry) => entry.id === id ? { ...entry, details } : entry)
+    );
+  };
 
   // ================= 14. ATTACHMENTS =================
   const [attachments, setAttachments] = useState<Record<string, { file: File | null; title: string }>>({
@@ -720,11 +793,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     // 11. Result Info
     if (resultSchool || subjectResults.some((s) => !!s.subject.trim())) filled++;
     // 12. Health Care
-    if (checkFrequency || medicineDetails || doctorName || hospitalName || doctorContactNo || hospitalType) filled++;
+    if (
+      checkFrequency || medicineDetails || antibioticMedicine || doctorName || hospitalName || doctorContactNo || hospitalType ||
+      additionalHealthCareEntries.some((entry) => Object.values(entry).some((value) => value.trim()))
+    ) filled++;
     // 13. Report
-    if (reportCategory || reportDetails) filled++;
+    if (reportCategory || reportDetails || additionalReportEntries.some((entry) => entry.category || entry.details)) filled++;
     // 14. Area of Interest
-    if (areaOfInterest.trim()) filled++;
+    if (areaOfInterest.trim() || additionalAreaOfInterestEntries.some((entry) => entry.details.trim())) filled++;
     // 15. Attachments
     if (profilePhotoFile || Object.values(attachments).some((a) => a.file !== null)) filled++;
 
@@ -744,9 +820,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       isSiblingComplete: siblings.some((s) => !!s.name.trim()),
       isWitnessComplete: witnesses.some((w) => !!w.name.trim()),
       isResultComplete: !!(resultSchool || subjectResults.some((s) => !!s.subject.trim())),
-      isHealthCareComplete: !!(checkFrequency || medicineDetails || doctorName || hospitalName || doctorContactNo || hospitalType),
-      isReportComplete: !!(reportCategory || reportDetails),
-      isInterestComplete: !!areaOfInterest.trim(),
+      isHealthCareComplete: !!(
+        checkFrequency || medicineDetails || antibioticMedicine || doctorName || hospitalName || doctorContactNo || hospitalType ||
+        additionalHealthCareEntries.some((entry) => Object.values(entry).some((value) => value.trim()))
+      ),
+      isReportComplete: !!(reportCategory || reportDetails || additionalReportEntries.some((entry) => entry.category || entry.details)),
+      isInterestComplete: !!(areaOfInterest.trim() || additionalAreaOfInterestEntries.some((entry) => entry.details.trim())),
       isAttachmentsComplete: !!(profilePhotoFile || Object.values(attachments).some((a) => a.file !== null)),
     };
   }, [
@@ -777,9 +856,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     hospitalName,
     doctorContactNo,
     hospitalType,
+    antibioticMedicine,
+    additionalHealthCareEntries,
     reportCategory,
     reportDetails,
+    additionalReportEntries,
     areaOfInterest,
+    additionalAreaOfInterestEntries,
     profilePhotoFile,
     attachments,
   ]);
@@ -1006,16 +1089,45 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setHospitalName(psh.healthCare.hospitalName || '');
           setDoctorContactNo(psh.healthCare.doctorContactNo || '');
           setHospitalType(psh.healthCare.hospitalType || '');
+          setAdditionalHealthCareEntries(
+            Array.isArray(psh.healthCare.additionalEntries)
+              ? psh.healthCare.additionalEntries.map((entry: Partial<HealthCareEntry>, index: number) => ({
+                  id: entry.id || `saved-health-${index}`,
+                  checkFrequency: entry.checkFrequency || '',
+                  medicineDetails: entry.medicineDetails || '',
+                  antibioticMedicine: entry.antibioticMedicine || '',
+                  doctorName: entry.doctorName || '',
+                  hospitalName: entry.hospitalName || '',
+                  doctorContactNo: entry.doctorContactNo || '',
+                  hospitalType: entry.hospitalType || '',
+                }))
+              : []
+          );
         }
 
         if (psh.reports) {
           setReportCategory(psh.reports.category || '');
           setReportDetails(psh.reports.details || '');
+          setAdditionalReportEntries(
+            Array.isArray(psh.reports.additionalEntries)
+              ? psh.reports.additionalEntries.map((entry: Partial<ReportEntry>, index: number) => ({
+                  id: entry.id || `saved-report-${index}`,
+                  category: entry.category || '',
+                  details: entry.details || '',
+                }))
+              : []
+          );
         }
 
-        if (psh.areaOfInterest) {
-          setAreaOfInterest(psh.areaOfInterest);
-        }
+        setAreaOfInterest(psh.areaOfInterest || '');
+        setAdditionalAreaOfInterestEntries(
+          Array.isArray(psh.areaOfInterestEntries)
+            ? psh.areaOfInterestEntries.map((entry: Partial<AreaOfInterestEntry>, index: number) => ({
+                id: entry.id || `saved-interest-${index}`,
+                details: entry.details || '',
+              }))
+            : []
+        );
       }
     }
   }, [initialChild]);
@@ -1134,12 +1246,19 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setHospitalName('');
     setDoctorContactNo('');
     setHospitalType('');
+    setAdditionalHealthCareEntries([]);
     setReportCategory('');
     setReportDetails('');
+    setAdditionalReportEntries([]);
     setAreaOfInterest('');
+    setAdditionalAreaOfInterestEntries([]);
   };
 
   const handleAutoFillDemo = (profileType: 'orphan' | 'poor' | 'replace' | 'posthumous' = 'orphan') => {
+    setAdditionalHealthCareEntries([]);
+    setAdditionalReportEntries([]);
+    setAdditionalAreaOfInterestEntries([]);
+
     if (profileType === 'poor') {
       setEnrollmentType('New Enrollment');
       setReplacedRegistrationNo('');
@@ -1901,12 +2020,21 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           hospitalName,
           doctorContactNo: doctorContactNo.trim() || null,
           hospitalType,
+          additionalEntries: additionalHealthCareEntries
+            .filter((entry) => Object.entries(entry).some(([key, value]) => key !== 'id' && Boolean(value.trim())))
+            .map(({ id: _id, ...entry }) => entry),
         },
         reports: {
           category: reportCategory,
           details: reportDetails,
+          additionalEntries: additionalReportEntries
+            .filter((entry) => Boolean(entry.category || entry.details.trim()))
+            .map(({ id: _id, ...entry }) => entry),
         },
         areaOfInterest,
+        areaOfInterestEntries: additionalAreaOfInterestEntries
+          .filter((entry) => Boolean(entry.details.trim()))
+          .map(({ id: _id, ...entry }) => entry),
         attachmentsSummary: Object.keys(attachments).map((k) => ({
           slot: k,
           title: attachments[k].title,
@@ -3438,7 +3566,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 12. HEALTH CARE SECTION ================= */}
       <div>
-        <SectionHeading step={12} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
+        <div className="flex items-start justify-between gap-3">
+          <SectionHeading step={12} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
+          <button
+            type="button"
+            onClick={addHealthCareEntry}
+            className="inline-flex shrink-0 items-center gap-1 px-2.5 py-1 bg-[#0D5C3A] text-white rounded text-xs font-semibold hover:bg-[#0b4d30] transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Check Frequency"
@@ -3479,7 +3617,66 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             value={doctorContactNo}
             onChange={(e) => setDoctorContactNo(e.target.value)}
           />
+        </div>
 
+        {additionalHealthCareEntries.map((entry, index) => (
+          <div key={entry.id} className="mt-3 border border-slate-200 rounded-lg p-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-700">Additional Medical Follow-up {index + 1}</span>
+              <button
+                type="button"
+                onClick={() => setAdditionalHealthCareEntries((current) => current.filter((item) => item.id !== entry.id))}
+                className="text-red-500 hover:text-red-700 p-1"
+                aria-label={`Remove medical follow-up ${index + 1}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+              <FormSelect
+                label="Check Frequency"
+                value={entry.checkFrequency}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'checkFrequency', e.target.value)}
+                options={['Daily', 'Weekly', 'Monthly']}
+              />
+              <FormInput
+                placeholder="Medicine Details"
+                value={entry.medicineDetails}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'medicineDetails', e.target.value)}
+              />
+              <FormInput
+                placeholder="Antibiotic Medicine"
+                value={entry.antibioticMedicine}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'antibioticMedicine', e.target.value)}
+              />
+              <FormInput
+                placeholder="Enter doctor name"
+                value={entry.doctorName}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'doctorName', e.target.value)}
+              />
+              <FormInput
+                placeholder="Enter hospital name"
+                value={entry.hospitalName}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'hospitalName', e.target.value)}
+              />
+              <FormSelect
+                label="Hospital Type"
+                value={entry.hospitalType}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'hospitalType', e.target.value)}
+                options={['Government', 'Private']}
+                placeholder="Select hospital type"
+              />
+              <FormInput
+                type="tel"
+                placeholder="Enter doctor contact number"
+                value={entry.doctorContactNo}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'doctorContactNo', e.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mt-3.5">
           <div className="md:col-span-3">
             <label className="block text-xs font-bold text-slate-800 mb-1.5">
               Prescription Photo / Medical Document
@@ -3526,7 +3723,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 13. REPORT / COMPLAINT SECTION ================= */}
       <div>
-        <SectionHeading step={13} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
+        <div className="flex items-start justify-between gap-3">
+          <SectionHeading step={13} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
+          <button
+            type="button"
+            onClick={addReportEntry}
+            className="inline-flex shrink-0 items-center gap-1 px-2.5 py-1 bg-[#0D5C3A] text-white rounded text-xs font-semibold hover:bg-[#0b4d30] transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-3.5">
           <FormSelect
             label="Complain Type"
@@ -3546,6 +3753,35 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               className="w-full px-3.5 py-2.5 bg-white border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-slate-950 focus:outline-hidden focus:ring-1 focus:ring-slate-950 resize-none"
             />
           </div>
+
+          {additionalReportEntries.map((entry, index) => (
+            <div key={entry.id} className="border border-slate-200 rounded-lg p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-700">Additional Report / Complaint {index + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => setAdditionalReportEntries((current) => current.filter((item) => item.id !== entry.id))}
+                  className="text-red-500 hover:text-red-700 p-1"
+                  aria-label={`Remove report or complaint ${index + 1}`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <FormSelect
+                label="Complain Type"
+                value={entry.category}
+                onChange={(e) => updateReportEntry(entry.id, 'category', e.target.value)}
+                options={['Discipline', 'Behavior', 'Academic', 'Islamic', 'Psychological']}
+              />
+              <textarea
+                rows={3}
+                value={entry.details}
+                onChange={(e) => updateReportEntry(entry.id, 'details', e.target.value)}
+                placeholder="Report / complaint details..."
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-slate-950 focus:outline-hidden focus:ring-1 focus:ring-slate-950 resize-none"
+              />
+            </div>
+          ))}
 
           <div>
             <label className="block text-xs font-bold text-slate-800 mb-1.5">
@@ -3593,7 +3829,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 14. AREA OF INTEREST – CHILD ================= */}
       <div>
-        <SectionHeading step={14} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
+        <div className="flex items-start justify-between gap-3">
+          <SectionHeading step={14} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
+          <button
+            type="button"
+            onClick={addAreaOfInterestEntry}
+            className="inline-flex shrink-0 items-center gap-1 px-2.5 py-1 bg-[#0D5C3A] text-white rounded text-xs font-semibold hover:bg-[#0b4d30] transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
+        </div>
         <div className="relative">
           <textarea
             rows={3}
@@ -3603,6 +3849,28 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             className="w-full px-3.5 py-2.5 bg-white border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-slate-950 focus:outline-hidden focus:ring-1 focus:ring-slate-950 resize-none"
           />
         </div>
+        {additionalAreaOfInterestEntries.map((entry, index) => (
+          <div key={entry.id} className="relative mt-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-slate-700">Additional Area of Interest {index + 1}</span>
+              <button
+                type="button"
+                onClick={() => setAdditionalAreaOfInterestEntries((current) => current.filter((item) => item.id !== entry.id))}
+                className="text-red-500 hover:text-red-700 p-1"
+                aria-label={`Remove area of interest ${index + 1}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <textarea
+              rows={3}
+              value={entry.details}
+              onChange={(e) => updateAreaOfInterestEntry(entry.id, e.target.value)}
+              placeholder="Area of Interest"
+              className="w-full px-3.5 py-2.5 bg-white border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-slate-950 focus:outline-hidden focus:ring-1 focus:ring-slate-950 resize-none"
+            />
+          </div>
+        ))}
       </div>
 
       {/* ================= 15. ATTACHMENTS (FINAL SECTION) ================= */}

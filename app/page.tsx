@@ -2258,12 +2258,31 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">Hospital Name:</span> <span>{psh?.healthCare?.hospitalName || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Hospital Type:</span> <span>{psh?.healthCare?.hospitalType || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Doctor Contact No.:</span> <span>{psh?.healthCare?.doctorContactNo || 'N/A'}</span></div>
+                      {psh?.healthCare?.additionalEntries?.map((entry: any, idx: number) => (
+                        <div key={`health-${idx}`} className="pt-2 border-t border-slate-100 space-y-1">
+                          <div className="font-semibold text-slate-700">Additional Follow-up {idx + 1}</div>
+                          {entry.checkFrequency && <div><span className="text-slate-400">Frequency:</span> {entry.checkFrequency}</div>}
+                          {entry.medicineDetails && <div><span className="text-slate-400">Medicines:</span> {entry.medicineDetails}</div>}
+                          {entry.antibioticMedicine && <div><span className="text-slate-400">Antibiotics:</span> {entry.antibioticMedicine}</div>}
+                          {entry.doctorName && <div><span className="text-slate-400">Doctor:</span> {entry.doctorName}</div>}
+                          {entry.hospitalName && <div><span className="text-slate-400">Hospital:</span> {entry.hospitalName}</div>}
+                          {entry.hospitalType && <div><span className="text-slate-400">Hospital Type:</span> {entry.hospitalType}</div>}
+                          {entry.doctorContactNo && <div><span className="text-slate-400">Doctor Contact No.:</span> {entry.doctorContactNo}</div>}
+                        </div>
+                      ))}
                     </div>
 
                     <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs">
                       <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">13. REPORT</span>
                       <div><span className="text-slate-400">Complain Type:</span> <span className="font-semibold">{psh?.reports?.category || 'Academic'}</span></div>
                       <div><span className="text-slate-400">Details:</span> <span className="italic">{psh?.reports?.details || 'Standard routine report recorded.'}</span></div>
+                      {psh?.reports?.additionalEntries?.map((entry: any, idx: number) => (
+                        <div key={`report-${idx}`} className="pt-2 border-t border-slate-100 space-y-1">
+                          <div className="font-semibold text-slate-700">Additional Report / Complaint {idx + 1}</div>
+                          {entry.category && <div><span className="text-slate-400">Complain Type:</span> {entry.category}</div>}
+                          {entry.details && <div><span className="text-slate-400">Details:</span> <span className="italic">{entry.details}</span></div>}
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -2273,6 +2292,11 @@ export default function StandalonePSHAdmissionWebsite() {
                     <p className="text-slate-800 font-medium pt-1">
                       {psh?.areaOfInterest || 'No specific interest recorded.'}
                     </p>
+                    {psh?.areaOfInterestEntries?.map((entry: any, idx: number) => (
+                      <p key={`interest-${idx}`} className="text-slate-800 font-medium pt-1">
+                        {entry.details}
+                      </p>
+                    ))}
                   </div>
 
                   {/* Section 15: Attachments Summary */}
