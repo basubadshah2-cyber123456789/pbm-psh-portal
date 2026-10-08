@@ -3354,24 +3354,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               }}
             />
           </div>
-          <label className="md:col-span-3 inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
-            <input
-              type="checkbox"
-              checked={sameAsPermanentAddress}
-              onChange={(e) => setSameAsPermanentAddress(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-            />
-            Same as Permanent Address
-          </label>
-          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
-            <AddressFields
-              typeLabel="Current / Present Address Type"
-              addressLabel="Current / Present Full Address"
-              values={currentGuardianAddress}
-              onChange={(field, value) => updateCurrentGuardianAddress(field, value)}
-              disabled={sameAsPermanentAddress}
-            />
-          </div>
         </div>
 
         {additionalGuardians.map((guardian, index) => (
