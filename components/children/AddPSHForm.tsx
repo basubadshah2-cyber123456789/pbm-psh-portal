@@ -2449,7 +2449,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= APPEARANCE ================= */}
       <div>
-        <SectionHeading title="Appearance" />
+        <SectionHeading step={4} title="Appearance" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormInput
             label="Height"
