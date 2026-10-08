@@ -449,6 +449,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                       <div className="text-[11px] text-slate-600">Profession: {s.profession || 'N/A'}</div>
                       <div className="text-[10px] text-slate-400 mt-1">Union Council No. / Name: {[s.ucNumber, s.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
                       <div className="text-[10px] text-slate-400 mt-1">Status: {s.maritalStatus || 'Single'}</div>
+                      {s.maritalStatus === 'Married' && s.marriedAddress && (
+                        <div className="text-[10px] text-slate-400 mt-1">Address After Marriage: {s.marriedAddress}</div>
+                      )}
                     </div>
                   ))}
                 </div>

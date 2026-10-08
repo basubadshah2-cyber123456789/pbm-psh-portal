@@ -60,6 +60,16 @@ export interface SiblingRecord {
   streetNumber: string;
   houseNumber: string;
   address: string;
+  marriedAddressType?: string;
+  marriedPostOffice?: string;
+  marriedColony?: string;
+  marriedDistrict?: string;
+  marriedTehsil?: string;
+  marriedUcNumber?: string;
+  marriedUcName?: string;
+  marriedStreetNumber?: string;
+  marriedHouseNumber?: string;
+  marriedAddress?: string;
 }
 
 export interface WitnessRecord {
@@ -810,6 +820,42 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       return addressComponentFields.has(field)
         ? { ...updated, address: composeLocationAddress(updated) }
         : updated;
+    }));
+  };
+
+  const updateMarriedSiblingAddress = (id: string, field: keyof AddressRecord, value: string) => {
+    const marriedFieldByAddressField: Record<keyof AddressRecord, keyof SiblingRecord> = {
+      addressType: 'marriedAddressType',
+      postOffice: 'marriedPostOffice',
+      colony: 'marriedColony',
+      district: 'marriedDistrict',
+      tehsil: 'marriedTehsil',
+      ucNumber: 'marriedUcNumber',
+      ucName: 'marriedUcName',
+      streetNumber: 'marriedStreetNumber',
+      houseNumber: 'marriedHouseNumber',
+      address: 'marriedAddress',
+    };
+
+    setSiblings((prev) => prev.map((sibling) => {
+      if (sibling.id !== id) return sibling;
+      const updated = { ...sibling, [marriedFieldByAddressField[field]]: value };
+      if (!addressComponentFields.has(field)) return updated;
+
+      return {
+        ...updated,
+        marriedAddress: composeLocationAddress({
+          addressType: updated.marriedAddressType || '',
+          postOffice: updated.marriedPostOffice || '',
+          colony: updated.marriedColony || '',
+          district: updated.marriedDistrict || '',
+          tehsil: updated.marriedTehsil || '',
+          ucNumber: updated.marriedUcNumber || '',
+          ucName: updated.marriedUcName || '',
+          streetNumber: updated.marriedStreetNumber || '',
+          houseNumber: updated.marriedHouseNumber || '',
+        }),
+      };
     }));
   };
 
@@ -3189,23 +3235,45 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 <FormInput placeholder="Institution" value={s.institution} onChange={(e) => updateSibling(s.id, 'institution', e.target.value)} />
                 <FormInput placeholder="Grade / Class" value={s.gradeClass} onChange={(e) => updateSibling(s.id, 'gradeClass', e.target.value)} />
                 <FormSelect label="Marital Status" value={s.maritalStatus} onChange={(e) => updateSibling(s.id, 'maritalStatus', e.target.value)} options={['Single', 'Married', 'Divorced', 'Widow']} />
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+                  <AddressFields
+                    values={{
+                      addressType: s.addressType || '',
+                      postOffice: s.postOffice || '',
+                      colony: s.colony || '',
+                      district: s.district,
+                      tehsil: s.tehsil,
+                      ucNumber: s.ucNumber,
+                      ucName: s.ucName || '',
+                      streetNumber: s.streetNumber,
+                      houseNumber: s.houseNumber,
+                      address: s.address,
+                    }}
+                    onChange={(field, value) => updateSibling(s.id, field, value)}
+                  />
+                </div>
                 {s.maritalStatus === 'Married' && (
-                  <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
-                    <AddressFields
-                      values={{
-                        addressType: s.addressType || '',
-                        postOffice: s.postOffice || '',
-                        colony: s.colony || '',
-                        district: s.district,
-                        tehsil: s.tehsil,
-                        ucNumber: s.ucNumber,
-                        ucName: s.ucName || '',
-                        streetNumber: s.streetNumber,
-                        houseNumber: s.houseNumber,
-                        address: s.address,
-                      }}
-                      onChange={(field, value) => updateSibling(s.id, field, value)}
-                    />
+                  <div className="md:col-span-3 border-t border-slate-200 pt-4 space-y-3">
+                    <h4 className="text-xs font-bold text-slate-700">Address After Marriage</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
+                      <AddressFields
+                        values={{
+                          addressType: s.marriedAddressType || '',
+                          postOffice: s.marriedPostOffice || '',
+                          colony: s.marriedColony || '',
+                          district: s.marriedDistrict || '',
+                          tehsil: s.marriedTehsil || '',
+                          ucNumber: s.marriedUcNumber || '',
+                          ucName: s.marriedUcName || '',
+                          streetNumber: s.marriedStreetNumber || '',
+                          houseNumber: s.marriedHouseNumber || '',
+                          address: s.marriedAddress || '',
+                        }}
+                        typeLabel="Married Address Type"
+                        addressLabel="Married Full Address"
+                        onChange={(field, value) => updateMarriedSiblingAddress(s.id, field, value)}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
