@@ -1100,12 +1100,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [isProfessionalCareerOpen, setIsProfessionalCareerOpen] = useState(false);
   const [careerAccountChildId, setCareerAccountChildId] = useState<string | undefined>(persistedInitialChildId);
   const [careerSetupAfterSave, setCareerSetupAfterSave] = useState(false);
-  const [careerAccountWasSaved, setCareerAccountWasSaved] = useState(false);
   const [childAfterCareerSetup, setChildAfterCareerSetup] = useState<Record<string, unknown> | null>(null);
+  const [careerCredentialsDraft, setCareerCredentialsDraft] = useState<{ username: string; password: string } | null>(null);
 
   const openCareerAccountSetup = (childId = careerAccountChildId || persistedInitialChildId) => {
     setCareerAccountChildId(childId);
-    setCareerAccountWasSaved(false);
     setIsProfessionalCareerOpen(true);
   };
 
@@ -1133,16 +1132,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setIsFollowUpOpen(false);
     setFollowUpError(null);
     setFollowUpDraft(createEmptyFollowUp());
-    if (careerAccountChildId || persistedInitialChildId) {
-      openCareerAccountSetup(careerAccountChildId || persistedInitialChildId);
-    } else {
-      setCareerSetupAfterSave(true);
-    }
+    openCareerAccountSetup(careerAccountChildId || persistedInitialChildId);
   };
 
   const closeCareerAccountSetup = () => {
     setIsProfessionalCareerOpen(false);
-    if (childAfterCareerSetup && careerAccountWasSaved) {
+    if (childAfterCareerSetup) {
       const savedChild = childAfterCareerSetup;
       setChildAfterCareerSetup(null);
       onSuccess(savedChild);
@@ -1677,6 +1672,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setFollowUpError(null);
     setCareerSetupAfterSave(false);
     setChildAfterCareerSetup(null);
+    setCareerCredentialsDraft(null);
     setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
     setCheckFrequency('');
     setMedicineDetails('');
@@ -2619,13 +2615,36 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       );
       if (careerSetupAfterSave) {
         if (!serverChildId) {
-          setFormError('The dossier was saved locally, but career login setup needs a server-saved child record. Check your connection and save the dossier again.');
+          setFormError('The dossier was saved locally, but the career login could not be connected without a server-saved child record. Check your connection and try saving again.');
           return;
         }
         setCareerAccountChildId(serverChildId);
         setChildAfterCareerSetup({ ...payload, id: serverChildId });
-        setCareerAccountWasSaved(false);
         setCareerSetupAfterSave(false);
+        try {
+          if (!careerCredentialsDraft) {
+            throw new Error('Career username and password are missing. Reopen Professional Career Setup to enter them.');
+          }
+          const accountResponse = await fetch(`/api/children/${serverChildId}/professional-career`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(careerCredentialsDraft),
+          });
+          const accountResult = await accountResponse.json();
+          if (!accountResponse.ok) {
+            throw new Error(accountResult.error || 'Unable to create career login.');
+          }
+          setCareerCredentialsDraft({
+            ...careerCredentialsDraft,
+            username: accountResult.account.username,
+          });
+        } catch (accountError: unknown) {
+          setFormError(
+            `The child dossier was saved, but career login setup needs attention: ${
+              accountError instanceof Error ? accountError.message : 'Unable to create career login.'
+            }`
+          );
+        }
         setIsProfessionalCareerOpen(true);
         return;
       }
@@ -4239,7 +4258,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= ACTIONS ================= */}
       {careerSetupAfterSave && (
         <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          Follow-up added. Save the child dossier to continue to username, password, and the graduate login link.
+          Career username and password are ready. Save the child dossier to activate the account and generate its login link.
         </p>
       )}
       <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
@@ -4365,7 +4384,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         isOpen={isProfessionalCareerOpen}
         childId={careerAccountChildId || persistedInitialChildId}
         childName={fullName}
-        onAccountSaved={() => setCareerAccountWasSaved(true)}
+        initialCredentials={careerCredentialsDraft || undefined}
+        onSetupDraft={(credentials) => {
+          setCareerCredentialsDraft(credentials);
+          setCareerSetupAfterSave(true);
+          setIsProfessionalCareerOpen(false);
+        }}
         onClose={closeCareerAccountSetup}
       />
 

@@ -13,13 +13,15 @@ export function ProfessionalCareerAccountModal({
   isOpen,
   childId,
   childName,
-  onAccountSaved,
+  initialCredentials,
+  onSetupDraft,
   onClose,
 }: {
   isOpen: boolean;
   childId?: string;
   childName: string;
-  onAccountSaved?: () => void;
+  initialCredentials?: { username: string; password: string };
+  onSetupDraft?: (credentials: { username: string; password: string }) => void;
   onClose: () => void;
 }) {
   const [username, setUsername] = useState('');
@@ -37,11 +39,11 @@ export function ProfessionalCareerAccountModal({
     setError('');
     setSuccess('');
     setCopied('');
-    setPassword('');
+    setPassword(initialCredentials?.password || '');
     setShowPassword(false);
     setAccount(null);
     setUsername(
-      childName
+      initialCredentials?.username || childName
         .toLowerCase()
         .normalize('NFKD')
         .replace(/[^a-z0-9]+/g, '.')
@@ -72,11 +74,12 @@ export function ProfessionalCareerAccountModal({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, childId, childName]);
+  }, [isOpen, childId, childName, initialCredentials]);
 
   const loginUrl = typeof window === 'undefined'
     ? ''
     : `${window.location.origin}/professional-career`;
+  const validUsername = /^[a-z0-9][a-z0-9._-]{3,31}$/i.test(username.trim());
 
   const copyValue = async (label: string, value: string) => {
     try {
@@ -110,7 +113,6 @@ export function ProfessionalCareerAccountModal({
       setAccount(result.account);
       setUsername(result.account.username);
       setSuccess('Career portal access is ready. Share this login link and the password with the graduate.');
-      onAccountSaved?.();
     } catch (saveError: unknown) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save career access.');
     } finally {
@@ -143,59 +145,64 @@ export function ProfessionalCareerAccountModal({
           </button>
         </header>
 
-        {!childId ? (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Save the child dossier first. If you opened this from Follow Up, username and password setup will open automatically after saving.
-          </div>
-        ) : (
-          <>
-            <p className="mb-5 text-sm leading-6 text-slate-600">
-              Set the graduate&apos;s username and password. Their saved career updates will be private to this login.
-            </p>
-            {loading && <p className="mb-4 text-sm text-slate-500">Loading account status…</p>}
+        <p className="mb-5 text-sm leading-6 text-slate-600">
+          {childId
+            ? 'Set the graduate’s username and password. Their saved career updates will be private to this login.'
+            : 'Create the graduate’s login details now. Save the child dossier afterward to activate the account and generate the link.'}
+        </p>
+        {loading && <p className="mb-4 text-sm text-slate-500">Loading account status…</p>}
 
-            {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-            {success && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
+        {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+        {success && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
 
-            <div className="space-y-4">
-              <label className="block text-sm font-semibold text-slate-700">
-                Username
-                <input
-                  autoComplete="off"
-                  maxLength={32}
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                />
-              </label>
-              <div>
-                <label htmlFor="career-account-password" className="block text-sm font-semibold text-slate-700">
-                  {account ? 'Set a new password' : 'Password'}
-                </label>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <input
-                    id="career-account-password"
-                    autoComplete="new-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder={account ? 'Enter a new password to rotate access' : 'At least 10 characters'}
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((current) => !current)}
-                    className="shrink-0 text-xs font-semibold text-emerald-700 hover:underline"
-                  >
-                    {showPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-                <span className="mt-1 block text-xs font-normal text-slate-500">
-                  Passwords are stored as secure hashes and cannot be retrieved later. Save the password before closing.
-                </span>
-              </div>
+        <div className="space-y-4">
+          <label className="block text-sm font-semibold text-slate-700">
+            Username
+            <input
+              autoComplete="off"
+              maxLength={32}
+              minLength={4}
+              pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{3,31}"
+              required
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              className="mt-1.5 w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+            />
+          </label>
+          <div>
+            <label htmlFor="career-account-password" className="block text-sm font-semibold text-slate-700">
+              {account ? 'Set a new password' : 'Password'}
+            </label>
+            <div className="mt-1.5 flex items-center gap-2">
+              <input
+                id="career-account-password"
+                autoComplete="new-password"
+                type={showPassword ? 'text' : 'password'}
+                minLength={10}
+                maxLength={128}
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder={account ? 'Enter a new password to rotate access' : 'At least 10 characters'}
+                className="w-full rounded-xl border border-slate-300 px-3.5 py-3 font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="shrink-0 text-xs font-semibold text-emerald-700 hover:underline"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
             </div>
+            <span className="mt-1 block text-xs font-normal text-slate-500">
+              {childId
+                ? 'Passwords are stored as secure hashes and cannot be retrieved later. Save the password before closing.'
+                : 'The password stays in this form until the child dossier is saved, then it is stored as a secure hash.'}
+            </span>
+          </div>
+        </div>
 
+        {childId ? (
             <div className="mt-4 rounded-2xl bg-slate-50 p-4">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <Link2 className="h-4 w-4" /> Shared login link
@@ -221,21 +228,31 @@ export function ProfessionalCareerAccountModal({
               )}
               {copied && <p role="status" className="mt-2 text-xs font-semibold text-emerald-700">{copied}</p>}
             </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+              After saving the child dossier, the account will be activated and the graduate login link will appear here.
+            </div>
+          )}
 
-            <footer className="mt-6 flex flex-col-reverse justify-end gap-2 sm:flex-row">
-              <button type="button" onClick={closeModal} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Close</button>
-              <button
-                type="button"
-                onClick={() => void saveAccount()}
-                disabled={loading || saving || !username.trim() || password.length < 10}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <KeyRound className="h-4 w-4" />
-                {saving ? 'Saving…' : account ? 'Update Login Access' : 'Create Login Access'}
-              </button>
-            </footer>
-          </>
-        )}
+        <footer className="mt-6 flex flex-col-reverse justify-end gap-2 sm:flex-row">
+          <button type="button" onClick={closeModal} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">Close</button>
+          <button
+            type="button"
+            onClick={() => {
+              if (childId) {
+                void saveAccount();
+              } else {
+                onSetupDraft?.({ username: username.trim().toLowerCase(), password });
+                onClose();
+              }
+            }}
+            disabled={loading || saving || !validUsername || password.length < 10 || (!childId && !onSetupDraft)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <KeyRound className="h-4 w-4" />
+            {saving ? 'Saving…' : childId ? (account ? 'Update Login Access' : 'Create Login Access') : 'Continue to Child Dossier'}
+          </button>
+        </footer>
       </section>
     </div>,
     document.body
