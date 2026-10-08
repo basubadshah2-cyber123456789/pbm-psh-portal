@@ -60,14 +60,18 @@ export function preserveProfessionalCareerData(
 ): string | null {
   const existingDossier = parseChildDossier(existingNotes);
   const existingCareer = getProfessionalCareerData(existingDossier);
-  if (!existingCareer.account && !existingCareer.profile) return incomingNotes;
-
   const incomingDossier = parseChildDossier(incomingNotes);
   const incomingCareer = getProfessionalCareerData(incomingDossier);
-  return JSON.stringify({
-    ...incomingDossier,
-    professionalCareer: { ...incomingCareer, ...existingCareer },
-  });
+  const nextDossier = { ...incomingDossier };
+
+  if (existingCareer.account || existingCareer.profile) {
+    nextDossier.professionalCareer = { ...incomingCareer, ...existingCareer };
+  }
+  if (Array.isArray(existingDossier.collegeProgress)) {
+    nextDossier.collegeProgress = existingDossier.collegeProgress;
+  }
+
+  return Object.keys(nextDossier).length > 0 || incomingNotes ? JSON.stringify(nextDossier) : null;
 }
 
 export function redactProfessionalCareerAccount(notes: string | null): string | null {

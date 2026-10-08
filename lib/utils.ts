@@ -38,10 +38,17 @@ export function parsePshNotes(notes: string | null | undefined): any | null {
   if (!notes) return null;
   try {
     const data = JSON.parse(notes);
-    if (data && typeof data === 'object' && (data.category || data.fatherInfo || data.basicInfo || data.healthCare || data.areaOfInterest)) {
+    if (data && typeof data === 'object' && (
+      data.category ||
+      data.fatherInfo ||
+      data.basicInfo ||
+      data.healthCare ||
+      data.areaOfInterest ||
+      data.collegeProgress ||
+      data.professionalCareer
+    )) {
       return data;
     }
   } catch {}
   return null;
 }
-

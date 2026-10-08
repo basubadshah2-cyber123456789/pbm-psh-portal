@@ -9,6 +9,7 @@ import { formatDate, parsePshNotes } from '@/lib/utils';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
 import { ChildComplaintsSection } from '@/components/children/ChildComplaintsSection';
 import { ChildDocumentsSection } from '@/components/children/ChildDocumentsSection';
+import { ChildCollegeProgressSection } from '@/components/children/ChildCollegeProgressSection';
 import { ProfessionalCareerAccountControl } from '@/components/children/ProfessionalCareerAccountControl';
 import {
   Users,
@@ -542,6 +543,16 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
             </div>
           </Section>
         )}
+
+        <ChildCollegeProgressSection
+          childId={child.id}
+          initialEntries={Array.isArray(psh?.collegeProgress) ? psh.collegeProgress : []}
+          canManage={
+            user.role === Role.INCHARGE ||
+            user.role === Role.ACCOUNT_ASSISTANT ||
+            user.role === Role.CLERK
+          }
+        />
 
         {careerProfile && (
           <Section label="PROFESSIONAL CAREER" title="Graduate Career Update" tone="blue">
