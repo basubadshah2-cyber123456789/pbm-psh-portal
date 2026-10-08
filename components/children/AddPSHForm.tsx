@@ -18,6 +18,27 @@ import { ProfessionalCareerAccountModal } from './ProfessionalCareerAccountModal
 import { CameraCaptureModal } from '@/components/common/CameraCaptureModal';
 import { formatCNIC, formatPhone } from '@/lib/formatters';
 
+function normalizeChildStatus(value: string): string {
+  switch (value.trim().toUpperCase()) {
+    case 'ACTIVE':
+      return 'ACTIVE';
+    case 'CURRENT':
+    case 'PENDING':
+      return 'CURRENT';
+    case 'DROPPED':
+    case 'TRANSFERRED':
+    case 'DEACTIVATED':
+      return 'DROPPED';
+    case 'EXPELLED':
+      return 'EXPELLED';
+    case 'PASSOUT':
+    case 'GRADUATED':
+      return 'PASSOUT';
+    default:
+      return value;
+  }
+}
+
 // Interfaces
 export interface MeetingPersonRecord {
   id: string;
@@ -1280,7 +1301,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       );
       setDateOfBirth(initialChild.dateOfBirth || '2016-01-15');
       setGender(initialChild.gender || 'MALE');
-      setStatus(initialChild.status || 'Active');
+      setStatus(normalizeChildStatus(initialChild.status || 'ACTIVE'));
       setBloodGroup(initialChild.bloodGroup || 'B+');
       setAppearanceMeasurements([{ id: '1', height: '', weight: '', age: '' }]);
       setEnrollmentType('New Enrollment');
@@ -1311,6 +1332,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         );
 
         if (psh.basicInfo) {
+          if (psh.basicInfo.status) setStatus(normalizeChildStatus(psh.basicInfo.status));
           setFamilyCast(psh.basicInfo.familyCast || '');
           setMotherLanguage(psh.basicInfo.motherLanguage || '');
           setBirthDistrict(psh.basicInfo.birthDistrict || '');
@@ -1580,7 +1602,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setNextOfKin('');
     setIsSponsored('');
     setSponsorshipAmount('');
-    setStatus('Active');
+    setStatus('ACTIVE');
     setDateOfStatus(new Date().toISOString().split('T')[0]);
     setStatusRemarks('');
     setIsDisable('No');
@@ -1713,7 +1735,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setNextOfKin('Ghulam Rasool (Father)');
       setIsSponsored('Yes');
       setSponsorshipAmount('12000');
-      setStatus('Active');
+      setStatus('ACTIVE');
       setDateOfStatus('2026-09-10');
       setStatusRemarks('Poorest of the poor stipend program');
 
@@ -1856,7 +1878,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setNextOfKin('Nasreen Bibi (Mother)');
       setIsSponsored('No');
       setSponsorshipAmount('');
-      setStatus('Active');
+      setStatus('ACTIVE');
       setDateOfStatus('2026-09-15');
       setStatusRemarks('Replacement against vacant seat ADM-2024-882');
 
@@ -2000,7 +2022,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setNextOfKin('Kalsoom Akhtar (Mother)');
       setIsSponsored('Yes');
       setSponsorshipAmount('12000');
-      setStatus('Active');
+      setStatus('ACTIVE');
       setDateOfStatus('2026-09-18');
       setStatusRemarks('Posthumous welfare admission quota');
 
@@ -2143,7 +2165,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setNextOfKin('Muhammad Tariq (Uncle)');
     setIsSponsored('Yes');
     setSponsorshipAmount('15000');
-    setStatus('Active');
+    setStatus('ACTIVE');
     setDateOfStatus('2026-09-01');
     setStatusRemarks('Admitted under welfare quota');
 
@@ -2994,7 +3016,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            options={['Active', 'Pending', 'Graduated', 'Transferred', 'Deactivated']}
+            options={['ACTIVE', 'CURRENT', 'DROPPED', 'EXPELLED', 'PASSOUT']}
             className="md:col-span-2"
           />
 
