@@ -97,6 +97,13 @@ export interface SubjectResultRow {
   totalMarks: string;
 }
 
+interface AppearanceMeasurement {
+  id: string;
+  height: string;
+  weight: string;
+  age: string;
+}
+
 interface AddPSHFormProps {
   onSuccess: (savedChild?: any) => void;
   onCancel: () => void;
@@ -274,9 +281,34 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [physicalHealth, setPhysicalHealth] = useState<string>('');
   const [vaccinationDetail, setVaccinationDetail] = useState<string>('');
   const [specialNeedDisease, setSpecialNeedDisease] = useState<string>('');
-  const [height, setHeight] = useState<string>('');
-  const [weight, setWeight] = useState<string>('');
-  const [age, setAge] = useState<string>('');
+  const [appearanceMeasurements, setAppearanceMeasurements] = useState<AppearanceMeasurement[]>([
+    { id: '1', height: '', weight: '', age: '' },
+  ]);
+
+  const addAppearanceMeasurement = () => {
+    setAppearanceMeasurements((current) => [
+      ...current,
+      { id: `${Date.now()}-${current.length}`, height: '', weight: '', age: '' },
+    ]);
+  };
+
+  const updateAppearanceMeasurement = (
+    id: string,
+    field: keyof Omit<AppearanceMeasurement, 'id'>,
+    value: string
+  ) => {
+    setAppearanceMeasurements((current) =>
+      current.map((measurement) =>
+        measurement.id === id ? { ...measurement, [field]: value } : measurement
+      )
+    );
+  };
+
+  const removeAppearanceMeasurement = (id: string) => {
+    setAppearanceMeasurements((current) =>
+      current.length > 1 ? current.filter((measurement) => measurement.id !== id) : current
+    );
+  };
 
   // ================= 4. FATHER INFO =================
   const [fatherName, setFatherName] = useState<string>('');
@@ -775,9 +807,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setGender(initialChild.gender || 'MALE');
       setStatus(initialChild.status || 'Active');
       setBloodGroup(initialChild.bloodGroup || 'B+');
-      setHeight('');
-      setWeight('');
-      setAge('');
+      setAppearanceMeasurements([{ id: '1', height: '', weight: '', age: '' }]);
       setEnrollmentType('New Enrollment');
       setReplacedRegistrationNo('');
       setReplacedClass('');
@@ -825,9 +855,19 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setSpecialNeedDisease(psh.healthInfo.specialNeedDisease || 'None');
         }
         if (psh.appearance) {
-          setHeight(psh.appearance.height === null || psh.appearance.height === undefined ? '' : String(psh.appearance.height));
-          setWeight(psh.appearance.weight === null || psh.appearance.weight === undefined ? '' : String(psh.appearance.weight));
-          setAge(psh.appearance.age === null || psh.appearance.age === undefined ? '' : String(psh.appearance.age));
+          const savedMeasurements = Array.isArray(psh.appearance.measurements)
+            ? psh.appearance.measurements
+            : [psh.appearance];
+          setAppearanceMeasurements(
+            savedMeasurements.length > 0
+              ? savedMeasurements.map((measurement: any, index: number) => ({
+                  id: typeof measurement.id === 'string' ? measurement.id : `saved-${index}`,
+                  height: measurement.height === null || measurement.height === undefined ? '' : String(measurement.height),
+                  weight: measurement.weight === null || measurement.weight === undefined ? '' : String(measurement.weight),
+                  age: measurement.age === null || measurement.age === undefined ? '' : String(measurement.age),
+                }))
+              : [{ id: '1', height: '', weight: '', age: '' }]
+          );
         }
 
         if (psh.fatherInfo) {
@@ -1015,9 +1055,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setPhysicalHealth('');
     setVaccinationDetail('');
     setSpecialNeedDisease('');
-    setHeight('');
-    setWeight('');
-    setAge('');
+    setAppearanceMeasurements([{ id: '1', height: '', weight: '', age: '' }]);
     setFatherName('');
     setFatherCnic('');
     setFatherContact('');
@@ -1722,6 +1760,15 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         }
       }
 
+      const savedAppearanceMeasurements = appearanceMeasurements
+        .filter((measurement) => measurement.height || measurement.weight || measurement.age)
+        .map(({ id, ...measurement }) => ({ id, ...measurement }));
+      const latestAppearanceMeasurement = savedAppearanceMeasurements[savedAppearanceMeasurements.length - 1] || {
+        height: '',
+        weight: '',
+        age: '',
+      };
+
       const fullPshDossier = {
         enrollmentType: {
           type: enrollmentType || 'New Enrollment',
@@ -1765,9 +1812,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           specialNeedDisease,
         },
         appearance: {
-          height,
-          weight,
-          age,
+          ...latestAppearanceMeasurement,
+          measurements: savedAppearanceMeasurements,
         },
         fatherInfo: {
           name: fatherName,
@@ -1889,11 +1935,15 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         bloodGroup: bloodGroup || 'B+',
         allergies: 'None',
         chronicConditions: specialNeedDisease || 'None',
-        height: height || null,
-        weight: weight || null,
-        age: age || null,
-        heightCm: height.trim() && Number.isFinite(Number(height)) ? Number(height) : 135,
-        weightKg: weight.trim() && Number.isFinite(Number(weight)) ? Number(weight) : 30,
+        height: latestAppearanceMeasurement.height || null,
+        weight: latestAppearanceMeasurement.weight || null,
+        age: latestAppearanceMeasurement.age || null,
+        heightCm: latestAppearanceMeasurement.height.trim() && Number.isFinite(Number(latestAppearanceMeasurement.height))
+          ? Number(latestAppearanceMeasurement.height)
+          : 135,
+        weightKg: latestAppearanceMeasurement.weight.trim() && Number.isFinite(Number(latestAppearanceMeasurement.weight))
+          ? Number(latestAppearanceMeasurement.weight)
+          : 30,
         notes: JSON.stringify(fullPshDossier),
       };
 
@@ -2451,35 +2501,65 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= APPEARANCE ================= */}
       <div>
-        <SectionHeading title="Appearance" isBold={false} />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
-          <FormInput
-            label="Height"
-            name="height"
-            type="number"
-            min={0}
-            step="any"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-          />
-          <FormInput
-            label="Weight"
-            name="weight"
-            type="number"
-            min={0}
-            step="any"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-          />
-          <FormInput
-            label="Age"
-            name="age"
-            type="number"
-            min={0}
-            step="1"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
-          />
+        <div className="flex items-center justify-between gap-3">
+          <SectionHeading title="Appearance" isBold={false} />
+          <button
+            type="button"
+            onClick={addAppearanceMeasurement}
+            className="mb-2 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add New
+          </button>
+        </div>
+        <div className="space-y-3">
+          {appearanceMeasurements.map((measurement, index) => (
+            <div key={measurement.id} className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-600">Appearance Entry {index + 1}</span>
+                {appearanceMeasurements.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeAppearanceMeasurement(measurement.id)}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                    aria-label={`Remove appearance entry ${index + 1}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 md:grid-cols-3">
+                <FormInput
+                  label="Height"
+                  name={`height-${measurement.id}`}
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={measurement.height}
+                  onChange={(e) => updateAppearanceMeasurement(measurement.id, 'height', e.target.value)}
+                />
+                <FormInput
+                  label="Weight"
+                  name={`weight-${measurement.id}`}
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={measurement.weight}
+                  onChange={(e) => updateAppearanceMeasurement(measurement.id, 'weight', e.target.value)}
+                />
+                <FormInput
+                  label="Age"
+                  name={`age-${measurement.id}`}
+                  type="number"
+                  min={0}
+                  step="1"
+                  value={measurement.age}
+                  onChange={(e) => updateAppearanceMeasurement(measurement.id, 'age', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
