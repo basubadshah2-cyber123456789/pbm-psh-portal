@@ -209,10 +209,12 @@ function SectionHeading({
   title,
   step,
   isCompleted,
+  isBold = true,
 }: {
   title: string;
   step?: number;
   isCompleted?: boolean;
+  isBold?: boolean;
 }) {
   return (
     <div className="flex items-center gap-3 mt-6 mb-3">
@@ -223,7 +225,7 @@ function SectionHeading({
           ✓
         </span>
       )}
-      <h3 className="text-slate-900 font-bold text-sm sm:text-base tracking-tight">
+      <h3 className={`text-slate-900 ${isBold ? 'font-bold' : 'font-normal'} text-sm sm:text-base tracking-tight`}>
         {typeof step === 'number' ? `${step}. ${title}` : title}
       </h3>
     </div>
@@ -2449,7 +2451,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= APPEARANCE ================= */}
       <div>
-        <SectionHeading step={4} title="Appearance" />
+        <SectionHeading title="Appearance" isBold={false} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormInput
             label="Height"
