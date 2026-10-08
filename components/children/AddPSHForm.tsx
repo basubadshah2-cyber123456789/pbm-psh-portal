@@ -2141,10 +2141,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 2. CATEGORY 2 ================= */}
       <div>
-        <SectionHeading step={2} title="Category 2 (Enrollment Type)" isCompleted={completionStats.isCat2Complete} />
+        <SectionHeading step={2} title="Enrollment Type" isCompleted={completionStats.isCat2Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
-            label="Category 2"
+            label="Enrollment Type"
             value={enrollmentType}
             onChange={(e) => setEnrollmentType(e.target.value)}
             options={['New Enrollment', 'Replace']}
