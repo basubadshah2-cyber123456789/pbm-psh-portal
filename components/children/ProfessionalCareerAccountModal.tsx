@@ -13,11 +13,13 @@ export function ProfessionalCareerAccountModal({
   isOpen,
   childId,
   childName,
+  onAccountSaved,
   onClose,
 }: {
   isOpen: boolean;
   childId?: string;
   childName: string;
+  onAccountSaved?: () => void;
   onClose: () => void;
 }) {
   const [username, setUsername] = useState('');
@@ -108,6 +110,7 @@ export function ProfessionalCareerAccountModal({
       setAccount(result.account);
       setUsername(result.account.username);
       setSuccess('Career portal access is ready. Share this login link and the password with the graduate.');
+      onAccountSaved?.();
     } catch (saveError: unknown) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save career access.');
     } finally {
@@ -142,7 +145,7 @@ export function ProfessionalCareerAccountModal({
 
         {!childId ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Save the child dossier first. After it has a saved record, reopen Professional Career to create login access.
+            Save the child dossier first. If you opened this from Follow Up, username and password setup will open automatically after saving.
           </div>
         ) : (
           <>

@@ -410,6 +410,11 @@ function SectionHeading({
 
 export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProps) {
   const generateAdmissionNo = () => `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+  const persistedInitialChildId = initialChild?.id &&
+    !String(initialChild.id).startsWith('seed-') &&
+    !String(initialChild.id).startsWith('demo-')
+      ? String(initialChild.id)
+      : undefined;
 
   // ================= 1. ENROLLMENT TYPE =================
   const [enrollmentType, setEnrollmentType] = useState<string>('New Enrollment');
@@ -1093,6 +1098,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [followUpError, setFollowUpError] = useState<string | null>(null);
   const [isProfessionalCareerOpen, setIsProfessionalCareerOpen] = useState(false);
+  const [careerAccountChildId, setCareerAccountChildId] = useState<string | undefined>(persistedInitialChildId);
+  const [careerSetupAfterSave, setCareerSetupAfterSave] = useState(false);
+  const [careerAccountWasSaved, setCareerAccountWasSaved] = useState(false);
+  const [childAfterCareerSetup, setChildAfterCareerSetup] = useState<Record<string, unknown> | null>(null);
+
+  const openCareerAccountSetup = (childId = careerAccountChildId || persistedInitialChildId) => {
+    setCareerAccountChildId(childId);
+    setCareerAccountWasSaved(false);
+    setIsProfessionalCareerOpen(true);
+  };
 
   const openFollowUpForm = () => {
     setFollowUpDraft({
@@ -1118,6 +1133,20 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setIsFollowUpOpen(false);
     setFollowUpError(null);
     setFollowUpDraft(createEmptyFollowUp());
+    if (careerAccountChildId || persistedInitialChildId) {
+      openCareerAccountSetup(careerAccountChildId || persistedInitialChildId);
+    } else {
+      setCareerSetupAfterSave(true);
+    }
+  };
+
+  const closeCareerAccountSetup = () => {
+    setIsProfessionalCareerOpen(false);
+    if (childAfterCareerSetup && careerAccountWasSaved) {
+      const savedChild = childAfterCareerSetup;
+      setChildAfterCareerSetup(null);
+      onSuccess(savedChild);
+    }
   };
 
   // Live Camera Capture State
@@ -1646,6 +1675,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setFollowUpDraft(createEmptyFollowUp());
     setIsFollowUpOpen(false);
     setFollowUpError(null);
+    setCareerSetupAfterSave(false);
+    setChildAfterCareerSetup(null);
     setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
     setCheckFrequency('');
     setMedicineDetails('');
@@ -2586,6 +2617,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           ? `${successMessage} Document upload warning: ${documentUploadWarnings.join(' ')}`
           : successMessage
       );
+      if (careerSetupAfterSave) {
+        if (!serverChildId) {
+          setFormError('The dossier was saved locally, but career login setup needs a server-saved child record. Check your connection and save the dossier again.');
+          return;
+        }
+        setCareerAccountChildId(serverChildId);
+        setChildAfterCareerSetup({ ...payload, id: serverChildId });
+        setCareerAccountWasSaved(false);
+        setCareerSetupAfterSave(false);
+        setIsProfessionalCareerOpen(true);
+        return;
+      }
       setTimeout(() => {
         onSuccess(payload);
       }, documentUploadWarnings.length > 0 ? 4000 : 900);
@@ -2617,7 +2660,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setIsProfessionalCareerOpen(true)}
+              onClick={() => openCareerAccountSetup()}
               disabled={isSubmitting}
               className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50"
             >
@@ -4194,6 +4237,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       </div>
 
       {/* ================= ACTIONS ================= */}
+      {careerSetupAfterSave && (
+        <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          Follow-up added. Save the child dossier to continue to username, password, and the graduate login link.
+        </p>
+      )}
       <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
         <button
           type="button"
@@ -4212,7 +4260,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </button>
         <button
           type="button"
-          onClick={() => setIsProfessionalCareerOpen(true)}
+          onClick={() => openCareerAccountSetup()}
           disabled={isSubmitting}
           className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs sm:text-sm font-bold hover:bg-emerald-100 transition-all cursor-pointer disabled:opacity-50"
         >
@@ -4315,15 +4363,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       <ProfessionalCareerAccountModal
         isOpen={isProfessionalCareerOpen}
-        childId={
-          initialChild?.id &&
-          !String(initialChild.id).startsWith('seed-') &&
-          !String(initialChild.id).startsWith('demo-')
-            ? String(initialChild.id)
-            : undefined
-        }
+        childId={careerAccountChildId || persistedInitialChildId}
         childName={fullName}
-        onClose={() => setIsProfessionalCareerOpen(false)}
+        onAccountSaved={() => setCareerAccountWasSaved(true)}
+        onClose={closeCareerAccountSetup}
       />
 
       {/* Live Camera Capture Modal */}
