@@ -9,6 +9,7 @@ import { formatDate, parsePshNotes } from '@/lib/utils';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
 import { ChildComplaintsSection } from '@/components/children/ChildComplaintsSection';
 import { ChildDocumentsSection } from '@/components/children/ChildDocumentsSection';
+import { ProfessionalCareerAccountControl } from '@/components/children/ProfessionalCareerAccountControl';
 import {
   Users,
   Shield,
@@ -127,6 +128,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
           >
             Manage in Children Directory
           </Link>
+          {(user.role === Role.INCHARGE || user.role === Role.ACCOUNT_ASSISTANT || user.role === Role.CLERK) && (
+            <ProfessionalCareerAccountControl childId={child.id} childName={child.fullName} />
+          )}
         </div>
 
         {/* Header Profile Card */}

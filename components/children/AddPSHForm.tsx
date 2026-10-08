@@ -2615,6 +2615,15 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsProfessionalCareerOpen(true)}
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50"
+            >
+              <Award className="h-4 w-4" />
+              Professional Career Setup
+            </button>
             {initialChild && onCancel && (
               <button
                 type="button"
