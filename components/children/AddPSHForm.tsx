@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Trash2,
@@ -4214,7 +4215,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </button>
       </div>
 
-      {isFollowUpOpen && (
+      {isFollowUpOpen && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6">
           <div
             role="dialog"
@@ -4289,7 +4290,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Live Camera Capture Modal */}
