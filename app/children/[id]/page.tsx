@@ -554,6 +554,35 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
           }
         />
 
+        {Array.isArray(psh?.universityProgress) && psh.universityProgress.length > 0 && (
+          <Section label="UNIVERSITY PROGRESS" title="Graduate-Submitted University Records" tone="blue">
+            <div className="space-y-3">
+              {psh.universityProgress.map((entry: Record<string, string>, index: number) => (
+                <article key={entry.id || index} className="rounded-lg border border-blue-100 bg-white p-3">
+                  <h3 className="text-xs font-bold text-slate-800">{entry.universityName || 'University record'}</h3>
+                  <dl className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                    {([
+                      ['Degree / Program', entry.degreeProgram],
+                      ['Major / Subjects', entry.majorSubjects],
+                      ['Board / Accrediting Body', entry.boardUniversity],
+                      ['Admission Year', entry.admissionYear],
+                      ['Registration Number', entry.registrationNumber],
+                      ['Roll Number / Student ID', entry.rollNumber],
+                      ['Current Status', entry.currentStatus],
+                      ['Remarks', entry.remarks],
+                    ] as const).map(([label, value]) => value ? (
+                      <div key={label}>
+                        <dt className="text-slate-400">{label}</dt>
+                        <dd className="whitespace-pre-wrap font-semibold text-slate-700">{value}</dd>
+                      </div>
+                    ) : null)}
+                  </dl>
+                </article>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {careerProfile && (
           <Section label="PROFESSIONAL CAREER" title="Graduate Career Update" tone="blue">
             <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:grid-cols-3">

@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, LogOut, Save } from 'lucide-react';
+import { UniversityProgressForm } from '@/components/professional-career/UniversityProgressForm';
 
 interface CareerProfile {
   name: string;
@@ -203,6 +204,7 @@ export default function ProfessionalCareerProfilePage() {
             </div>
           </form>
         </section>
+        <UniversityProgressForm />
       </div>
     </main>
   );

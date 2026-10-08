@@ -71,6 +71,7 @@ export function Sidebar({ user, isOpen = false, onClose }: SidebarProps) {
     { name: 'Duty Assignment', href: '/duties', module: 'duties', icon: ClipboardList },
     { name: 'Hostel Management', href: '/hostel', module: 'hostel', icon: Building2 },
     { name: 'Education', href: '/education', module: 'education', icon: GraduationCap },
+    { name: 'Academic', href: '/academic', module: 'academic', icon: GraduationCap },
     { name: 'Inventory & Ration', href: '/inventory', module: 'inventory', icon: Package },
     { name: 'Kitchen & Mess', href: '/mess', module: 'mess', icon: UtensilsCrossed },
     { name: 'Medical & Health', href: '/medical', module: 'medical', icon: HeartPulse },

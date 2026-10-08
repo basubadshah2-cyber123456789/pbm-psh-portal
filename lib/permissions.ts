@@ -10,6 +10,7 @@ export type ERPModule =
   | 'duties'
   | 'hostel'
   | 'education'
+  | 'academic'
   | 'inventory'
   | 'mess'
   | 'medical'
@@ -249,6 +250,7 @@ export function hasModuleAccess(role: Role, module: ERPModule, customPermissions
   if (role === Role.ACCOUNT_ASSISTANT) {
     return [
       'dashboard',
+      'academic',
       'attendance',
       'inventory',
       'mess',
@@ -266,7 +268,7 @@ export function hasModuleAccess(role: Role, module: ERPModule, customPermissions
   }
 
   if (role === Role.CLERK) {
-    return ['dashboard', 'children', 'leave', 'attendance', 'hostel', 'education', 'reports'].includes(module);
+    return ['dashboard', 'children', 'leave', 'attendance', 'hostel', 'education', 'academic', 'reports'].includes(module);
   }
 
   if (role === Role.MOTHER_MAID) {
@@ -348,4 +350,3 @@ export function canManageStaffRole(
 
   return { allowed: true };
 }
-

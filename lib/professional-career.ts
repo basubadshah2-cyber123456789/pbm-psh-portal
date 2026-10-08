@@ -70,6 +70,9 @@ export function preserveProfessionalCareerData(
   if (Array.isArray(existingDossier.collegeProgress)) {
     nextDossier.collegeProgress = existingDossier.collegeProgress;
   }
+  if (Array.isArray(existingDossier.universityProgress)) {
+    nextDossier.universityProgress = existingDossier.universityProgress;
+  }
 
   return Object.keys(nextDossier).length > 0 || incomingNotes ? JSON.stringify(nextDossier) : null;
 }

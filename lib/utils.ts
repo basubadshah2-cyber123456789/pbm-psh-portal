@@ -45,6 +45,7 @@ export function parsePshNotes(notes: string | null | undefined): any | null {
       data.healthCare ||
       data.areaOfInterest ||
       data.collegeProgress ||
+      data.universityProgress ||
       data.professionalCareer
     )) {
       return data;
