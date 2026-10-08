@@ -224,7 +224,7 @@ function SectionHeading({
         </span>
       )}
       <h3 className="text-slate-900 font-bold text-sm sm:text-base tracking-tight">
-        {typeof step === 'number' ? `Category No. ${step} — ${title}` : title}
+        {typeof step === 'number' ? `${step}. ${title}` : title}
       </h3>
     </div>
   );
@@ -2124,7 +2124,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 1. CATEGORY ================= */}
       <div>
-        <SectionHeading title="Category" isCompleted={completionStats.isCat1Complete} />
+        <SectionHeading step={1} title="Category" isCompleted={completionStats.isCat1Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Category"
@@ -2141,7 +2141,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 2. CATEGORY 2 ================= */}
       <div>
-        <SectionHeading title="Category 2 (Enrollment Type)" isCompleted={completionStats.isCat2Complete} />
+        <SectionHeading step={2} title="Category 2 (Enrollment Type)" isCompleted={completionStats.isCat2Complete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Category 2"
@@ -2228,7 +2228,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 3. BASIC INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={1} title="Basic Info" isCompleted={completionStats.isBasicComplete} />
+          <SectionHeading step={3} title="Basic Info" isCompleted={completionStats.isBasicComplete} />
           <div className="mb-2">
             <ChildPhotoPicker
               onFileSelected={(file) => setProfilePhotoFile(file)}
@@ -2407,7 +2407,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 4. HEALTH INFO ================= */}
       <div>
-        <SectionHeading step={2} title="Health Info" isCompleted={completionStats.isHealthComplete} />
+        <SectionHeading step={4} title="Health Info" isCompleted={completionStats.isHealthComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormSelect
@@ -2483,7 +2483,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 5. FATHER INFO ================= */}
       <div>
-        <SectionHeading step={3} title="Father Info" isCompleted={completionStats.isFatherComplete} />
+        <SectionHeading step={5} title="Father Info" isCompleted={completionStats.isFatherComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -2587,7 +2587,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 6. MOTHER INFO ================= */}
       <div>
-        <SectionHeading step={4} title="Mother Info" isCompleted={completionStats.isMotherComplete} />
+        <SectionHeading step={6} title="Mother Info" isCompleted={completionStats.isMotherComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {/* Row 1 */}
           <FormInput
@@ -2692,7 +2692,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 5. SIBLINGS INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={5} title="Siblings Info" isCompleted={completionStats.isSiblingComplete} />
+          <SectionHeading step={7} title="Siblings Info" isCompleted={completionStats.isSiblingComplete} />
           <button
             type="button"
             onClick={addSibling}
@@ -2743,7 +2743,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 6. GUARDIAN INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={6} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
+          <SectionHeading step={8} title="Guardian Info" isCompleted={completionStats.isGuardianComplete} />
           <button
             type="button"
             onClick={addGuardian}
@@ -3010,7 +3010,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 8. MEETING PERSON INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={7} title="Meeting Person Info" isCompleted={completionStats.isMeetingComplete} />
+          <SectionHeading step={9} title="Meeting Person Info" isCompleted={completionStats.isMeetingComplete} />
           <button
             type="button"
             onClick={addMeetingPerson}
@@ -3140,7 +3140,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 8. WITNESS INFO ================= */}
       <div>
         <div className="flex items-center justify-between">
-          <SectionHeading step={8} title="Witness Info" isCompleted={completionStats.isWitnessComplete} />
+          <SectionHeading step={10} title="Witness Info" isCompleted={completionStats.isWitnessComplete} />
           <button
             type="button"
             onClick={addWitness}
@@ -3248,7 +3248,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 11. RESULT INFO ================= */}
       <div>
-        <SectionHeading step={9} title="Result Info" isCompleted={completionStats.isResultComplete} />
+        <SectionHeading step={11} title="Result Info" isCompleted={completionStats.isResultComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-4">
           <FormInput
             placeholder="School"
@@ -3356,7 +3356,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 12. HEALTH CARE SECTION ================= */}
       <div>
-        <SectionHeading step={10} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
+        <SectionHeading step={12} title="Health Care & Medical Follow-up" isCompleted={completionStats.isHealthCareComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
           <FormSelect
             label="Check Frequency"
@@ -3444,7 +3444,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 13. REPORT / COMPLAINT SECTION ================= */}
       <div>
-        <SectionHeading step={11} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
+        <SectionHeading step={13} title="Behavioral & Academic Report / Complaints" isCompleted={completionStats.isReportComplete} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-3.5">
           <FormSelect
             label="Complain Type"
@@ -3511,7 +3511,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 14. AREA OF INTEREST – CHILD ================= */}
       <div>
-        <SectionHeading step={12} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
+        <SectionHeading step={14} title="Area of Interest – Child" isCompleted={completionStats.isInterestComplete} />
         <div className="relative">
           <textarea
             rows={3}
@@ -3525,7 +3525,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 15. ATTACHMENTS (FINAL SECTION) ================= */}
       <div>
-        <SectionHeading step={13} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
+        <SectionHeading step={15} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3.5">
           {Object.entries(attachments).map(([key, item]) => (
             <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2 shadow-xs">
