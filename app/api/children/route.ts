@@ -4,6 +4,7 @@ import { requireAuth, getCurrentUser } from '@/lib/auth';
 import { Role } from '@prisma/client';
 import { logAudit } from '@/lib/audit';
 import { isPersistedChildPhotoUrl } from '@/lib/child-photo';
+import { redactProfessionalCareerAccount } from '@/lib/professional-career';
 
 export async function GET(request: Request) {
   try {
@@ -69,7 +70,13 @@ export async function GET(request: Request) {
       orderBy: { childId: 'asc' },
     });
 
-    return NextResponse.json({ success: true, children });
+    return NextResponse.json({
+      success: true,
+      children: children.map((child) => ({
+        ...child,
+        notes: redactProfessionalCareerAccount(child.notes),
+      })),
+    });
   } catch (error) {
     console.error('Fetch children error:', error);
     return NextResponse.json({ error: 'Failed to fetch children records' }, { status: 500 });

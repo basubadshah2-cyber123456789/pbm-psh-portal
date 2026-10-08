@@ -105,6 +105,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
 
   const attendancePresent = child.attendances.filter((record) => record.status === 'PRESENT').length;
   const psh = parsePshNotes(child.notes);
+  const careerProfile = psh?.professionalCareer?.profile;
 
   return (
     <AppLayout>
@@ -535,6 +536,40 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                 </div>
               ))}
             </div>
+          </Section>
+        )}
+
+        {careerProfile && (
+          <Section label="PROFESSIONAL CAREER" title="Graduate Career Update" tone="blue">
+            <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:grid-cols-3">
+              {([
+                ['Name', careerProfile.name],
+                ['Current status', careerProfile.currentStatus],
+                ['School / University', careerProfile.schoolOrUniversity],
+                ['Program / Degree', careerProfile.programOrDegree],
+                ['Class / Year', careerProfile.currentClassYear],
+                ['Employer', careerProfile.employer],
+                ['Job title', careerProfile.jobTitle],
+                ['Location', careerProfile.location],
+              ] as const).map(([label, value]) => (
+                <div key={label}>
+                  <dt className="text-slate-400">{label}</dt>
+                  <dd className="mt-0.5 font-semibold text-slate-800">{value || 'Not provided'}</dd>
+                </div>
+              ))}
+              {careerProfile.notes && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <dt className="text-slate-400">Additional information</dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap font-semibold text-slate-800">{careerProfile.notes}</dd>
+                </div>
+              )}
+              {careerProfile.updatedAt && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <dt className="text-slate-400">Last updated</dt>
+                  <dd className="mt-0.5 font-semibold text-slate-800">{formatDate(new Date(careerProfile.updatedAt))}</dd>
+                </div>
+              )}
+            </dl>
           </Section>
         )}
 

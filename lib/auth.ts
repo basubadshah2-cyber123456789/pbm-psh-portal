@@ -14,7 +14,7 @@ import {
 
 export { type ERPModule, type PermissionCode, hasModuleAccess, hasPermission, ROLE_DISPLAY_NAMES } from './permissions';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pbm-sweet-home-multan-jwt-secret-key-2026';
+export const JWT_SECRET = process.env.JWT_SECRET || 'pbm-sweet-home-multan-jwt-secret-key-2026';
 export const SESSION_COOKIE_NAME = 'pbm_session';
 
 export interface SessionPayload {
@@ -130,4 +130,3 @@ export async function requirePermission(permissionCode: PermissionCode) {
   }
   return user;
 }
-

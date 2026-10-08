@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { Role } from '@prisma/client';
 import { logAudit } from '@/lib/audit';
+import { redactProfessionalCareerAccount } from '@/lib/professional-career';
 
 export async function POST(request: Request) {
   try {
@@ -86,7 +87,10 @@ export async function POST(request: Request) {
       details: `Transferred child ${child.fullName} to Room ${targetBed.room.roomNumber}, Bed ${targetBed.bedNumber}`,
     });
 
-    return NextResponse.json({ success: true, child: updatedChild });
+    return NextResponse.json({
+      success: true,
+      child: { ...updatedChild, notes: redactProfessionalCareerAccount(updatedChild.notes) },
+    });
   } catch (error) {
     console.error('Bed transfer error:', error);
     return NextResponse.json({ error: 'Failed to transfer bed' }, { status: 500 });

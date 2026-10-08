@@ -4,6 +4,10 @@ import { requireAuth } from '@/lib/auth';
 import { Role } from '@prisma/client';
 import { logAudit } from '@/lib/audit';
 import { isPersistedChildPhotoUrl } from '@/lib/child-photo';
+import {
+  preserveProfessionalCareerData,
+  redactProfessionalCareerAccount,
+} from '@/lib/professional-career';
 
 export async function GET(
   request: Request,
@@ -48,7 +52,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized to access child profiles' }, { status: 403 });
     }
 
-    return NextResponse.json({ success: true, child });
+    return NextResponse.json({
+      success: true,
+      child: { ...child, notes: redactProfessionalCareerAccount(child.notes) },
+    });
   } catch (error) {
     console.error('Fetch child profile error:', error);
     return NextResponse.json({ error: 'Failed to fetch child profile' }, { status: 500 });
@@ -174,8 +181,8 @@ export async function PUT(
       nextRoomId = roomId ? String(roomId).trim() : null;
     }
 
-    const updatedChild = await prisma.child.update({
-      where: { id },
+    const updateResult = await prisma.child.updateMany({
+      where: { id, notes: existingChild.notes },
       data: {
         fullName: fullName !== undefined ? String(fullName).trim() : existingChild.fullName,
         fatherGuardianName: fatherGuardianName !== undefined ? String(fatherGuardianName).trim() : existingChild.fatherGuardianName,
@@ -192,12 +199,25 @@ export async function PUT(
         classId: classId !== undefined ? (classId ? String(classId).trim() : null) : existingChild.classId,
         clothingIssued: clothingIssued !== undefined ? clothingIssued : existingChild.clothingIssued,
         dietaryNotes: dietaryNotes !== undefined ? dietaryNotes : existingChild.dietaryNotes,
-        notes: notes !== undefined ? notes : existingChild.notes,
+        notes: notes !== undefined
+          ? preserveProfessionalCareerData(existingChild.notes, notes)
+          : existingChild.notes,
         ...(Object.prototype.hasOwnProperty.call(body, 'photo')
           ? { photo: photo ? String(photo).trim() : null }
           : {}),
       },
     });
+    if (updateResult.count !== 1) {
+      return NextResponse.json(
+        { error: 'The child dossier changed while saving. Please reload the record and try again.' },
+        { status: 409 }
+      );
+    }
+
+    const updatedChild = await prisma.child.findUnique({ where: { id } });
+    if (!updatedChild) {
+      return NextResponse.json({ error: 'Child not found after update' }, { status: 404 });
+    }
 
     // Update medical record
     if (bloodGroup || allergies || chronicConditions || heightCm || weightKg) {
@@ -233,7 +253,10 @@ export async function PUT(
       details: `Updated child profile for ${updatedChild.fullName} (${updatedChild.childId})`,
     });
 
-    return NextResponse.json({ success: true, child: updatedChild });
+    return NextResponse.json({
+      success: true,
+      child: { ...updatedChild, notes: redactProfessionalCareerAccount(updatedChild.notes) },
+    });
   } catch (error: any) {
     console.error('Update child error:', error);
     if (error?.code === 'P2002') {
