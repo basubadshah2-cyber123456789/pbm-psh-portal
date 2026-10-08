@@ -4,7 +4,7 @@ import { requireAuth, getCurrentUser } from '@/lib/auth';
 import { Role } from '@prisma/client';
 import { logAudit } from '@/lib/audit';
 import { isPersistedChildPhotoUrl } from '@/lib/child-photo';
-import { redactLegacyCareerAccount } from '@/lib/legacy-career-data';
+import { redactProfessionalCareerAccount } from '@/lib/professional-career';
 
 export async function GET(request: Request) {
   try {
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       success: true,
       children: children.map((child) => ({
         ...child,
-        notes: redactLegacyCareerAccount(child.notes),
+        notes: redactProfessionalCareerAccount(child.notes),
       })),
     });
   } catch (error) {

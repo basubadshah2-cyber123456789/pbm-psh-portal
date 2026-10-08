@@ -5,9 +5,9 @@ import { Role } from '@prisma/client';
 import { logAudit } from '@/lib/audit';
 import { isPersistedChildPhotoUrl } from '@/lib/child-photo';
 import {
-  preserveLegacyCareerData,
-  redactLegacyCareerAccount,
-} from '@/lib/legacy-career-data';
+  preserveProfessionalCareerData,
+  redactProfessionalCareerAccount,
+} from '@/lib/professional-career';
 
 export async function GET(
   request: Request,
@@ -54,7 +54,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      child: { ...child, notes: redactLegacyCareerAccount(child.notes) },
+      child: { ...child, notes: redactProfessionalCareerAccount(child.notes) },
     });
   } catch (error) {
     console.error('Fetch child profile error:', error);
@@ -200,7 +200,7 @@ export async function PUT(
         clothingIssued: clothingIssued !== undefined ? clothingIssued : existingChild.clothingIssued,
         dietaryNotes: dietaryNotes !== undefined ? dietaryNotes : existingChild.dietaryNotes,
         notes: notes !== undefined
-          ? preserveLegacyCareerData(existingChild.notes, notes)
+          ? preserveProfessionalCareerData(existingChild.notes, notes)
           : existingChild.notes,
         ...(Object.prototype.hasOwnProperty.call(body, 'photo')
           ? { photo: photo ? String(photo).trim() : null }
@@ -255,7 +255,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      child: { ...updatedChild, notes: redactLegacyCareerAccount(updatedChild.notes) },
+      child: { ...updatedChild, notes: redactProfessionalCareerAccount(updatedChild.notes) },
     });
   } catch (error: any) {
     console.error('Update child error:', error);
