@@ -3189,23 +3189,25 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 <FormInput placeholder="Institution" value={s.institution} onChange={(e) => updateSibling(s.id, 'institution', e.target.value)} />
                 <FormInput placeholder="Grade / Class" value={s.gradeClass} onChange={(e) => updateSibling(s.id, 'gradeClass', e.target.value)} />
                 <FormSelect label="Marital Status" value={s.maritalStatus} onChange={(e) => updateSibling(s.id, 'maritalStatus', e.target.value)} options={['Single', 'Married', 'Divorced', 'Widow']} />
-                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
-                  <AddressFields
-                    values={{
-                      addressType: s.addressType || '',
-                      postOffice: s.postOffice || '',
-                      colony: s.colony || '',
-                      district: s.district,
-                      tehsil: s.tehsil,
-                      ucNumber: s.ucNumber,
-                      ucName: s.ucName || '',
-                      streetNumber: s.streetNumber,
-                      houseNumber: s.houseNumber,
-                      address: s.address,
-                    }}
-                    onChange={(field, value) => updateSibling(s.id, field, value)}
-                  />
-                </div>
+                {s.maritalStatus === 'Married' && (
+                  <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 border-t border-slate-200 pt-4">
+                    <AddressFields
+                      values={{
+                        addressType: s.addressType || '',
+                        postOffice: s.postOffice || '',
+                        colony: s.colony || '',
+                        district: s.district,
+                        tehsil: s.tehsil,
+                        ucNumber: s.ucNumber,
+                        ucName: s.ucName || '',
+                        streetNumber: s.streetNumber,
+                        houseNumber: s.houseNumber,
+                        address: s.address,
+                      }}
+                      onChange={(field, value) => updateSibling(s.id, field, value)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           ))}
