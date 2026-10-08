@@ -507,6 +507,37 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
           </Section>
         )}
 
+        {Array.isArray(psh?.followUps) && psh.followUps.length > 0 && (
+          <Section label="FOLLOW UP" title="Academic Follow-Up Records" tone="purple">
+            <div className="space-y-3">
+              {psh.followUps.map((followUp: any, index: number) => (
+                <div key={followUp.id || index} className="rounded-lg border border-indigo-100 bg-white p-3">
+                  <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                    {([
+                      ['Name', followUp.name],
+                      ['Class', followUp.className],
+                      ['Institute Name', followUp.instituteName],
+                      ['Passed From', followUp.passedFrom],
+                      ['Board Registration Number', followUp.boardRegistrationNumber],
+                      ['Roll Number', followUp.rollNumber],
+                      ['Passing Year', followUp.passingYear],
+                      ['Total Marks', followUp.totalMarks],
+                      ['Obtained Marks', followUp.obtainedMarks],
+                      ['PSH Registration Number', followUp.pshRegistrationNumber],
+                      ['Passed From Which PSH', followUp.passedFromPsh],
+                    ] as const).map(([label, value]) => (
+                      <div key={label}>
+                        <span className="text-slate-400">{label}: </span>
+                        <span className="font-semibold text-slate-800">{value || 'N/A'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* 3 & 11: Medical & Health Summary */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <Section label="SECTION 3 & 11: HEALTH" title="Medical Summary & Prescription" tone="red">
