@@ -18,6 +18,7 @@ import {
   Heart,
   Award,
   BookOpen,
+  GraduationCap,
   Sparkles,
   Search,
   Filter,
@@ -1208,6 +1209,13 @@ export default function StandalonePSHAdmissionWebsite() {
 
             {/* Top Navigation Tabs */}
             <div className="flex items-center gap-2">
+              <Link
+                href="/academic"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
+              >
+                <GraduationCap className="h-4 w-4" />
+                Academic
+              </Link>
               <Link
                 href="/professional-career"
                 className="rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
