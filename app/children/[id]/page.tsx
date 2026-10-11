@@ -109,6 +109,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
   const attendancePresent = child.attendances.filter((record) => record.status === 'PRESENT').length;
   const psh = parsePshNotes(child.notes);
   const careerProfile = psh?.professionalCareer?.profile;
+  const disciplinaryProceedings = psh?.disciplinaryProceedings;
+  const disciplinaryType = disciplinaryProceedings?.type ||
+    (child.status === 'DROPPED' || child.status === 'EXPELLED' ? child.status : '');
   const getHistoryYear = (value: string | number | Date | null | undefined) => {
     if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
     if (typeof value === 'string') {
@@ -348,6 +351,37 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
             </dl>
           </Section>
         </div>
+
+        {disciplinaryType && (
+          <Section label="DISCIPLINARY PROCEEDINGS" title={disciplinaryType} tone="red">
+            {disciplinaryProceedings ? (
+              <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                {([
+                  ['Name', disciplinaryProceedings.name],
+                  ['Father Name', disciplinaryProceedings.fatherName],
+                  ['Which PBM Sweet Home', disciplinaryProceedings.pshName],
+                  ['Class', disciplinaryProceedings.className],
+                  ['Roll No.', disciplinaryProceedings.rollNumber],
+                  ['Institute', disciplinaryProceedings.instituteName],
+                  ['Total Marks', disciplinaryProceedings.totalMarks],
+                  ['Obtained Marks', disciplinaryProceedings.obtainedMarks],
+                  ['Reason', disciplinaryProceedings.reason],
+                  ['Date', disciplinaryProceedings.date],
+                  ['Remarks', disciplinaryProceedings.remarks],
+                ] as const).map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-slate-400">{label}</dt>
+                    <dd className="whitespace-pre-wrap font-semibold text-slate-800">{value || 'Not recorded'}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="text-xs text-slate-600">
+                This child has a legacy {disciplinaryType.toLowerCase()} status. Additional proceeding details have not been recorded.
+              </p>
+            )}
+          </Section>
+        )}
 
         {/* 4, 5, 6: Father, Mother & Guardian Info */}
         {psh && (psh.fatherInfo || psh.motherInfo || psh.guardianInfo || psh.additionalGuardians?.length > 0) && (

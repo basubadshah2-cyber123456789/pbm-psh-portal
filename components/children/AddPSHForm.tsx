@@ -116,6 +116,21 @@ interface FollowUpRecord {
   passedFromPsh: string;
 }
 
+type DisciplinaryProceedingRecord = {
+  type: '' | 'DROPPED' | 'EXPELLED';
+  name: string;
+  fatherName: string;
+  pshName: string;
+  className: string;
+  rollNumber: string;
+  instituteName: string;
+  totalMarks: string;
+  obtainedMarks: string;
+  reason: string;
+  date: string;
+  remarks: string;
+};
+
 const createEmptyFollowUp = (): FollowUpRecord => ({
   id: '',
   name: '',
@@ -129,6 +144,21 @@ const createEmptyFollowUp = (): FollowUpRecord => ({
   obtainedMarks: '',
   pshRegistrationNumber: '',
   passedFromPsh: '',
+});
+
+const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
+  type: '',
+  name: '',
+  fatherName: '',
+  pshName: '',
+  className: '',
+  rollNumber: '',
+  instituteName: '',
+  totalMarks: '',
+  obtainedMarks: '',
+  reason: '',
+  date: '',
+  remarks: '',
 });
 
 export interface WitnessRecord {
@@ -562,6 +592,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [status, setStatus] = useState<string>('');
   const [dateOfStatus, setDateOfStatus] = useState<string>(new Date().toISOString().split('T')[0]);
   const [statusRemarks, setStatusRemarks] = useState<string>('');
+  const [disciplinaryProceeding, setDisciplinaryProceeding] = useState<DisciplinaryProceedingRecord>(createEmptyDisciplinaryProceeding);
 
   // ================= 3. HEALTH INFO =================
   const [isDisable, setIsDisable] = useState<string>('');
@@ -1321,6 +1352,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [followUpDraft, setFollowUpDraft] = useState<FollowUpRecord>(createEmptyFollowUp());
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
   const [followUpError, setFollowUpError] = useState<string | null>(null);
+  const [disciplinaryDraft, setDisciplinaryDraft] = useState<DisciplinaryProceedingRecord>(createEmptyDisciplinaryProceeding);
+  const [isDisciplinaryProceedingsOpen, setIsDisciplinaryProceedingsOpen] = useState(false);
   const [isProfessionalCareerOpen, setIsProfessionalCareerOpen] = useState(false);
   const [careerAccountChildId, setCareerAccountChildId] = useState<string | undefined>(persistedInitialChildId);
   const [careerSetupAfterSave, setCareerSetupAfterSave] = useState(false);
@@ -1341,6 +1374,27 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     });
     setFollowUpError(null);
     setIsFollowUpOpen(true);
+  };
+
+  const openDisciplinaryProceedingsForm = () => {
+    setDisciplinaryDraft({
+      ...createEmptyDisciplinaryProceeding(),
+      ...disciplinaryProceeding,
+      name: disciplinaryProceeding.name || fullName,
+      fatherName: disciplinaryProceeding.fatherName || fatherName,
+      className: disciplinaryProceeding.className || resultClass,
+      instituteName: disciplinaryProceeding.instituteName || resultSchool,
+    });
+    setIsDisciplinaryProceedingsOpen(true);
+  };
+
+  const saveDisciplinaryProceeding = () => {
+    setDisciplinaryProceeding(
+      disciplinaryDraft.type === 'DROPPED'
+        ? { ...createEmptyDisciplinaryProceeding(), type: 'DROPPED' }
+        : disciplinaryDraft
+    );
+    setIsDisciplinaryProceedingsOpen(false);
   };
 
   const saveFollowUpDraft = () => {
@@ -1496,6 +1550,24 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       } catch {
         psh = null;
       }
+      const savedBaseStatus = psh?.basicInfo?.status || initialChild.status || 'ACTIVE';
+      const normalizedStatus = normalizeChildStatus(savedBaseStatus);
+      const savedDisciplinaryType = psh?.disciplinaryProceedings?.type;
+      const legacyDisciplinaryType = normalizedStatus === 'DROPPED' || normalizedStatus === 'EXPELLED'
+        ? normalizedStatus
+        : '';
+      setStatus(
+        normalizedStatus === 'DROPPED' || normalizedStatus === 'EXPELLED'
+          ? 'ACTIVE'
+          : normalizedStatus
+      );
+      setDisciplinaryProceeding({
+        ...createEmptyDisciplinaryProceeding(),
+        ...(psh?.disciplinaryProceedings || {}),
+        type: savedDisciplinaryType === 'DROPPED' || savedDisciplinaryType === 'EXPELLED'
+          ? savedDisciplinaryType
+          : legacyDisciplinaryType,
+      });
       const legacyDataYear = getYearValue(initialChild.updatedAt || initialChild.admissionDate || initialChild.createdAt);
       setFollowUpRecords(
         Array.isArray(psh?.followUps)
@@ -1518,7 +1590,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       );
       setDateOfBirth(initialChild.dateOfBirth || '2016-01-15');
       setGender(initialChild.gender || 'MALE');
-      setStatus(normalizeChildStatus(initialChild.status || 'ACTIVE'));
       setBloodGroup(initialChild.bloodGroup || 'B+');
       setAppearanceMeasurements([{
         id: '1',
@@ -1555,7 +1626,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         );
 
         if (psh.basicInfo) {
-          if (psh.basicInfo.status) setStatus(normalizeChildStatus(psh.basicInfo.status));
           setFamilyCast(psh.basicInfo.familyCast || '');
           setMotherLanguage(psh.basicInfo.motherLanguage || '');
           setBirthDistrict(psh.basicInfo.birthDistrict || '');
@@ -1908,6 +1978,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setStatus('ACTIVE');
     setDateOfStatus(new Date().toISOString().split('T')[0]);
     setStatusRemarks('');
+    setDisciplinaryProceeding(createEmptyDisciplinaryProceeding());
+    setDisciplinaryDraft(createEmptyDisciplinaryProceeding());
+    setIsDisciplinaryProceedingsOpen(false);
     setIsDisable('No');
     setBloodGroup('');
     setMentalHealth('');
@@ -2758,10 +2831,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           nextOfKin,
           isSponsored,
           sponsorshipAmount: isSponsored === 'Yes' ? sponsorshipAmount : null,
-          status,
+          status: disciplinaryProceeding.type || status || 'ACTIVE',
           dateOfStatus,
           statusRemarks,
         },
+        disciplinaryProceedings: disciplinaryProceeding.type ? disciplinaryProceeding : null,
         healthInfo: {
           isDisable,
           bloodGroup,
@@ -2907,7 +2981,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         guardianContact,
         address: fatherAddress || motherAddress || guardianAddress || 'Sweet Home Multan, Punjab',
         photo: photoUrl || initialChild?.photo || null,
-        status: status || 'ACTIVE',
+        status: disciplinaryProceeding.type || status || 'ACTIVE',
         bloodGroup: bloodGroup || 'B+',
         allergies: 'None',
         chronicConditions: specialNeedDisease || 'None',
@@ -3402,8 +3476,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setStatus(e.target.value)}
             options={[
               { label: 'REGULAR', value: 'ACTIVE' },
-              'DROPPED',
-              'EXPELLED',
               'PASSOUT',
             ]}
             className="md:col-span-2"
@@ -4755,6 +4827,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </button>
         <button
           type="button"
+          onClick={openDisciplinaryProceedingsForm}
+          disabled={isSubmitting}
+          className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-red-300 bg-red-50 text-red-800 text-xs sm:text-sm font-bold hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50"
+        >
+          Disciplinary Proceedings{disciplinaryProceeding.type ? ` (${disciplinaryProceeding.type})` : ''}
+        </button>
+        <button
+          type="button"
           onClick={openFollowUpForm}
           disabled={isSubmitting}
           className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-800 text-xs sm:text-sm font-bold hover:bg-indigo-100 transition-all cursor-pointer disabled:opacity-50"
@@ -4857,6 +4937,105 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 className="rounded-lg bg-[#0D5C3A] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0b4d30]"
               >
                 Add Follow Up
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isDisciplinaryProceedingsOpen && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="disciplinary-proceedings-title"
+            className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 id="disciplinary-proceedings-title" className="text-lg font-bold text-slate-900">
+                  Disciplinary Proceedings
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  These details are saved with the child dossier when you save the dossier.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDisciplinaryProceedingsOpen(false)}
+                className="rounded-lg px-2 py-1 text-xl leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                aria-label="Close disciplinary proceedings form"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+              <FormSelect
+                label="Proceeding Type"
+                value={disciplinaryDraft.type}
+                onChange={(event) => setDisciplinaryDraft((current) => ({
+                  ...current,
+                  type: event.target.value as DisciplinaryProceedingRecord['type'],
+                }))}
+                options={[
+                  { label: 'DROPPED', value: 'DROPPED' },
+                  { label: 'EXPELLED', value: 'EXPELLED' },
+                ]}
+                required
+              />
+            </div>
+
+            {disciplinaryDraft.type === 'EXPELLED' ? (
+              <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                {([
+                  ['name', 'Name'],
+                  ['fatherName', 'Father Name'],
+                  ['pshName', 'Which PBM Sweet Home'],
+                  ['className', 'Class'],
+                  ['rollNumber', 'Roll No.'],
+                  ['instituteName', 'Institute'],
+                  ['totalMarks', 'Total Marks'],
+                  ['obtainedMarks', 'Obtained Marks'],
+                  ['reason', 'Reason of Expulsion'],
+                  ['date', 'Date of Expulsion'],
+                  ['remarks', 'Remarks'],
+                ] as const).map(([field, label]) => (
+                  <FormInput
+                    key={field}
+                    label={label}
+                    type={field === 'date' ? 'date' : field === 'totalMarks' || field === 'obtainedMarks' ? 'number' : 'text'}
+                    min={field === 'totalMarks' || field === 'obtainedMarks' ? 0 : undefined}
+                    value={disciplinaryDraft[field]}
+                    onChange={(event) => setDisciplinaryDraft((current) => ({
+                      ...current,
+                      [field]: event.target.value,
+                    }))}
+                  />
+                ))}
+              </div>
+            ) : disciplinaryDraft.type === 'DROPPED' ? (
+              <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                DROPPED details fields will be added after they are provided.
+              </p>
+            ) : null}
+
+            <div className="mt-6 flex flex-col-reverse justify-end gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setIsDisciplinaryProceedingsOpen(false)}
+                className="rounded-lg border border-slate-300 px-5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={saveDisciplinaryProceeding}
+                disabled={!disciplinaryDraft.type || isSubmitting}
+                className="rounded-lg bg-red-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Save Proceedings
               </button>
             </div>
           </div>
