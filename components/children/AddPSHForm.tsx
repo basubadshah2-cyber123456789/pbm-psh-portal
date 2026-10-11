@@ -125,6 +125,7 @@ type DisciplinaryProceedingRecord = {
   classSection: string;
   rollNumber: string;
   attendance: string;
+  pshRegistrationNumber: string;
   instituteName: string;
   totalMarks: string;
   obtainedMarks: string;
@@ -158,6 +159,7 @@ const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
   classSection: '',
   rollNumber: '',
   attendance: '',
+  pshRegistrationNumber: '',
   instituteName: '',
   totalMarks: '',
   obtainedMarks: '',
@@ -5022,6 +5024,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 {([
                   ['name', 'Name'],
                   ['fatherName', 'Father Name'],
+                  ['pshName', 'Which PBM Sweet Home Dropped From'],
+                  ['pshRegistrationNumber', 'PSH Registration'],
                   ['className', 'Class'],
                   ['classSection', 'Class Section'],
                   ['rollNumber', 'Roll No.'],

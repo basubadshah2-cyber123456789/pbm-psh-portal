@@ -359,6 +359,8 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                 {(disciplinaryType === 'DROPPED' ? [
                   ['Name', disciplinaryProceedings.name],
                   ['Father Name', disciplinaryProceedings.fatherName],
+                  ['Which PBM Sweet Home Dropped From', disciplinaryProceedings.pshName],
+                  ['PSH Registration', disciplinaryProceedings.pshRegistrationNumber],
                   ['Class', disciplinaryProceedings.className],
                   ['Class Section', disciplinaryProceedings.classSection],
                   ['Roll No.', disciplinaryProceedings.rollNumber],
