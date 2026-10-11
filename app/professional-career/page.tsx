@@ -17,7 +17,7 @@ export default function ProfessionalCareerLoginPage() {
     setError('');
     setLoading(true);
     try {
-      const response = await fetch('/api/professional-career/login', {
+      const response = await fetch('/api/pbm/career/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

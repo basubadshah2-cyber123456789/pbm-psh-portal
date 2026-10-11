@@ -52,7 +52,7 @@ export default function ProfessionalCareerProfilePage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/professional-career/profile')
+    fetch('/api/pbm/career/profile')
       .then(async (response) => {
         const result = await response.json();
         if (response.status === 401) {
@@ -79,7 +79,7 @@ export default function ProfessionalCareerProfilePage() {
     setError('');
     setNotice('');
     try {
-      const response = await fetch('/api/professional-career/profile', {
+      const response = await fetch('/api/pbm/career/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
@@ -102,7 +102,7 @@ export default function ProfessionalCareerProfilePage() {
   const signOut = async () => {
     setLoggingOut(true);
     try {
-      const response = await fetch('/api/professional-career/logout', { method: 'POST' });
+      const response = await fetch('/api/pbm/career/logout', { method: 'POST' });
       if (!response.ok) throw new Error('Unable to sign out. Please try again.');
       router.replace('/professional-career');
     } catch (logoutError: unknown) {

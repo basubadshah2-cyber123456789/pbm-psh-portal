@@ -1,8 +1,7 @@
-import { AppLayout } from '@/components/layout/AppLayout';
 import { AcademicManagement, type AcademicChild } from '@/components/academic/AcademicManagement';
-import { requireModuleAccess } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { parseChildDossier } from '@/lib/professional-career';
+import { redirect } from 'next/navigation';
+import { getPbmStaffSession } from '@/lib/pbm-auth';
+import { getPbmPrismaReady } from '@/lib/pbm-db';
 
 function getCollegeEntries(value: unknown): AcademicChild['collegeProgress'] {
   if (!Array.isArray(value)) return [];
@@ -28,26 +27,26 @@ function getCollegeEntries(value: unknown): AcademicChild['collegeProgress'] {
 }
 
 export default async function AcademicPage() {
-  await requireModuleAccess('academic');
+  const staff = await getPbmStaffSession();
+  if (!staff) redirect('/pbm-staff/login?next=%2Facademic');
 
-  const children = await prisma.child.findMany({
-    select: { id: true, childId: true, fullName: true, notes: true },
-    orderBy: { fullName: 'asc' },
-  });
+  const client = await getPbmPrismaReady();
+  const children = await client.$queryRaw<Array<{
+    id: string;
+    admissionNo: string;
+    fullName: string;
+    collegeProgress: unknown;
+  }>>`
+    SELECT id, "admissionNo", "fullName", "collegeProgress"
+    FROM "PbmChildRecord"
+    ORDER BY "fullName" ASC
+  `;
+  const academicChildren: AcademicChild[] = children.map((child) => ({
+    id: child.id,
+    childId: child.admissionNo,
+    fullName: child.fullName,
+    collegeProgress: getCollegeEntries(child.collegeProgress),
+  }));
 
-  const academicChildren: AcademicChild[] = children.map((child) => {
-    const dossier = parseChildDossier(child.notes);
-    return {
-      id: child.id,
-      childId: child.childId,
-      fullName: child.fullName,
-      collegeProgress: getCollegeEntries(dossier.collegeProgress),
-    };
-  });
-
-  return (
-    <AppLayout>
-      <AcademicManagement children={academicChildren} />
-    </AppLayout>
-  );
+  return <AcademicManagement children={academicChildren} />;
 }

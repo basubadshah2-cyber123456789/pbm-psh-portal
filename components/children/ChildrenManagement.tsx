@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { exportToExcelFile } from '@/lib/export';
 import { formatDate, parsePshNotes } from '@/lib/utils';
+import { formatAddress } from '@/lib/formatters';
 import { ChildPhotoPicker } from './ChildPhotoPicker';
 import { AddPSHForm } from './AddPSHForm';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
@@ -733,13 +734,13 @@ export function ChildrenManagement() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Residential Address</label>
-                <textarea
-                  rows={2}
-                  placeholder="Complete home / village address..."
+                <label className="block font-semibold text-slate-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  placeholder="Enter address..."
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-emerald-500 outline-hidden resize-none"
+                  className="w-full p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-emerald-500 outline-hidden"
                 />
               </div>
 
@@ -957,8 +958,7 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">Status:</span> <strong>{psh?.fatherInfo?.isAlive === 'No' ? 'Deceased (مرحوم)' : 'Alive (حیات)'}</strong> {psh?.fatherInfo?.dod ? `• DOD: ${formatDate(psh.fatherInfo.dod)}` : ''}</div>
                     <div><span className="text-slate-500">CNIC:</span> {psh?.fatherInfo?.cnic || 'N/A'} • <span className="text-slate-500">Contact:</span> {psh?.fatherInfo?.contact || 'N/A'}</div>
                     <div><span className="text-slate-500">Profession:</span> {psh?.fatherInfo?.profession || 'Daily Wager'} ({psh?.fatherInfo?.qualification || 'Matric'})</div>
-                    <div><span className="text-slate-500">Native Address:</span> {psh?.fatherInfo?.address || `${psh?.fatherInfo?.city || 'Multan'}, ${psh?.fatherInfo?.province || 'Punjab'}`}</div>
-                    <div><span className="text-slate-500">Union Council No. / Name:</span> {[psh?.fatherInfo?.ucNumber, psh?.fatherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
+                    <div><span className="text-slate-500">Address:</span> {formatAddress(psh?.fatherInfo)}</div>
                   </div>
 
                   {/* Mother Info */}
@@ -969,8 +969,7 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">Status:</span> <strong>{psh?.motherInfo?.isAlive === 'No' ? 'Deceased (مرحومہ)' : 'Alive (حیات)'}</strong> {psh?.motherInfo?.dod ? `• DOD: ${formatDate(psh.motherInfo.dod)}` : ''}</div>
                     <div><span className="text-slate-500">CNIC:</span> {psh?.motherInfo?.cnic || 'N/A'} • <span className="text-slate-500">Contact:</span> {psh?.motherInfo?.contact || 'N/A'}</div>
                     <div><span className="text-slate-500">Profession:</span> {psh?.motherInfo?.profession || 'Housewife'} ({psh?.motherInfo?.qualification || 'Primary'})</div>
-                    <div><span className="text-slate-500">Native Address:</span> {psh?.motherInfo?.address || `${psh?.motherInfo?.city || 'Multan'}, ${psh?.motherInfo?.province || 'Punjab'}`}</div>
-                    <div><span className="text-slate-500">Union Council No. / Name:</span> {[psh?.motherInfo?.ucNumber, psh?.motherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
+                    <div><span className="text-slate-500">Address:</span> {formatAddress(psh?.motherInfo)}</div>
                   </div>
                 </div>
 
@@ -985,13 +984,8 @@ export function ChildrenManagement() {
                     <div><span className="text-slate-500">Contact:</span> <strong>{psh?.guardianInfo?.contact || selectedChild.guardianContact || '0300-XXXXXXX'}</strong></div>
                     <div><span className="text-slate-500">CNIC:</span> <strong>{psh?.guardianInfo?.cnic || '36302-XXXXXXX-X'}</strong></div>
                     <div><span className="text-slate-500">Profession/Income:</span> <strong>{psh?.guardianInfo?.profession || 'Domestic Work / Sewing'}</strong></div>
-                    <div><span className="text-slate-500">Address:</span> <strong>{psh?.guardianInfo?.address || selectedChild.address || 'Multan'}</strong></div>
-                    <div><span className="text-slate-500">Permanent Type / Post Office / Colony:</span> <strong>{[psh?.guardianInfo?.addressType, psh?.guardianInfo?.addressType === 'Village' ? psh.guardianInfo.postOffice : psh?.guardianInfo?.addressType === 'City' ? psh.guardianInfo.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
-                    <div><span className="text-slate-500">Union Council No. / Name:</span> <strong>{[psh?.guardianInfo?.ucNumber, psh?.guardianInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
-                    <div><span className="text-slate-500">Current / Present Address:</span> <strong>{psh?.guardianInfo?.currentAddress?.address || 'N/A'}</strong></div>
-                    <div><span className="text-slate-500">Current Address Type / Post Office / Colony:</span> <strong>{[psh?.guardianInfo?.currentAddress?.addressType, psh?.guardianInfo?.currentAddress?.addressType === 'Village' ? psh.guardianInfo.currentAddress.postOffice : psh?.guardianInfo?.currentAddress?.addressType === 'City' ? psh.guardianInfo.currentAddress.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
-                    <div><span className="text-slate-500">Current Union Council No. / Name:</span> <strong>{[psh?.guardianInfo?.currentAddress?.ucNumber, psh?.guardianInfo?.currentAddress?.ucName].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
-                    <div><span className="text-slate-500">Current District / Tehsil / Street / House:</span> <strong>{[psh?.guardianInfo?.currentAddress?.district, psh?.guardianInfo?.currentAddress?.tehsil, psh?.guardianInfo?.currentAddress?.streetNumber, psh?.guardianInfo?.currentAddress?.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                    <div><span className="text-slate-500">Address:</span> <strong>{formatAddress(psh?.guardianInfo, selectedChild.address || 'N/A')}</strong></div>
+                    <div><span className="text-slate-500">Current Address:</span> <strong>{formatAddress(psh?.guardianInfo?.currentAddress)}</strong></div>
                   </div>
                   {Array.isArray(psh?.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
                     <div key={guardian.id || index} className="mt-3 border-t border-slate-100 pt-3">
@@ -1002,10 +996,7 @@ export function ChildrenManagement() {
                         <div><span className="text-slate-500">CNIC:</span> <strong>{guardian.cnic || 'N/A'}</strong></div>
                         <div><span className="text-slate-500">Qualification:</span> <strong>{guardian.qualification || 'N/A'}</strong></div>
                         <div><span className="text-slate-500">Profession:</span> <strong>{guardian.profession || 'N/A'}</strong></div>
-                        <div><span className="text-slate-500">Address:</span> <strong>{guardian.address || 'N/A'}</strong></div>
-                        <div><span className="text-slate-500">District:</span> <strong>{guardian.district || 'N/A'}</strong></div>
-                        <div><span className="text-slate-500">Tehsil:</span> <strong>{guardian.tehsil || 'N/A'}</strong></div>
-                        <div><span className="text-slate-500">UC No. / Name / Street / House:</span> <strong>{[guardian.ucNumber, guardian.ucName, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</strong></div>
+                        <div><span className="text-slate-500">Address:</span> <strong>{formatAddress(guardian)}</strong></div>
                       </div>
                     </div>
                   ))}

@@ -18,3 +18,42 @@ export function formatPhone(input: string): string {
   if (digits.length <= 4) return digits;
   return `${digits.slice(0, 4)}-${digits.slice(4)}`;
 }
+
+type AddressDetails = {
+  address?: string | null;
+  addressType?: string | null;
+  villageName?: string | null;
+  postOffice?: string | null;
+  colony?: string | null;
+  district?: string | null;
+  tehsil?: string | null;
+  ucNumber?: string | null;
+  ucName?: string | null;
+  streetNumber?: string | null;
+  houseNumber?: string | null;
+};
+
+export function formatAddress(details: AddressDetails | null | undefined, fallback = 'N/A'): string {
+  if (!details) return fallback;
+
+  const parts = [
+    details.addressType,
+    details.addressType === 'Village'
+      ? details.villageName
+      : details.addressType === 'City'
+        ? details.colony
+        : details.postOffice || details.colony,
+    details.addressType === 'Village' ? details.postOffice : null,
+    details.district,
+    details.tehsil,
+    details.ucNumber,
+    details.ucName,
+    details.streetNumber,
+    details.houseNumber,
+  ].map((part) => part?.trim()).filter((part): part is string => Boolean(part));
+  const legacyAddress = details.address?.trim();
+
+  const legacyParts = legacyAddress?.split(', ').map((part) => part.trim()).filter(Boolean) || [];
+  if (legacyAddress && !legacyParts.every((part) => parts.includes(part))) parts.push(legacyAddress);
+  return parts.join(', ') || fallback;
+}

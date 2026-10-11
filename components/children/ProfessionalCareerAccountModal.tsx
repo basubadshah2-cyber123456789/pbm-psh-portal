@@ -54,7 +54,7 @@ export function ProfessionalCareerAccountModal({
     if (!childId) return;
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/children/${childId}/professional-career`)
+    fetch(`/api/pbm/children/${childId}/career-account`)
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Unable to load career account.');
@@ -102,7 +102,7 @@ export function ProfessionalCareerAccountModal({
     setSuccess('');
     setSaving(true);
     try {
-      const response = await fetch(`/api/children/${childId}/professional-career`, {
+      const response = await fetch(`/api/pbm/children/${childId}/career-account`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

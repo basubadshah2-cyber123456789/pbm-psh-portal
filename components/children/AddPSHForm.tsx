@@ -17,14 +17,14 @@ import { ChildPhotoPicker } from './ChildPhotoPicker';
 import { ProfessionalCareerAccountModal } from './ProfessionalCareerAccountModal';
 import { CameraCaptureModal } from '@/components/common/CameraCaptureModal';
 import { formatCNIC, formatPhone } from '@/lib/formatters';
+import { childPhotoDisplaySrc } from '@/lib/child-photo';
 
 function normalizeChildStatus(value: string): string {
   switch (value.trim().toUpperCase()) {
     case 'ACTIVE':
-      return 'ACTIVE';
     case 'CURRENT':
     case 'PENDING':
-      return 'CURRENT';
+      return 'ACTIVE';
     case 'DROPPED':
     case 'TRANSFERRED':
     case 'DEACTIVATED':
@@ -49,6 +49,7 @@ export interface MeetingPersonRecord {
   qualification: string;
   profession: string;
   addressType?: string;
+  villageName?: string;
   postOffice?: string;
   colony?: string;
   dateTime: string;
@@ -74,6 +75,7 @@ export interface SiblingRecord {
   gradeClass: string;
   maritalStatus: string;
   addressType?: string;
+  villageName?: string;
   postOffice?: string;
   colony?: string;
   district: string;
@@ -84,6 +86,7 @@ export interface SiblingRecord {
   houseNumber: string;
   address: string;
   marriedAddressType?: string;
+  marriedVillageName?: string;
   marriedPostOffice?: string;
   marriedColony?: string;
   marriedDistrict?: string;
@@ -141,7 +144,9 @@ export interface WitnessRecord {
   qualification: string;
   profession: string;
   addressType?: string;
+  villageName?: string;
   postOffice?: string;
+  colony?: string;
 }
 
 export interface AdditionalGuardianRecord {
@@ -154,6 +159,7 @@ export interface AdditionalGuardianRecord {
   profession: string;
   address: string;
   addressType?: string;
+  villageName?: string;
   postOffice?: string;
   colony?: string;
   district: string;
@@ -173,6 +179,7 @@ export interface SubjectResultRow {
 
 type AddressRecord = {
   addressType: string;
+  villageName: string;
   postOffice: string;
   colony: string;
   district: string;
@@ -188,6 +195,7 @@ type AddressComponentField = keyof Omit<AddressRecord, 'address'>;
 
 const addressComponentFields = new Set<string>([
   'addressType',
+  'villageName',
   'postOffice',
   'colony',
   'district',
@@ -203,7 +211,8 @@ const composeAddress = (parts: Array<string | null | undefined>) =>
 
 const composeLocationAddress = (location: Partial<AddressRecord>) => composeAddress([
   location.addressType,
-  location.addressType === 'Village' ? location.postOffice : location.colony,
+  location.addressType === 'Village' ? location.villageName : location.colony,
+  location.addressType === 'Village' ? location.postOffice : '',
   location.district,
   location.tehsil,
   location.ucNumber,
@@ -211,6 +220,36 @@ const composeLocationAddress = (location: Partial<AddressRecord>) => composeAddr
   location.streetNumber,
   location.houseNumber,
 ]);
+
+const getYearValue = (value?: string | number | null) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+  if (!value) return new Date().getFullYear();
+  const yearPrefix = value.match(/^(\d{4})(?:-|$)/);
+  if (yearPrefix) return Number(yearPrefix[1]);
+  const parsedDate = new Date(value);
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.getFullYear();
+  }
+  return new Date().getFullYear();
+};
+
+const mergeYearlyHistory = <T extends { year?: number | string }>(
+  existingEntries: T[] | undefined,
+  nextEntry: T,
+  yearValue: number
+) => {
+  const nextHistory = [...(Array.isArray(existingEntries) ? existingEntries : [])];
+  const nextEntryWithYear = { ...nextEntry, year: yearValue };
+  const index = nextHistory.findIndex((entry) => Number(entry.year) === yearValue);
+
+  if (index >= 0) {
+    nextHistory[index] = nextEntryWithYear;
+  } else {
+    nextHistory.push(nextEntryWithYear);
+  }
+
+  return nextHistory.sort((left, right) => Number(right.year) - Number(left.year));
+};
 
 function AddressFields({
   values,
@@ -235,12 +274,20 @@ function AddressFields({
         disabled={disabled}
       />
       {values.addressType === 'Village' ? (
-        <FormInput
-          label="Post Office"
-          value={values.postOffice}
-          onChange={(event) => onChange('postOffice', event.target.value)}
-          disabled={disabled}
-        />
+        <>
+          <FormInput
+            label="Village Name"
+            value={values.villageName}
+            onChange={(event) => onChange('villageName', event.target.value)}
+            disabled={disabled}
+          />
+          <FormInput
+            label="Post Office"
+            value={values.postOffice}
+            onChange={(event) => onChange('postOffice', event.target.value)}
+            disabled={disabled}
+          />
+        </>
       ) : values.addressType === 'City' ? (
         <FormInput
           label="Colony"
@@ -251,8 +298,12 @@ function AddressFields({
       ) : <div />}
       <FormInput label="District" value={values.district} onChange={(event) => onChange('district', event.target.value)} disabled={disabled} />
       <FormInput label="Tehsil" value={values.tehsil} onChange={(event) => onChange('tehsil', event.target.value)} disabled={disabled} />
-      <FormInput label="Union Council No." value={values.ucNumber} onChange={(event) => onChange('ucNumber', event.target.value)} disabled={disabled} />
-      <FormInput label="Union Council Name" value={values.ucName} onChange={(event) => onChange('ucName', event.target.value)} disabled={disabled} />
+      <FormInput
+        label="Union Council No./Name"
+        value={composeAddress([values.ucNumber, values.ucName])}
+        onChange={(event) => onChange('ucNumber', event.target.value)}
+        disabled={disabled}
+      />
       <FormInput label="Street No." value={values.streetNumber} onChange={(event) => onChange('streetNumber', event.target.value)} disabled={disabled} />
       <FormInput label="House No." value={values.houseNumber} onChange={(event) => onChange('houseNumber', event.target.value)} disabled={disabled} />
       <FormInput
@@ -260,6 +311,7 @@ function AddressFields({
         value={values.address}
         onChange={(event) => onChange('address', event.target.value)}
         className="md:col-span-3"
+        disabled={disabled}
       />
     </>
   );
@@ -267,9 +319,32 @@ function AddressFields({
 
 interface AppearanceMeasurement {
   id: string;
+  year: string;
   height: string;
   weight: string;
   age: string;
+}
+
+interface ResultInfoRecord {
+  id: string;
+  year: number;
+  school: string;
+  gradeClass: string;
+  examDate: string;
+  examType: string;
+  passingScore: string;
+  subjectResults: SubjectResultRow[];
+}
+
+interface AreaOfInterestYearRecord {
+  year: number;
+  areaOfInterest: string;
+  entries: AreaOfInterestEntry[];
+}
+
+interface ProfilePhotoYearRecord {
+  year: number;
+  photo: string;
 }
 
 interface HealthCareEntry {
@@ -477,13 +552,19 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [vaccinationDetail, setVaccinationDetail] = useState<string>('');
   const [specialNeedDisease, setSpecialNeedDisease] = useState<string>('');
   const [appearanceMeasurements, setAppearanceMeasurements] = useState<AppearanceMeasurement[]>([
-    { id: '1', height: '', weight: '', age: '' },
+    { id: '1', year: String(new Date().getFullYear()), height: '', weight: '', age: '' },
   ]);
 
   const addAppearanceMeasurement = () => {
     setAppearanceMeasurements((current) => [
       ...current,
-      { id: `${Date.now()}-${current.length}`, height: '', weight: '', age: '' },
+      {
+        id: `${Date.now()}-${current.length}`,
+        year: String(new Date().getFullYear()),
+        height: '',
+        weight: '',
+        age: '',
+      },
     ]);
   };
 
@@ -516,6 +597,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [fatherQualification, setFatherQualification] = useState<string>('');
   const [fatherProfession, setFatherProfession] = useState<string>('');
   const [fatherAddressType, setFatherAddressType] = useState('');
+  const [fatherVillageName, setFatherVillageName] = useState('');
   const [fatherPostOffice, setFatherPostOffice] = useState('');
   const [fatherColony, setFatherColony] = useState('');
   const [fatherDistrict, setFatherDistrict] = useState<string>('');
@@ -534,22 +616,27 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (parent === 'father') {
       const parts = {
         addressType: fatherAddressType,
+        villageName: fatherVillageName,
         postOffice: fatherPostOffice,
         colony: fatherColony,
         district: fatherDistrict,
         tehsil: fatherTehsil,
         ucNumber: fatherUcNumber,
-        ucName: fatherUcName,
+        ucName: field === 'ucNumber' ? '' : fatherUcName,
         streetNumber: fatherStreetNumber,
         houseNumber: fatherHouseNumber,
         [field]: value,
       };
       if (field === 'addressType') setFatherAddressType(value);
+      if (field === 'villageName') setFatherVillageName(value);
       if (field === 'postOffice') setFatherPostOffice(value);
       if (field === 'colony') setFatherColony(value);
       if (field === 'district') setFatherDistrict(value);
       if (field === 'tehsil') setFatherTehsil(value);
-      if (field === 'ucNumber') setFatherUcNumber(value);
+      if (field === 'ucNumber') {
+        setFatherUcNumber(value);
+        setFatherUcName('');
+      }
       if (field === 'ucName') setFatherUcName(value);
       if (field === 'streetNumber') setFatherStreetNumber(value);
       if (field === 'houseNumber') setFatherHouseNumber(value);
@@ -559,22 +646,27 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
     const parts = {
       addressType: motherAddressType,
+      villageName: motherVillageName,
       postOffice: motherPostOffice,
       colony: motherColony,
       district: motherDistrict,
       tehsil: motherTehsil,
       ucNumber: motherUcNumber,
-      ucName: motherUcName,
+      ucName: field === 'ucNumber' ? '' : motherUcName,
       streetNumber: motherStreetNumber,
       houseNumber: motherHouseNumber,
       [field]: value,
     };
     if (field === 'addressType') setMotherAddressType(value);
+    if (field === 'villageName') setMotherVillageName(value);
     if (field === 'postOffice') setMotherPostOffice(value);
     if (field === 'colony') setMotherColony(value);
     if (field === 'district') setMotherDistrict(value);
     if (field === 'tehsil') setMotherTehsil(value);
-    if (field === 'ucNumber') setMotherUcNumber(value);
+    if (field === 'ucNumber') {
+      setMotherUcNumber(value);
+      setMotherUcName('');
+    }
     if (field === 'ucName') setMotherUcName(value);
     if (field === 'streetNumber') setMotherStreetNumber(value);
     if (field === 'houseNumber') setMotherHouseNumber(value);
@@ -592,6 +684,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [motherQualification, setMotherQualification] = useState<string>('');
   const [motherProfession, setMotherProfession] = useState<string>('');
   const [motherAddressType, setMotherAddressType] = useState('');
+  const [motherVillageName, setMotherVillageName] = useState('');
   const [motherPostOffice, setMotherPostOffice] = useState('');
   const [motherColony, setMotherColony] = useState('');
   const [motherDistrict, setMotherDistrict] = useState<string>('');
@@ -617,11 +710,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [guardianStreetNumber, setGuardianStreetNumber] = useState<string>('');
   const [guardianHouseNumber, setGuardianHouseNumber] = useState<string>('');
   const [guardianAddressType, setGuardianAddressType] = useState('');
+  const [guardianVillageName, setGuardianVillageName] = useState('');
   const [guardianPostOffice, setGuardianPostOffice] = useState('');
   const [guardianColony, setGuardianColony] = useState('');
   const [sameAsPermanentAddress, setSameAsPermanentAddress] = useState(false);
   const [currentGuardianAddress, setCurrentGuardianAddress] = useState({
     addressType: '',
+    villageName: '',
     postOffice: '',
     colony: '',
     address: '',
@@ -640,22 +735,27 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   ) => {
     const parts = {
       addressType: guardianAddressType,
+      villageName: guardianVillageName,
       postOffice: guardianPostOffice,
       colony: guardianColony,
       district: guardianDistrict,
       tehsil: guardianTehsil,
       ucNumber: guardianUcNumber,
-      ucName: guardianUcName,
+      ucName: field === 'ucNumber' ? '' : guardianUcName,
       streetNumber: guardianStreetNumber,
       houseNumber: guardianHouseNumber,
       [field]: value,
     };
     if (field === 'addressType') setGuardianAddressType(value);
+    if (field === 'villageName') setGuardianVillageName(value);
     if (field === 'postOffice') setGuardianPostOffice(value);
     if (field === 'colony') setGuardianColony(value);
     if (field === 'district') setGuardianDistrict(value);
     if (field === 'tehsil') setGuardianTehsil(value);
-    if (field === 'ucNumber') setGuardianUcNumber(value);
+    if (field === 'ucNumber') {
+      setGuardianUcNumber(value);
+      setGuardianUcName('');
+    }
     if (field === 'ucName') setGuardianUcName(value);
     if (field === 'streetNumber') setGuardianStreetNumber(value);
     if (field === 'houseNumber') setGuardianHouseNumber(value);
@@ -666,6 +766,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (!sameAsPermanentAddress) return;
     setCurrentGuardianAddress({
       addressType: guardianAddressType,
+      villageName: guardianVillageName,
       postOffice: guardianPostOffice,
       colony: guardianColony,
       address: guardianAddress,
@@ -679,6 +780,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   }, [
     sameAsPermanentAddress,
     guardianAddressType,
+    guardianVillageName,
     guardianPostOffice,
     guardianColony,
     guardianAddress,
@@ -695,7 +797,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     value: string
   ) => {
     setCurrentGuardianAddress((current) => {
-      const updated = { ...current, [field]: value };
+      const updated = {
+        ...current,
+        [field]: value,
+        ...(field === 'ucNumber' ? { ucName: '' } : {}),
+      };
       if (field === 'address') return updated;
       return {
         ...updated,
@@ -717,6 +823,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         profession: '',
         address: '',
         addressType: '',
+        villageName: '',
         postOffice: '',
         colony: '',
         district: '',
@@ -735,7 +842,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (field === 'contact') formattedValue = formatPhone(value);
     setAdditionalGuardians((current) => current.map((guardian) => {
       if (guardian.id !== id) return guardian;
-      const updated = { ...guardian, [field]: formattedValue };
+      const updated = {
+        ...guardian,
+        [field]: formattedValue,
+        ...(field === 'ucNumber' ? { ucName: '' } : {}),
+      };
       return addressComponentFields.has(field)
         ? { ...updated, address: composeLocationAddress(updated) }
         : updated;
@@ -753,6 +864,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       qualification: '',
       profession: '',
       addressType: '',
+      villageName: '',
       postOffice: '',
       colony: '',
       dateTime: '',
@@ -780,6 +892,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         qualification: '',
         profession: '',
         addressType: '',
+        villageName: '',
         postOffice: '',
         colony: '',
         dateTime: '',
@@ -807,7 +920,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (field === 'contact') formattedVal = formatPhone(value);
     setMeetingPersons((prev) => prev.map((person) => {
       if (person.id !== id) return person;
-      const updated = { ...person, [field]: formattedVal };
+      const updated = {
+        ...person,
+        [field]: formattedVal,
+        ...(field === 'ucNumber' ? { ucName: '' } : {}),
+      };
       return addressComponentFields.has(field)
         ? { ...updated, address: composeLocationAddress(updated) }
         : updated;
@@ -827,6 +944,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       gradeClass: '',
       maritalStatus: '',
       addressType: '',
+      villageName: '',
       postOffice: '',
       colony: '',
       district: '',
@@ -853,6 +971,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         gradeClass: '',
         maritalStatus: '',
         addressType: '',
+        villageName: '',
         postOffice: '',
         colony: '',
         district: '',
@@ -874,7 +993,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const updateSibling = (id: string, field: keyof SiblingRecord, value: string) => {
     setSiblings((prev) => prev.map((sibling) => {
       if (sibling.id !== id) return sibling;
-      const updated = { ...sibling, [field]: value };
+      const updated = {
+        ...sibling,
+        [field]: value,
+        ...(field === 'ucNumber' ? { ucName: '' } : {}),
+      };
       return addressComponentFields.has(field)
         ? { ...updated, address: composeLocationAddress(updated) }
         : updated;
@@ -884,6 +1007,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const updateMarriedSiblingAddress = (id: string, field: keyof AddressRecord, value: string) => {
     const marriedFieldByAddressField: Record<keyof AddressRecord, keyof SiblingRecord> = {
       addressType: 'marriedAddressType',
+      villageName: 'marriedVillageName',
       postOffice: 'marriedPostOffice',
       colony: 'marriedColony',
       district: 'marriedDistrict',
@@ -897,13 +1021,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
     setSiblings((prev) => prev.map((sibling) => {
       if (sibling.id !== id) return sibling;
-      const updated = { ...sibling, [marriedFieldByAddressField[field]]: value };
+      const updated = {
+        ...sibling,
+        [marriedFieldByAddressField[field]]: value,
+        ...(field === 'ucNumber' ? { marriedUcName: '' } : {}),
+      };
       if (!addressComponentFields.has(field)) return updated;
 
       return {
         ...updated,
         marriedAddress: composeLocationAddress({
           addressType: updated.marriedAddressType || '',
+          villageName: updated.marriedVillageName || '',
           postOffice: updated.marriedPostOffice || '',
           colony: updated.marriedColony || '',
           district: updated.marriedDistrict || '',
@@ -928,6 +1057,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       qualification: '',
       profession: '',
       addressType: '',
+      villageName: '',
       postOffice: '',
       colony: '',
       district: '',
@@ -952,6 +1082,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         qualification: '',
         profession: '',
         addressType: '',
+        villageName: '',
         postOffice: '',
         colony: '',
         district: '',
@@ -976,7 +1107,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (field === 'contact') formattedVal = formatPhone(value);
     setWitnesses((prev) => prev.map((witness) => {
       if (witness.id !== id) return witness;
-      const updated = { ...witness, [field]: formattedVal };
+      const updated = {
+        ...witness,
+        [field]: formattedVal,
+        ...(field === 'ucNumber' ? { ucName: '' } : {}),
+      };
       return addressComponentFields.has(field)
         ? { ...updated, address: composeLocationAddress(updated) }
         : updated;
@@ -984,15 +1119,41 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   // ================= 10. RESULT INFO =================
+  const [resultEntryId, setResultEntryId] = useState<string>('new-result');
   const [resultSchool, setResultSchool] = useState<string>('');
   const [resultClass, setResultClass] = useState<string>('');
   const [resultExamDate, setResultExamDate] = useState<string>('');
   const [resultExamType, setResultExamType] = useState<string>('');
   const [resultPassingScore, setResultPassingScore] = useState<string>('');
+  const [resultInfoHistory, setResultInfoHistory] = useState<ResultInfoRecord[]>([]);
 
   const [subjectResults, setSubjectResults] = useState<SubjectResultRow[]>([
     { id: '1', subject: '', obtainedMarks: '', totalMarks: '' },
   ]);
+
+  const startNewResultEntry = () => {
+    setResultEntryId(`new-result-${Date.now()}`);
+    setResultSchool('');
+    setResultClass('');
+    setResultExamDate('');
+    setResultExamType('');
+    setResultPassingScore('');
+    setSubjectResults([{ id: `${Date.now()}-subject`, subject: '', obtainedMarks: '', totalMarks: '' }]);
+  };
+
+  const editResultEntry = (entry: ResultInfoRecord) => {
+    setResultEntryId(entry.id);
+    setResultSchool(entry.school || '');
+    setResultClass(entry.gradeClass || '');
+    setResultExamDate(entry.examDate || '');
+    setResultExamType(entry.examType || '');
+    setResultPassingScore(entry.passingScore || '');
+    setSubjectResults(
+      entry.subjectResults.length > 0
+        ? entry.subjectResults
+        : [{ id: `${entry.id}-subject`, subject: '', obtainedMarks: '', totalMarks: '' }]
+    );
+  };
 
   const addSubjectResult = () => {
     setSubjectResults((prev) => [
@@ -1067,6 +1228,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   // ================= 13. AREA OF INTEREST – CHILD =================
   const [areaOfInterest, setAreaOfInterest] = useState<string>('');
   const [additionalAreaOfInterestEntries, setAdditionalAreaOfInterestEntries] = useState<AreaOfInterestEntry[]>([]);
+  const [areaOfInterestHistory, setAreaOfInterestHistory] = useState<AreaOfInterestYearRecord[]>([]);
+  const [profilePhotoHistory, setProfilePhotoHistory] = useState<ProfilePhotoYearRecord[]>([]);
 
   const addAreaOfInterestEntry = () => {
     setAdditionalAreaOfInterestEntries((current) => [
@@ -1274,12 +1437,26 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   // Load existing child data for editing
   useEffect(() => {
     if (initialChild) {
+      setResultEntryId('new-result');
+      setResultSchool('');
+      setResultClass('');
+      setResultExamDate('');
+      setResultExamType('');
+      setResultPassingScore('');
+      setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
+      setResultInfoHistory([]);
+      setAreaOfInterest('');
+      setAdditionalAreaOfInterestEntries([]);
+      setAreaOfInterestHistory([]);
+      setProfilePhotoHistory([]);
+
       let psh: any = null;
       try {
         psh = typeof initialChild.notes === 'string' ? JSON.parse(initialChild.notes) : initialChild.notes;
       } catch {
         psh = null;
       }
+      const legacyDataYear = getYearValue(initialChild.updatedAt || initialChild.admissionDate || initialChild.createdAt);
       setFollowUpRecords(
         Array.isArray(psh?.followUps)
           ? psh.followUps.map((record: Partial<FollowUpRecord>, index: number) => ({
@@ -1303,7 +1480,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setGender(initialChild.gender || 'MALE');
       setStatus(normalizeChildStatus(initialChild.status || 'ACTIVE'));
       setBloodGroup(initialChild.bloodGroup || 'B+');
-      setAppearanceMeasurements([{ id: '1', height: '', weight: '', age: '' }]);
+      setAppearanceMeasurements([{
+        id: '1',
+        year: String(new Date().getFullYear()),
+        height: '',
+        weight: '',
+        age: '',
+      }]);
       setEnrollmentType('New Enrollment');
       setReplacedRegistrationNo('');
       setReplacedClass('');
@@ -1351,21 +1534,25 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setVaccinationDetail(psh.healthInfo.vaccinationDetail || 'Complete');
           setSpecialNeedDisease(psh.healthInfo.specialNeedDisease || 'None');
         }
-        if (psh.appearance) {
-          const savedMeasurements = Array.isArray(psh.appearance.measurements)
+        const savedMeasurements = Array.isArray(psh.appearanceHistory) && psh.appearanceHistory.length > 0
+          ? psh.appearanceHistory
+          : Array.isArray(psh.appearance?.measurements) && psh.appearance.measurements.length > 0
             ? psh.appearance.measurements
-            : [psh.appearance];
-          setAppearanceMeasurements(
-            savedMeasurements.length > 0
-              ? savedMeasurements.map((measurement: any, index: number) => ({
-                  id: typeof measurement.id === 'string' ? measurement.id : `saved-${index}`,
-                  height: measurement.height === null || measurement.height === undefined ? '' : String(measurement.height),
-                  weight: measurement.weight === null || measurement.weight === undefined ? '' : String(measurement.weight),
-                  age: measurement.age === null || measurement.age === undefined ? '' : String(measurement.age),
-                }))
-              : [{ id: '1', height: '', weight: '', age: '' }]
-          );
-        }
+            : psh.appearance
+              ? [psh.appearance]
+              : [];
+        const normalizedMeasurements = savedMeasurements.map((measurement: any, index: number) => ({
+          id: typeof measurement.id === 'string' ? measurement.id : `saved-measurement-${index}`,
+          year: String(getYearValue(measurement.year ?? legacyDataYear)),
+          height: measurement.height === null || measurement.height === undefined ? '' : String(measurement.height),
+          weight: measurement.weight === null || measurement.weight === undefined ? '' : String(measurement.weight),
+          age: measurement.age === null || measurement.age === undefined ? '' : String(measurement.age),
+        }));
+        setAppearanceMeasurements(
+          normalizedMeasurements.length > 0
+            ? normalizedMeasurements
+            : [{ id: '1', year: String(new Date().getFullYear()), height: '', weight: '', age: '' }]
+        );
 
         if (psh.fatherInfo) {
           setFatherName(psh.fatherInfo.name || '');
@@ -1378,6 +1565,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setFatherQualification(psh.fatherInfo.qualification || '');
           setFatherProfession(psh.fatherInfo.profession || '');
           setFatherAddressType(psh.fatherInfo.addressType || '');
+          setFatherVillageName(psh.fatherInfo.villageName || '');
           setFatherPostOffice(psh.fatherInfo.postOffice || '');
           setFatherColony(psh.fatherInfo.colony || '');
           setFatherDistrict(psh.fatherInfo.district || '');
@@ -1400,6 +1588,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMotherQualification(psh.motherInfo.qualification || '');
           setMotherProfession(psh.motherInfo.profession || '');
           setMotherAddressType(psh.motherInfo.addressType || '');
+          setMotherVillageName(psh.motherInfo.villageName || '');
           setMotherPostOffice(psh.motherInfo.postOffice || '');
           setMotherColony(psh.motherInfo.colony || '');
           setMotherDistrict(psh.motherInfo.district || '');
@@ -1426,11 +1615,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setGuardianStreetNumber(psh.guardianInfo.streetNumber || '');
           setGuardianHouseNumber(psh.guardianInfo.houseNumber || '');
           setGuardianAddressType(psh.guardianInfo.addressType || '');
+          setGuardianVillageName(psh.guardianInfo.villageName || '');
           setGuardianPostOffice(psh.guardianInfo.postOffice || '');
           setGuardianColony(psh.guardianInfo.colony || '');
           setSameAsPermanentAddress(Boolean(psh.guardianInfo.sameAsPermanentAddress));
           setCurrentGuardianAddress({
             addressType: psh.guardianInfo.currentAddress?.addressType || '',
+            villageName: psh.guardianInfo.currentAddress?.villageName || '',
             postOffice: psh.guardianInfo.currentAddress?.postOffice || '',
             colony: psh.guardianInfo.currentAddress?.colony || '',
             address: psh.guardianInfo.currentAddress?.address || '',
@@ -1455,6 +1646,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 profession: guardian.profession || '',
                 address: guardian.address || '',
                 addressType: guardian.addressType || '',
+                villageName: guardian.villageName || '',
                 postOffice: guardian.postOffice || '',
                 colony: guardian.colony || '',
                 district: guardian.district || '',
@@ -1471,6 +1663,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMeetingPersons(psh.meetingPersons.map((person: MeetingPersonRecord) => ({
             ...person,
             addressType: person.addressType || '',
+            villageName: person.villageName || '',
             postOffice: person.postOffice || '',
             colony: person.colony || '',
             district: person.district || '',
@@ -1488,6 +1681,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             id: sibling.id || `saved-${index}`,
             profession: sibling.profession || '',
             addressType: sibling.addressType || '',
+            villageName: sibling.villageName || '',
             postOffice: sibling.postOffice || '',
             colony: sibling.colony || '',
             district: sibling.district || '',
@@ -1503,6 +1697,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setWitnesses(psh.witnesses.map((w: WitnessRecord) => ({
             ...w,
             addressType: w.addressType || '',
+            villageName: w.villageName || '',
             postOffice: w.postOffice || '',
             colony: w.colony || '',
             district: w.district || '',
@@ -1514,15 +1709,50 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           })));
         }
 
-        if (psh.resultInfo) {
-          setResultSchool(psh.resultInfo.school || '');
-          setResultClass(psh.resultInfo.gradeClass || '');
-          setResultExamDate(psh.resultInfo.examDate || '');
-          setResultExamType(psh.resultInfo.examType || '');
-          setResultPassingScore(psh.resultInfo.passingScore || '');
-          if (Array.isArray(psh.resultInfo.subjectResults) && psh.resultInfo.subjectResults.length > 0) {
-            setSubjectResults(psh.resultInfo.subjectResults);
-          }
+        const savedResults = Array.isArray(psh.resultInfoHistory) && psh.resultInfoHistory.length > 0
+          ? psh.resultInfoHistory
+          : psh.resultInfo
+            ? [psh.resultInfo]
+            : [];
+        const normalizedResults: ResultInfoRecord[] = savedResults.map((entry: any, index: number) => ({
+          id: typeof entry.id === 'string' ? entry.id : `saved-result-${index}`,
+          year: getYearValue(entry.year ?? entry.examDate ?? legacyDataYear),
+          school: entry.school || entry.schoolName || '',
+          gradeClass: entry.gradeClass || entry.class || '',
+          examDate: entry.examDate || '',
+          examType: entry.examType || '',
+          passingScore: entry.passingScore || '',
+          subjectResults: Array.isArray(entry.subjectResults)
+            ? entry.subjectResults.map((result: Partial<SubjectResultRow>, resultIndex: number) => ({
+                id: result.id || `saved-result-${index}-subject-${resultIndex}`,
+                subject: result.subject || '',
+                obtainedMarks: result.obtainedMarks || '',
+                totalMarks: result.totalMarks || '',
+              }))
+            : [],
+        })).sort((left, right) => right.year - left.year || right.examDate.localeCompare(left.examDate));
+        setResultInfoHistory(normalizedResults);
+        if (normalizedResults.length > 0) {
+          const latestResult = normalizedResults[0];
+          setResultEntryId(latestResult.id);
+          setResultSchool(latestResult.school);
+          setResultClass(latestResult.gradeClass);
+          setResultExamDate(latestResult.examDate);
+          setResultExamType(latestResult.examType);
+          setResultPassingScore(latestResult.passingScore);
+          setSubjectResults(
+            latestResult.subjectResults.length > 0
+              ? latestResult.subjectResults
+              : [{ id: `${latestResult.id}-subject`, subject: '', obtainedMarks: '', totalMarks: '' }]
+          );
+        } else {
+          setResultEntryId('new-result');
+          setResultSchool('');
+          setResultClass('');
+          setResultExamDate('');
+          setResultExamType('');
+          setResultPassingScore('');
+          setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
         }
 
         if (psh.healthCare) {
@@ -1563,13 +1793,38 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           );
         }
 
-        setAreaOfInterest(psh.areaOfInterest || '');
-        setAdditionalAreaOfInterestEntries(
-          Array.isArray(psh.areaOfInterestEntries)
-            ? psh.areaOfInterestEntries.map((entry: Partial<AreaOfInterestEntry>, index: number) => ({
-                id: entry.id || `saved-interest-${index}`,
-                details: entry.details || '',
-              }))
+        const savedInterestHistory = Array.isArray(psh.areaOfInterestHistory) && psh.areaOfInterestHistory.length > 0
+          ? psh.areaOfInterestHistory
+          : psh.areaOfInterest || (Array.isArray(psh.areaOfInterestEntries) && psh.areaOfInterestEntries.length > 0)
+            ? [{
+                year: legacyDataYear,
+                areaOfInterest: psh.areaOfInterest || '',
+                entries: psh.areaOfInterestEntries || [],
+              }]
+            : [];
+        const normalizedInterestHistory: AreaOfInterestYearRecord[] = savedInterestHistory
+          .map((entry: any, index: number) => ({
+            year: getYearValue(entry.year ?? legacyDataYear),
+            areaOfInterest: entry.areaOfInterest || '',
+            entries: (Array.isArray(entry.entries) ? entry.entries : entry.areaOfInterestEntries || [])
+              .map((interest: Partial<AreaOfInterestEntry>, interestIndex: number) => ({
+                id: interest.id || `saved-interest-${index}-${interestIndex}`,
+                details: interest.details || '',
+              })),
+          }))
+          .sort((left, right) => right.year - left.year);
+        setAreaOfInterestHistory(normalizedInterestHistory);
+        setAreaOfInterest(normalizedInterestHistory[0]?.areaOfInterest || '');
+        setAdditionalAreaOfInterestEntries(normalizedInterestHistory[0]?.entries || []);
+        setProfilePhotoHistory(
+          Array.isArray(psh.profilePhotoHistory)
+            ? psh.profilePhotoHistory
+                .filter((entry: any) => typeof entry.photo === 'string' && entry.photo)
+                .map((entry: any) => ({
+                  year: getYearValue(entry.year ?? legacyDataYear),
+                  photo: entry.photo,
+                }))
+                .sort((left: ProfilePhotoYearRecord, right: ProfilePhotoYearRecord) => right.year - left.year)
             : []
         );
       }
@@ -1611,7 +1866,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setPhysicalHealth('');
     setVaccinationDetail('');
     setSpecialNeedDisease('');
-    setAppearanceMeasurements([{ id: '1', height: '', weight: '', age: '' }]);
+    setAppearanceMeasurements([{
+      id: '1',
+      year: String(new Date().getFullYear()),
+      height: '',
+      weight: '',
+      age: '',
+    }]);
     setFatherName('');
     setFatherCnic('');
     setFatherContact('');
@@ -1622,6 +1883,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setFatherQualification('');
     setFatherProfession('');
     setFatherAddressType('');
+    setFatherVillageName('');
     setFatherPostOffice('');
     setFatherColony('');
     setFatherDistrict('');
@@ -1641,6 +1903,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setMotherQualification('');
     setMotherProfession('');
     setMotherAddressType('');
+    setMotherVillageName('');
     setMotherPostOffice('');
     setMotherColony('');
     setMotherDistrict('');
@@ -1664,11 +1927,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setGuardianStreetNumber('');
     setGuardianHouseNumber('');
     setGuardianAddressType('');
+    setGuardianVillageName('');
     setGuardianPostOffice('');
     setGuardianColony('');
     setSameAsPermanentAddress(false);
     setCurrentGuardianAddress({
       addressType: '',
+      villageName: '',
       postOffice: '',
       colony: '',
       address: '',
@@ -1680,14 +1945,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       houseNumber: '',
     });
     setAdditionalGuardians([]);
-    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', addressType: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', addressType: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', addressType: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', addressType: '', villageName: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', addressType: '', villageName: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', addressType: '', villageName: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
     setResultSchool('');
     setResultClass('');
     setResultExamDate('');
     setResultExamType('');
     setResultPassingScore('');
+    setResultEntryId('new-result');
+    setResultInfoHistory([]);
     setFollowUpRecords([]);
     setFollowUpDraft(createEmptyFollowUp());
     setIsFollowUpOpen(false);
@@ -1709,6 +1976,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setAdditionalReportEntries([]);
     setAreaOfInterest('');
     setAdditionalAreaOfInterestEntries([]);
+    setAreaOfInterestHistory([]);
+    setProfilePhotoHistory([]);
   };
 
   const handleAutoFillDemo = (profileType: 'orphan' | 'poor' | 'replace' | 'posthumous' = 'orphan') => {
@@ -2326,24 +2595,86 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         try {
           const body = new FormData();
           body.append('file', profilePhotoFile);
-          const uploadRes = await fetch('/api/children/photo', { method: 'POST', body });
-          if (uploadRes.ok) {
-            const data = await uploadRes.json();
-            photoUrl = data.url;
-          }
+          const uploadRes = await fetch('/api/pbm/children/photo', { method: 'POST', body });
+          const uploadResult = await uploadRes.json();
+          if (!uploadRes.ok) throw new Error(uploadResult.error || 'Unable to upload the child photo.');
+          photoUrl = uploadResult.url;
         } catch (uploadErr) {
-          console.warn('Profile photo upload issue:', uploadErr);
+          throw new Error(uploadErr instanceof Error ? uploadErr.message : 'Unable to upload the child photo.');
         }
       }
 
       const savedAppearanceMeasurements = appearanceMeasurements
         .filter((measurement) => measurement.height || measurement.weight || measurement.age)
-        .map(({ id, ...measurement }) => ({ id, ...measurement }));
-      const latestAppearanceMeasurement = savedAppearanceMeasurements[savedAppearanceMeasurements.length - 1] || {
+        .map((measurement, index) => ({
+          id: measurement.id,
+          year: getYearValue(measurement.year),
+          height: measurement.height,
+          weight: measurement.weight,
+          age: measurement.age,
+          index,
+        }))
+        .sort((left, right) => right.year - left.year || right.index - left.index)
+        .map(({ index: _index, ...measurement }) => measurement);
+      const latestAppearanceMeasurement = savedAppearanceMeasurements[0] || {
+        year: new Date().getFullYear(),
         height: '',
         weight: '',
         age: '',
       };
+      const currentYear = new Date().getFullYear();
+      const resultEntry: ResultInfoRecord = {
+        id: resultEntryId,
+        year: getYearValue(resultExamDate),
+        school: resultSchool,
+        gradeClass: resultClass,
+        examDate: resultExamDate,
+        examType: resultExamType,
+        passingScore: resultPassingScore,
+        subjectResults: subjectResults.filter((result) =>
+          result.subject.trim() || result.obtainedMarks.trim() || result.totalMarks.trim()
+        ),
+      };
+      const hasResultData = Boolean(
+        resultEntry.school.trim() ||
+        resultEntry.gradeClass.trim() ||
+        resultEntry.examDate ||
+        resultEntry.examType ||
+        resultEntry.passingScore.trim() ||
+        resultEntry.subjectResults.length
+      );
+      const nextResultInfoHistory = hasResultData
+        ? [
+            ...resultInfoHistory.filter((entry) => entry.id !== resultEntry.id),
+            resultEntry,
+          ].sort((left, right) => right.year - left.year || right.examDate.localeCompare(left.examDate))
+        : resultInfoHistory;
+      const currentInterestEntries = additionalAreaOfInterestEntries
+        .filter((entry) => entry.details.trim())
+        .map((entry) => ({ ...entry }));
+      const hasInterestData = Boolean(areaOfInterest.trim() || currentInterestEntries.length);
+      const nextAreaOfInterestHistory = hasInterestData
+        ? mergeYearlyHistory(
+            areaOfInterestHistory,
+            { year: currentYear, areaOfInterest, entries: currentInterestEntries },
+            currentYear
+          )
+        : areaOfInterestHistory;
+      const legacyPhotoYear = getYearValue(initialChild?.updatedAt || initialChild?.admissionDate || initialChild?.createdAt);
+      const nextProfilePhotoHistory = (profilePhotoHistory.length > 0
+        ? profilePhotoHistory
+        : initialChild?.photo
+          ? [{ year: legacyPhotoYear, photo: initialChild.photo }]
+          : []
+      );
+      const currentProfilePhoto = photoUrl || initialChild?.photo || null;
+      const archivedProfilePhotoHistory = currentProfilePhoto
+        ? mergeYearlyHistory(
+            nextProfilePhotoHistory,
+            { year: currentYear, photo: currentProfilePhoto },
+            currentYear
+          )
+        : nextProfilePhotoHistory;
 
       const fullPshDossier = {
         enrollmentType: {
@@ -2391,6 +2722,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           ...latestAppearanceMeasurement,
           measurements: savedAppearanceMeasurements,
         },
+        appearanceHistory: savedAppearanceMeasurements,
         fatherInfo: {
           name: fatherName,
           cnic: fatherCnic,
@@ -2402,6 +2734,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           qualification: fatherQualification,
           profession: fatherProfession,
           addressType: fatherAddressType,
+          villageName: fatherVillageName,
           postOffice: fatherPostOffice,
           colony: fatherColony,
           district: fatherDistrict,
@@ -2423,6 +2756,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           qualification: motherQualification,
           profession: motherProfession,
           addressType: motherAddressType,
+          villageName: motherVillageName,
           postOffice: motherPostOffice,
           colony: motherColony,
           district: motherDistrict,
@@ -2448,6 +2782,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           streetNumber: guardianStreetNumber,
           houseNumber: guardianHouseNumber,
           addressType: guardianAddressType,
+          villageName: guardianVillageName,
           postOffice: guardianPostOffice,
           colony: guardianColony,
           sameAsPermanentAddress,
@@ -2467,14 +2802,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           streetNumber: w.streetNumber || '',
           houseNumber: w.houseNumber || '',
         })),
-        resultInfo: {
-          school: resultSchool,
-          gradeClass: resultClass,
-          examDate: resultExamDate,
-          examType: resultExamType,
-          passingScore: resultPassingScore,
-          subjectResults,
-        },
+        resultInfo: nextResultInfoHistory[0] || resultEntry,
+        resultInfoHistory: nextResultInfoHistory,
         followUps: followUpRecords,
         healthCare: {
           checkFrequency,
@@ -2495,10 +2824,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             .filter((entry) => Boolean(entry.category || entry.details.trim()))
             .map(({ id: _id, ...entry }) => entry),
         },
-        areaOfInterest,
-        areaOfInterestEntries: additionalAreaOfInterestEntries
-          .filter((entry) => Boolean(entry.details.trim()))
-          .map(({ id: _id, ...entry }) => entry),
+        areaOfInterest: nextAreaOfInterestHistory[0]?.areaOfInterest || '',
+        areaOfInterestEntries: (nextAreaOfInterestHistory[0]?.entries || []).map(({ details }) => ({ details })),
+        areaOfInterestHistory: nextAreaOfInterestHistory,
+        profilePhotoHistory: archivedProfilePhotoHistory,
         attachmentsSummary: Object.keys(attachments).map((k) => ({
           slot: k,
           title: attachments[k].title,
@@ -2539,42 +2868,25 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         notes: JSON.stringify(fullPshDossier),
       };
 
-      // Save locally to localStorage for standalone persistence
-      try {
-        const existingRaw = localStorage.getItem('psh_admissions_records');
-        const existingList = existingRaw ? JSON.parse(existingRaw) : [];
-        const updatedList = [payload, ...existingList.filter((item: any) => item.admissionNo !== payload.admissionNo)];
-        localStorage.setItem('psh_admissions_records', JSON.stringify(updatedList));
-      } catch (lsErr) {
-        console.warn('LocalStorage save warning:', lsErr);
-      }
-
       let serverChildId: string | null = null;
       const documentUploadWarnings: string[] = [];
 
-      // Try server API sync if available
-      try {
-        const hasPersistedChildId = initialChild?.id &&
-          !String(initialChild.id).startsWith('seed-') &&
-          !String(initialChild.id).startsWith('demo-');
-        const apiResponse = await fetch(
-          hasPersistedChildId ? `/api/children/${initialChild.id}` : '/api/children',
-          {
+      const hasPersistedChildId = initialChild?.id &&
+        !String(initialChild.id).startsWith('seed-') &&
+        !String(initialChild.id).startsWith('demo-');
+      const apiResponse = await fetch(
+        hasPersistedChildId ? `/api/pbm/children/${initialChild.id}` : '/api/pbm/children',
+        {
           method: hasPersistedChildId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-          }
-        );
-        if (apiResponse.ok) {
-          const result = await apiResponse.json();
-          serverChildId = result.child?.id || (hasPersistedChildId ? String(initialChild.id) : null);
-        } else {
-          const result = await apiResponse.json().catch(() => ({}));
-          console.warn('Server API sync failed:', result.error || apiResponse.statusText);
         }
-      } catch (apiErr) {
-        console.warn('Server API sync skipped in standalone demo mode:', apiErr);
-      }
+      );
+      const savedResult = await apiResponse.json();
+      if (!apiResponse.ok) throw new Error(savedResult.error || 'Unable to save the child record.');
+      serverChildId = savedResult.child?.id;
+      if (!serverChildId) throw new Error('The server did not return the saved child record.');
+      const uploadedDocuments = Array.isArray(initialChild?.documents) ? [...initialChild.documents] : [];
 
       const documentsToUpload = [
         { file: bFormFrontFile, title: 'B-Form Front', documentType: 'B_FORM_FRONT' },
@@ -2608,15 +2920,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           documentForm.append('file', document.file);
           documentForm.append('title', document.title);
           documentForm.append('documentType', document.documentType);
-          const uploadResponse = await fetch(`/api/children/${serverChildId}/documents`, {
+          const uploadResponse = await fetch(`/api/pbm/children/${serverChildId}/documents`, {
             method: 'POST',
             body: documentForm,
           });
+          const uploadResult = await uploadResponse.json();
           if (!uploadResponse.ok) {
-            const result = await uploadResponse.json().catch(() => ({}));
-            const warning = result.error || `${document.title} could not be uploaded to the document vault.`;
+            const warning = uploadResult.error || `${document.title} could not be uploaded to the document vault.`;
             documentUploadWarnings.push(warning);
             console.warn(`${document.title} upload failed:`, warning);
+          } else if (uploadResult.document) {
+            uploadedDocuments.push(uploadResult.document);
           }
         } catch (uploadError) {
           const warning = uploadError instanceof Error
@@ -2627,6 +2941,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         }
       }
 
+      const savedPayload = { ...payload, id: serverChildId, documents: uploadedDocuments };
       const successMessage = initialChild
           ? `Record for ${payload.fullName} (${payload.admissionNo}) updated successfully!`
           : `Child ${payload.fullName} enrolled into Pakistan Sweet Home Multan successfully!`;
@@ -2636,18 +2951,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           : successMessage
       );
       if (careerSetupAfterSave) {
-        if (!serverChildId) {
-          setFormError('The dossier was saved locally, but the career login could not be connected without a server-saved child record. Check your connection and try saving again.');
-          return;
-        }
         setCareerAccountChildId(serverChildId);
-        setChildAfterCareerSetup({ ...payload, id: serverChildId });
+        setChildAfterCareerSetup(savedPayload);
         setCareerSetupAfterSave(false);
         try {
           if (!careerCredentialsDraft) {
             throw new Error('Career username and password are missing. Reopen Professional Career Setup to enter them.');
           }
-          const accountResponse = await fetch(`/api/children/${serverChildId}/professional-career`, {
+          const accountResponse = await fetch(`/api/pbm/children/${serverChildId}/career-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(careerCredentialsDraft),
@@ -2671,7 +2982,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         return;
       }
       setTimeout(() => {
-        onSuccess(payload);
+        onSuccess(savedPayload);
       }, documentUploadWarnings.length > 0 ? 4000 : 900);
     } catch (err) {
       console.error('Submission error:', err);
@@ -2919,10 +3230,28 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <SectionHeading step={3} title="Basic Info" isCompleted={completionStats.isBasicComplete} />
           <div className="mb-2">
             <ChildPhotoPicker
+              currentPhoto={initialChild?.photo}
               onFileSelected={(file) => setProfilePhotoFile(file)}
               onRemove={() => setProfilePhotoFile(null)}
               disabled={isSubmitting}
             />
+            {profilePhotoHistory.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {profilePhotoHistory.map((entry) => {
+                  const photoSrc = childPhotoDisplaySrc(entry.photo);
+                  return photoSrc ? (
+                    <div key={entry.year} className="w-12">
+                      <img
+                        src={photoSrc}
+                        alt={`Profile photo from ${entry.year}`}
+                        className="h-14 w-12 rounded border border-slate-200 object-cover"
+                      />
+                      <p className="mt-0.5 text-center text-[10px] text-slate-500">{entry.year}</p>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -3016,7 +3345,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            options={['ACTIVE', 'CURRENT', 'DROPPED', 'EXPELLED', 'PASSOUT']}
+            options={[
+              { label: 'REGULAR', value: 'ACTIVE' },
+              'DROPPED',
+              'EXPELLED',
+              'PASSOUT',
+            ]}
             className="md:col-span-2"
           />
 
@@ -3076,7 +3410,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                     <p className="text-[11px] text-slate-600">Selected: {document.file.name}</p>
                   ) : savedDocument ? (
                     <a
-                      href={`/api/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
+                      href={`/api/pbm/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex text-[11px] font-semibold text-indigo-700 hover:underline"
@@ -3152,7 +3486,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           {appearanceMeasurements.map((measurement, index) => (
             <div key={measurement.id} className="rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
               <div className="mb-4 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-slate-600">Appearance Entry {index + 1}</span>
+                <span className="text-xs font-semibold text-slate-600">
+                  Appearance Entry {measurement.year || index + 1}
+                </span>
                 {appearanceMeasurements.length > 1 && (
                   <button
                     type="button"
@@ -3165,7 +3501,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-4 gap-y-3.5 md:grid-cols-4">
+                <FormInput
+                  label="Year"
+                  name={`appearance-year-${measurement.id}`}
+                  type="number"
+                  min={1900}
+                  max={new Date().getFullYear() + 1}
+                  value={measurement.year}
+                  onChange={(e) => updateAppearanceMeasurement(measurement.id, 'year', e.target.value)}
+                />
                 <FormInput
                   label="Height"
                   name={`height-${measurement.id}`}
@@ -3264,6 +3609,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             <AddressFields
               values={{
                 addressType: fatherAddressType,
+                villageName: fatherVillageName,
                 postOffice: fatherPostOffice,
                 colony: fatherColony,
                 district: fatherDistrict,
@@ -3274,10 +3620,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 houseNumber: fatherHouseNumber,
                 address: fatherAddress,
               }}
-              onChange={(field, value) => {
-                if (field === 'address') setFatherAddress(value);
-                else updateParentAddressPart('father', field, value);
-              }}
+              onChange={(field, value) => field === 'address'
+                ? setFatherAddress(value)
+                : updateParentAddressPart('father', field, value)}
             />
           </div>
         </div>
@@ -3348,6 +3693,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             <AddressFields
               values={{
                 addressType: motherAddressType,
+                villageName: motherVillageName,
                 postOffice: motherPostOffice,
                 colony: motherColony,
                 district: motherDistrict,
@@ -3358,10 +3704,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 houseNumber: motherHouseNumber,
                 address: motherAddress,
               }}
-              onChange={(field, value) => {
-                if (field === 'address') setMotherAddress(value);
-                else updateParentAddressPart('mother', field, value);
-              }}
+              onChange={(field, value) => field === 'address'
+                ? setMotherAddress(value)
+                : updateParentAddressPart('mother', field, value)}
             />
           </div>
         </div>
@@ -3409,6 +3754,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   <AddressFields
                     values={{
                       addressType: s.addressType || '',
+                      villageName: s.villageName || '',
                       postOffice: s.postOffice || '',
                       colony: s.colony || '',
                       district: s.district,
@@ -3429,6 +3775,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                       <AddressFields
                         values={{
                           addressType: s.marriedAddressType || '',
+                          villageName: s.marriedVillageName || '',
                           postOffice: s.marriedPostOffice || '',
                           colony: s.marriedColony || '',
                           district: s.marriedDistrict || '',
@@ -3439,8 +3786,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                           houseNumber: s.marriedHouseNumber || '',
                           address: s.marriedAddress || '',
                         }}
-                        typeLabel="Married Address Type"
-                        addressLabel="Married Full Address"
                         onChange={(field, value) => updateMarriedSiblingAddress(s.id, field, value)}
                       />
                     </div>
@@ -3504,10 +3849,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           {/* Row 3 */}
           <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5">
             <AddressFields
-              typeLabel="Permanent Address Type"
-              addressLabel="Permanent Full Address"
               values={{
                 addressType: guardianAddressType,
+                villageName: guardianVillageName,
                 postOffice: guardianPostOffice,
                 colony: guardianColony,
                 district: guardianDistrict,
@@ -3518,10 +3862,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 houseNumber: guardianHouseNumber,
                 address: guardianAddress,
               }}
-              onChange={(field, value) => {
-                if (field === 'address') setGuardianAddress(value);
-                else updatePermanentGuardianAddressPart(field, value);
-              }}
+              onChange={(field, value) => field === 'address'
+                ? setGuardianAddress(value)
+                : updatePermanentGuardianAddressPart(field, value)}
             />
           </div>
         </div>
@@ -3575,6 +3918,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 <AddressFields
                   values={{
                     addressType: guardian.addressType || '',
+                    villageName: guardian.villageName || '',
                     postOffice: guardian.postOffice || '',
                     colony: guardian.colony || '',
                     district: guardian.district,
@@ -3683,6 +4027,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   <AddressFields
                     values={{
                       addressType: p.addressType || '',
+                      villageName: p.villageName || '',
                       postOffice: p.postOffice || '',
                       colony: p.colony || '',
                       district: p.district,
@@ -3772,6 +4117,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   <AddressFields
                     values={{
                       addressType: w.addressType || '',
+                      villageName: w.villageName || '',
                       postOffice: w.postOffice || '',
                       colony: w.colony || '',
                       district: w.district || '',
@@ -3793,7 +4139,42 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
       {/* ================= 11. RESULT INFO ================= */}
       <div>
-        <SectionHeading step={11} title="Result Info" isCompleted={completionStats.isResultComplete} />
+        <div className="flex items-start justify-between gap-3">
+          <SectionHeading step={11} title="Result Info" isCompleted={completionStats.isResultComplete} />
+          <button
+            type="button"
+            onClick={startNewResultEntry}
+            className="inline-flex shrink-0 items-center gap-1 rounded bg-[#0D5C3A] px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0b4d30]"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New Test Record
+          </button>
+        </div>
+        {resultInfoHistory.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-xs font-semibold text-slate-700">Saved test history</p>
+            {resultInfoHistory.map((entry) => (
+              <div key={entry.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-blue-100 bg-blue-50/60 p-2.5 text-xs">
+                <div>
+                  <p className="font-semibold text-slate-800">
+                    {entry.year} · {entry.examType || 'Exam'}{entry.examDate ? ` · ${entry.examDate}` : ''}
+                  </p>
+                  <p className="text-slate-600">
+                    {entry.school || 'School not recorded'}{entry.gradeClass ? ` · ${entry.gradeClass}` : ''}
+                    {entry.subjectResults.length ? ` · ${entry.subjectResults.length} subjects` : ''}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => editResultEntry(entry)}
+                  className="rounded border border-blue-200 bg-white px-2.5 py-1 font-semibold text-blue-800 hover:bg-blue-100"
+                >
+                  Edit
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-3.5 mb-4">
           <FormInput
             placeholder="School"
@@ -3816,7 +4197,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Exam Type"
             value={resultExamType}
             onChange={(e) => setResultExamType(e.target.value)}
-            options={['Annual', 'Mid-Term', 'Monthly Assessment', 'Entry Test']}
+            options={['Daily Test', 'Monthly Test', 'Monthly Assessment', 'Mid-Term', 'Annual', 'Entry Test']}
           />
           <FormInput
             placeholder="Passing Score"
@@ -4074,7 +4455,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Complain Type"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
-            options={['Discipline', 'Behavior', 'Academic', 'Islamic', 'Psychological']}
+            options={['Discipline', 'Behavior', 'Academic', 'Psychological']}
           />
         </div>
 
@@ -4106,7 +4487,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 label="Complain Type"
                 value={entry.category}
                 onChange={(e) => updateReportEntry(entry.id, 'category', e.target.value)}
-                options={['Discipline', 'Behavior', 'Academic', 'Islamic', 'Psychological']}
+                options={['Discipline', 'Behavior', 'Academic', 'Psychological']}
               />
               <textarea
                 rows={3}
@@ -4206,6 +4587,24 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             />
           </div>
         ))}
+        {areaOfInterestHistory.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-semibold text-slate-700">Saved yearly interest history</p>
+            {areaOfInterestHistory.map((entry) => (
+              <div key={entry.year} className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                <p className="text-xs font-bold text-amber-900">{entry.year}</p>
+                {entry.areaOfInterest && (
+                  <p className="mt-1 whitespace-pre-wrap text-xs text-slate-700">{entry.areaOfInterest}</p>
+                )}
+                {entry.entries.map((interest, index) => (
+                  <p key={interest.id || `${entry.year}-${index}`} className="mt-1 whitespace-pre-wrap text-xs text-slate-700">
+                    {interest.details}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ================= 15. ATTACHMENTS (FINAL SECTION) ================= */}
@@ -4225,7 +4624,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
                 return !item.file && savedDocument && initialChild?.id ? (
                   <a
-                    href={`/api/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
+                    href={`/api/pbm/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs font-semibold text-indigo-700 hover:underline"

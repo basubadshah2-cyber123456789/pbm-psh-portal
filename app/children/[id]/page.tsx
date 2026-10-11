@@ -6,6 +6,7 @@ import { requireModuleAccess } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { formatDate, parsePshNotes } from '@/lib/utils';
+import { formatAddress } from '@/lib/formatters';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
 import { ChildComplaintsSection } from '@/components/children/ChildComplaintsSection';
 import { ChildDocumentsSection } from '@/components/children/ChildDocumentsSection';
@@ -108,6 +109,61 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
   const attendancePresent = child.attendances.filter((record) => record.status === 'PRESENT').length;
   const psh = parsePshNotes(child.notes);
   const careerProfile = psh?.professionalCareer?.profile;
+  const getHistoryYear = (value: string | number | Date | null | undefined) => {
+    if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+    if (typeof value === 'string') {
+      const yearPrefix = value.match(/^(\d{4})(?:-|$)/);
+      if (yearPrefix) return Number(yearPrefix[1]);
+    }
+    if (value) {
+      const date = value instanceof Date ? value : new Date(value);
+      if (!Number.isNaN(date.getTime())) return date.getFullYear();
+    }
+    return new Date().getFullYear();
+  };
+  const resultInfoHistory = (
+    Array.isArray(psh?.resultInfoHistory) && psh.resultInfoHistory.length > 0
+      ? psh.resultInfoHistory
+      : psh?.resultInfo
+        ? [psh.resultInfo]
+        : []
+  ).sort((left: any, right: any) =>
+    getHistoryYear(right.year ?? right.examDate ?? child.updatedAt) -
+    getHistoryYear(left.year ?? left.examDate ?? child.updatedAt)
+  );
+  const appearanceHistory = (
+    Array.isArray(psh?.appearanceHistory) && psh.appearanceHistory.length > 0
+      ? psh.appearanceHistory
+      : Array.isArray(psh?.appearance?.measurements) && psh.appearance.measurements.length > 0
+        ? psh.appearance.measurements
+        : psh?.appearance
+          ? [psh.appearance]
+          : []
+  ).sort((left: any, right: any) =>
+    getHistoryYear(right.year ?? child.updatedAt) - getHistoryYear(left.year ?? child.updatedAt)
+  );
+  const areaOfInterestHistory = (
+    Array.isArray(psh?.areaOfInterestHistory) && psh.areaOfInterestHistory.length > 0
+      ? psh.areaOfInterestHistory
+      : psh?.areaOfInterest || psh?.areaOfInterestEntries?.length
+        ? [{
+            year: getHistoryYear(child.updatedAt),
+            areaOfInterest: psh.areaOfInterest || '',
+            entries: psh.areaOfInterestEntries || [],
+          }]
+        : []
+  ).sort((left: any, right: any) =>
+    getHistoryYear(right.year ?? child.updatedAt) - getHistoryYear(left.year ?? child.updatedAt)
+  );
+  const profilePhotoHistory = Array.isArray(psh?.profilePhotoHistory) && psh.profilePhotoHistory.length > 0
+    ? [...psh.profilePhotoHistory]
+        .filter((entry: any) => typeof entry.photo === 'string' && entry.photo)
+        .sort((left: any, right: any) =>
+          getHistoryYear(right.year ?? child.updatedAt) - getHistoryYear(left.year ?? child.updatedAt)
+        )
+    : child.photo
+      ? [{ year: getHistoryYear(child.admissionDate), photo: child.photo }]
+      : [];
 
   return (
     <AppLayout>
@@ -188,7 +244,41 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
               </div>
             </div>
           </div>
+          {profilePhotoHistory.length > 0 && (
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <h3 className="mb-2 text-xs font-bold text-slate-700">Profile Photo History</h3>
+              <div className="flex flex-wrap gap-3">
+                {profilePhotoHistory.map((entry: any, index: number) => {
+                  const photoSrc = childPhotoDisplaySrc(entry.photo);
+                  return photoSrc ? (
+                    <div key={`${entry.year}-${index}`} className="w-20">
+                      <div className="h-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                        <img src={photoSrc} alt={`${child.fullName} profile from ${entry.year}`} className="h-full w-full object-cover" />
+                      </div>
+                      <p className="mt-1 text-center text-[11px] font-semibold text-slate-600">{entry.year}</p>
+                    </div>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
         </section>
+
+        {appearanceHistory.length > 0 && (
+          <Section label="YEARLY APPEARANCE" title="Growth & Appearance History" tone="emerald">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {appearanceHistory.map((entry: any, index: number) => (
+                <div key={`${entry.year || 'year'}-${index}`} className="rounded-lg border border-emerald-100 bg-white p-3 text-xs">
+                  <p className="font-bold text-emerald-900">{entry.year || getHistoryYear(child.updatedAt)}</p>
+                  <p className="mt-1 text-slate-700">
+                    Height: {entry.height ? `${entry.height} cm` : 'N/A'} · Weight: {entry.weight ? `${entry.weight} kg` : 'N/A'}
+                  </p>
+                  <p className="mt-1 text-slate-600">Age: {entry.age ? `${entry.age} years` : 'N/A'}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* 1 & 2: Basic Biometrics & Institutional Care */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -290,8 +380,8 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{psh.fatherInfo.city}, {psh.fatherInfo.province}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Union Council No. / Name</dt>
-                    <dd className="font-semibold">{[psh.fatherInfo.ucNumber, psh.fatherInfo.ucName].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                    <dt className="text-slate-400">Address</dt>
+                    <dd className="font-semibold">{formatAddress(psh.fatherInfo)}</dd>
                   </div>
                 </dl>
               </Section>
@@ -321,12 +411,8 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{psh.motherInfo.profession || 'Housewife'} ({psh.motherInfo.qualification || 'Primary'})</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Native Location</dt>
-                    <dd className="font-semibold">{psh.motherInfo.address || `${psh.motherInfo.city}, ${psh.motherInfo.province}`}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">Union Council No. / Name</dt>
-                    <dd className="font-semibold">{[psh.motherInfo.ucNumber, psh.motherInfo.ucName].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                    <dt className="text-slate-400">Address</dt>
+                    <dd className="font-semibold">{formatAddress(psh.motherInfo)}</dd>
                   </div>
                 </dl>
               </Section>
@@ -352,34 +438,12 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{psh.guardianInfo.profession || 'N/A'}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Full Address</dt>
-                    <dd className="font-semibold">{psh.guardianInfo.address || 'N/A'}</dd>
+                    <dt className="text-slate-400">Permanent Address</dt>
+                    <dd className="font-semibold">{formatAddress(psh.guardianInfo)}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Permanent Address Type / Post Office / Colony</dt>
-                    <dd className="font-semibold">{[psh.guardianInfo.addressType, psh.guardianInfo.addressType === 'Village' ? psh.guardianInfo.postOffice : psh.guardianInfo.addressType === 'City' ? psh.guardianInfo.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">District / Tehsil</dt>
-                    <dd className="font-semibold">{[psh.guardianInfo.district, psh.guardianInfo.tehsil].filter(Boolean).join(' / ') || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">Union Council No. / Name / Street / House</dt>
-                    <dd className="font-semibold">
-                      {[psh.guardianInfo.ucNumber, psh.guardianInfo.ucName, psh.guardianInfo.streetNumber, psh.guardianInfo.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">Current / Present Address</dt>
-                    <dd className="font-semibold">{psh.guardianInfo.currentAddress?.address || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">Current Address Type / Post Office / Colony</dt>
-                    <dd className="font-semibold">{[psh.guardianInfo.currentAddress?.addressType, psh.guardianInfo.currentAddress?.addressType === 'Village' ? psh.guardianInfo.currentAddress.postOffice : psh.guardianInfo.currentAddress?.addressType === 'City' ? psh.guardianInfo.currentAddress.colony : ''].filter(Boolean).join(' / ') || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">Current District / Tehsil / UC No. / UC Name / Street / House</dt>
-                    <dd className="font-semibold">{[psh.guardianInfo.currentAddress?.district, psh.guardianInfo.currentAddress?.tehsil, psh.guardianInfo.currentAddress?.ucNumber, psh.guardianInfo.currentAddress?.ucName, psh.guardianInfo.currentAddress?.streetNumber, psh.guardianInfo.currentAddress?.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</dd>
+                    <dt className="text-slate-400">Current Address</dt>
+                    <dd className="font-semibold">{formatAddress(psh.guardianInfo.currentAddress)}</dd>
                   </div>
                 </dl>
               </Section>
@@ -400,18 +464,8 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-semibold">{guardian.qualification || 'N/A'} • {guardian.profession || 'N/A'}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-400">Full Address</dt>
-                    <dd className="font-semibold">{guardian.address || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">District / Tehsil</dt>
-                    <dd className="font-semibold">{[guardian.district, guardian.tehsil].filter(Boolean).join(' / ') || 'N/A'}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-400">Union Council No. / Name / Street / House</dt>
-                    <dd className="font-semibold">
-                      {[guardian.ucNumber, guardian.ucName, guardian.streetNumber, guardian.houseNumber].filter(Boolean).join(' / ') || 'N/A'}
-                    </dd>
+                    <dt className="text-slate-400">Address</dt>
+                    <dd className="font-semibold">{formatAddress(guardian)}</dd>
                   </div>
                 </dl>
               </Section>
@@ -433,7 +487,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                         Schedule: {p.visitFrequency} • Timing: {p.visitTiming}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-1">Contact: {p.contact || 'N/A'} • CNIC: {p.cnic || 'N/A'}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">Union Council No. / Name: {[p.ucNumber, p.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">Address: {formatAddress(p)}</div>
                     </div>
                   ))}
                 </div>
@@ -453,10 +507,22 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                         Age: {s.age || 'N/A'} • {s.schoolName || 'School'} ({s.gradeClass || 'Class'})
                       </div>
                       <div className="text-[11px] text-slate-600">Profession: {s.profession || 'N/A'}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">Union Council No. / Name: {[s.ucNumber, s.ucName].filter(Boolean).join(' / ') || 'N/A'}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">Address: {formatAddress(s)}</div>
                       <div className="text-[10px] text-slate-400 mt-1">Status: {s.maritalStatus || 'Single'}</div>
                       {s.maritalStatus === 'Married' && s.marriedAddress && (
-                        <div className="text-[10px] text-slate-400 mt-1">Address After Marriage: {s.marriedAddress}</div>
+                        <div className="text-[10px] text-slate-400 mt-1">Address After Marriage: {formatAddress({
+                          address: s.marriedAddress,
+                          addressType: s.marriedAddressType,
+                          villageName: s.marriedVillageName,
+                          postOffice: s.marriedPostOffice,
+                          colony: s.marriedColony,
+                          district: s.marriedDistrict,
+                          tehsil: s.marriedTehsil,
+                          ucNumber: s.marriedUcNumber,
+                          ucName: s.marriedUcName,
+                          streetNumber: s.marriedStreetNumber,
+                          houseNumber: s.marriedHouseNumber,
+                        })}</div>
                       )}
                     </div>
                   ))}
@@ -477,7 +543,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                         {w.profession || 'Community Elder'} • CNIC: {w.cnic || 'N/A'}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-1">
-                        Contact: {w.contact || 'N/A'} • {w.address || 'N/A'} • {[w.district, w.tehsil, w.ucNumber, w.ucName, w.streetNumber, w.houseNumber].filter(Boolean).join(', ')}
+                        Contact: {w.contact || 'N/A'} • Address: {formatAddress(w)}
                       </div>
                     </div>
                   ))}
@@ -490,25 +556,41 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
         )}
 
         {/* 10: Academic Results */}
-        {psh?.resultInfo?.subjectResults?.length > 0 && (
-          <Section label="SECTION 10: RESULT INFO" title={`Academic Record: ${psh.resultInfo.examType} (${psh.resultInfo.class})`} tone="blue">
-            <div className="space-y-3 text-xs">
-              <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-blue-100/60 rounded-lg font-bold text-blue-900">
-                <span>School: {psh.resultInfo.schoolName || 'Govt School'}</span>
-                <span>Date: {formatDate(psh.resultInfo.examDate)}</span>
-                <span>Aggregate: {psh.resultInfo.totalObtained} / {psh.resultInfo.totalMax} ({psh.resultInfo.percentage})</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                {psh.resultInfo.subjectResults.map((sr: any, i: number) => (
-                  <div key={i} className="p-2.5 rounded-lg bg-white border border-blue-200">
-                    <span className="block font-bold text-slate-800">{sr.subject}</span>
-                    <span className="text-xs font-bold text-blue-800 mt-1 block">
-                      {sr.obtainedMarks} / {sr.totalMarks}
-                    </span>
-                    <span className="text-[10px] text-slate-400">Grade: {sr.grade || 'Pass'}</span>
+        {resultInfoHistory.length > 0 && (
+          <Section label="SECTION 10: RESULT INFO" title="Academic Result History" tone="blue">
+            <div className="space-y-4">
+              {resultInfoHistory.map((result: any, resultIndex: number) => (
+                <div key={result.id || `${result.year}-${resultIndex}`} className="rounded-lg border border-blue-100 bg-white p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-blue-100/60 p-2 text-xs font-bold text-blue-900">
+                    <span>{result.year || getHistoryYear(result.examDate ?? child.updatedAt)} · {result.examType || 'Exam'}</span>
+                    {result.gradeClass || result.class ? <span>Class: {result.gradeClass || result.class}</span> : null}
+                    {result.examDate ? <span>Date: {formatDate(result.examDate)}</span> : null}
+                    <span>School: {result.school || result.schoolName || 'Govt School'}</span>
+                    {result.passingScore ? <span>Passing Score: {result.passingScore}</span> : null}
+                    {result.totalObtained !== undefined && (
+                      <span>
+                        Aggregate: {result.totalObtained} / {result.totalMax ?? '-'}
+                        {result.percentage ? ` (${result.percentage})` : ''}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
+                  {Array.isArray(result.subjectResults) && result.subjectResults.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+                      {result.subjectResults.map((subject: any, subjectIndex: number) => (
+                        <div key={subject.id || `${resultIndex}-${subjectIndex}`} className="rounded-lg border border-blue-200 p-2.5">
+                          <span className="block font-bold text-slate-800">{subject.subject || 'Subject'}</span>
+                          <span className="mt-1 block text-xs font-bold text-blue-800">
+                            {subject.obtainedMarks ?? '-'} / {subject.totalMarks ?? '-'}
+                          </span>
+                          {subject.grade && <span className="text-[10px] text-slate-400">Grade: {subject.grade}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">No subject marks recorded.</p>
+                  )}
+                </div>
+              ))}
             </div>
           </Section>
         )}
@@ -738,19 +820,22 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
 
           <Section label="SECTION 13: INTEREST" title="Area of Interest – Child" tone="amber">
             <div className="space-y-2 text-xs">
-              {psh?.areaOfInterest || psh?.areaOfInterestEntries?.length ? (
-                <>
-                  {psh?.areaOfInterest && (
-                    <p className="text-slate-800 font-medium text-[11px] leading-relaxed">
-                      {psh.areaOfInterest}
+              {areaOfInterestHistory.length > 0 ? (
+                areaOfInterestHistory.map((entry: any, yearIndex: number) => (
+                  <div key={`${entry.year || 'year'}-${yearIndex}`} className="rounded-lg border border-amber-100 bg-white p-3">
+                    <p className="mb-1 font-bold text-amber-900">
+                      {entry.year || getHistoryYear(child.updatedAt)}
                     </p>
-                  )}
-                  {psh.areaOfInterestEntries?.map((entry: any, index: number) => (
-                    <p key={`interest-${index}`} className="text-slate-800 font-medium text-[11px] leading-relaxed">
-                      {entry.details}
-                    </p>
-                  ))}
-                </>
+                    {entry.areaOfInterest && (
+                      <p className="whitespace-pre-wrap font-medium leading-relaxed text-slate-800">{entry.areaOfInterest}</p>
+                    )}
+                    {(entry.entries || entry.areaOfInterestEntries || []).map((interest: any, index: number) => (
+                      <p key={interest.id || `${yearIndex}-${index}`} className="mt-1 whitespace-pre-wrap font-medium leading-relaxed text-slate-800">
+                        {interest.details}
+                      </p>
+                    ))}
+                  </div>
+                ))
               ) : (
                 <p className="text-xs text-slate-500">No specific hobbies or career aspirations recorded.</p>
               )}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Shield,
   FileText,
@@ -24,7 +25,6 @@ import {
   Filter,
   Download,
   Upload,
-  RefreshCw,
   TrendingUp,
   CreditCard,
   UserCheck,
@@ -33,6 +33,8 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { AddPSHForm } from '@/components/children/AddPSHForm';
+import { childPhotoDisplaySrc } from '@/lib/child-photo';
+import { formatAddress } from '@/lib/formatters';
 
 // ================= TYPES =================
 export interface EnrolledChild {
@@ -856,12 +858,13 @@ function AnimatedCounter({ end, duration = 800, prefix = '', suffix = '' }: { en
 
 // ================= MAIN STANDALONE PORTAL =================
 export default function StandalonePSHAdmissionWebsite() {
+  const router = useRouter();
   const [showIntro, setShowIntro] = useState(true);
   const [activeTab, setActiveTab] = useState<'form' | 'records'>('form');
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
-  const [beds, setBeds] = useState<{ id: string; bedNumber: string; roomNumber: string }[]>([]);
-  const [motherMaids, setMotherMaids] = useState<{ id: string; fullName: string }[]>([]);
-  
+  const [portalReady, setPortalReady] = useState(false);
+  const [portalLoadError, setPortalLoadError] = useState('');
+  const [staffName, setStaffName] = useState('');
+  const [isPbmAdmin, setIsPbmAdmin] = useState(false);
   const [enrolledChildren, setEnrolledChildren] = useState<EnrolledChild[]>([]);
   const [justSubmittedChild, setJustSubmittedChild] = useState<EnrolledChild | null>(null);
   const [selectedDossierChild, setSelectedDossierChild] = useState<EnrolledChild | null>(null);
@@ -884,59 +887,69 @@ export default function StandalonePSHAdmissionWebsite() {
     }, 3500);
   };
 
-  // 1. Load records from LocalStorage or seed defaults
+  // Load PBM records and migrate genuine legacy browser records once after staff sign-in.
   useEffect(() => {
-    try {
-      const savedRaw = localStorage.getItem('psh_admissions_records');
-      if (savedRaw) {
-        const list = JSON.parse(savedRaw);
-        if (Array.isArray(list) && list.length > 0) {
-          setEnrolledChildren(list);
+    let cancelled = false;
+    const loadPortal = async () => {
+      try {
+        const sessionResponse = await fetch('/api/pbm/staff/session');
+        if (sessionResponse.status === 401) {
+          router.replace('/pbm-staff/login?next=%2F');
           return;
         }
-      }
-    } catch (e) {
-      console.warn('Failed to load local admissions:', e);
-    }
+        const sessionResult = await sessionResponse.json();
+        if (!sessionResponse.ok) throw new Error(sessionResult.error || 'Unable to verify PBM staff access.');
 
-    // Default Seed
-    setEnrolledChildren(DEFAULT_SEED_CHILDREN);
-    try {
-      localStorage.setItem('psh_admissions_records', JSON.stringify(DEFAULT_SEED_CHILDREN));
-    } catch (e) {
-      console.warn('Local storage init warning:', e);
-    }
-  }, []);
+        const recordsResponse = await fetch('/api/pbm/children');
+        const recordsResult = await recordsResponse.json();
+        if (!recordsResponse.ok) throw new Error(recordsResult.error || 'Unable to load PBM child records.');
+        let records: EnrolledChild[] = Array.isArray(recordsResult.children) ? recordsResult.children : [];
 
-  // 2. Fetch server options if backend is running
-  useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [classRes, hostelRes, staffRes] = await Promise.all([
-          fetch('/api/education/classes').catch(() => null),
-          fetch('/api/hostel/beds').catch(() => null),
-          fetch('/api/staff?role=MOTHER_MAID').catch(() => null),
-        ]);
+        const legacyRaw = localStorage.getItem('psh_admissions_records');
+        const legacyRecords: unknown = legacyRaw ? JSON.parse(legacyRaw) : [];
+        if (Array.isArray(legacyRecords)) {
+          const migratable = legacyRecords.filter((record): record is EnrolledChild =>
+            Boolean(record) &&
+            typeof record === 'object' &&
+            typeof record.admissionNo === 'string' &&
+            typeof record.fullName === 'string' &&
+            typeof record.notes === 'string' &&
+            typeof record.id === 'string' &&
+            !record.id.startsWith('seed-') &&
+            !record.id.startsWith('demo-') &&
+            !DEFAULT_SEED_CHILDREN.some((sample) => sample.id === record.id)
+          );
+          for (const legacyRecord of migratable) {
+            if (records.some((child) => child.admissionNo === legacyRecord.admissionNo)) continue;
+            const response = await fetch('/api/pbm/children', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(legacyRecord),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || `Unable to migrate ${legacyRecord.admissionNo}.`);
+            records = [result.child, ...records];
+          }
+          if (migratable.length > 0) localStorage.removeItem('psh_admissions_records');
+        }
 
-        if (classRes && classRes.ok) {
-          const d = await classRes.json();
-          if (d.classes) setClasses(d.classes);
+        if (!cancelled) {
+          setStaffName(sessionResult.staff?.displayName || '');
+          setIsPbmAdmin(sessionResult.staff?.role === 'ADMIN');
+          setEnrolledChildren(records);
+          setPortalReady(true);
         }
-        if (hostelRes && hostelRes.ok) {
-          const d = await hostelRes.json();
-          if (d.beds) setBeds(d.beds);
+      } catch (error) {
+        if (!cancelled) {
+          setPortalLoadError(error instanceof Error ? error.message : 'Unable to load the PBM portal.');
         }
-        if (staffRes && staffRes.ok) {
-          const d = await staffRes.json();
-          if (d.employees) setMotherMaids(d.employees);
-        }
-      } catch (err) {
-        console.warn('Backend options fetch skipped in standalone demo:', err);
       }
     };
-
-    fetchOptions();
-  }, []);
+    void loadPortal();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   // Parse notes JSON safely
   const parseDossierNotes = (notesStr?: string) => {
@@ -962,29 +975,17 @@ export default function StandalonePSHAdmissionWebsite() {
   };
 
   // Delete record handler
-  const handleDeleteRecord = (admissionNo: string) => {
-    if (typeof window !== 'undefined' && window.confirm(`Are you sure you want to remove record ${admissionNo}?`)) {
-      const updated = enrolledChildren.filter((c) => c.admissionNo !== admissionNo);
-      setEnrolledChildren(updated);
+  const handleDeleteRecord = async (child: EnrolledChild) => {
+    if (typeof window !== 'undefined' && window.confirm(`Permanently remove record ${child.admissionNo}?`)) {
       try {
-        localStorage.setItem('psh_admissions_records', JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Local storage update error:', e);
+        const response = await fetch(`/api/pbm/children/${child.id}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to delete child record.');
+        setEnrolledChildren((current) => current.filter((record) => record.id !== child.id));
+        showToast(`Record ${child.admissionNo} removed.`);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : 'Unable to delete child record.');
       }
-      showToast(`Record ${admissionNo} removed.`);
-    }
-  };
-
-  // Reset to default seed dataset
-  const handleResetToSeedData = () => {
-    if (typeof window !== 'undefined' && window.confirm('Reset directory to official sample resident dataset (5 children)?')) {
-      setEnrolledChildren(DEFAULT_SEED_CHILDREN);
-      try {
-        localStorage.setItem('psh_admissions_records', JSON.stringify(DEFAULT_SEED_CHILDREN));
-      } catch (e) {
-        console.warn('Local storage error:', e);
-      }
-      showToast('Admitted Records directory restored to sample records.');
     }
   };
 
@@ -1067,9 +1068,31 @@ export default function StandalonePSHAdmissionWebsite() {
       try {
         const imported = JSON.parse(event.target?.result as string);
         if (Array.isArray(imported)) {
-          setEnrolledChildren(imported);
-          localStorage.setItem('psh_admissions_records', JSON.stringify(imported));
-          showToast(`Successfully restored ${imported.length} records from backup!`);
+          void (async () => {
+            const importedChildren: EnrolledChild[] = [];
+            for (const record of imported) {
+              const existingChild = enrolledChildren.find((child) => child.admissionNo === record.admissionNo);
+              const response = await fetch(
+                existingChild ? `/api/pbm/children/${existingChild.id}` : '/api/pbm/children',
+                {
+                method: existingChild ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record),
+                }
+              );
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || 'Unable to import a child record.');
+              importedChildren.push(result.child);
+            }
+            setEnrolledChildren((current) => {
+              const merged = new Map(current.map((child) => [child.id, child]));
+              importedChildren.forEach((child) => merged.set(child.id, child));
+              return Array.from(merged.values());
+            });
+            showToast(`Successfully imported ${importedChildren.length} records.`);
+          })().catch((importError: unknown) => {
+            alert(importError instanceof Error ? importError.message : 'Unable to import the backup file.');
+          });
         } else {
           alert('Invalid backup file structure.');
         }
@@ -1168,6 +1191,24 @@ export default function StandalonePSHAdmissionWebsite() {
       });
   }, [enrolledChildren, searchQuery, categoryFilter, genderFilter, sponsorshipFilter, sortBy]);
 
+  if (!portalReady) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+          {portalLoadError ? (
+            <>
+              <h1 className="text-lg font-bold text-slate-900">PBM portal unavailable</h1>
+              <p role="alert" className="mt-2 text-sm text-red-700">{portalLoadError}</p>
+              <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Try again</button>
+            </>
+          ) : (
+            <p className="text-sm text-slate-600">Loading secure PBM child records…</p>
+          )}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <>
       {/* Intro Brand Splash Animation */}
@@ -1210,7 +1251,7 @@ export default function StandalonePSHAdmissionWebsite() {
             {/* Top Navigation Tabs */}
             <div className="flex items-center gap-2">
               <Link
-                href="/login?next=%2Facademic"
+                href="/academic"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
               >
                 <GraduationCap className="h-4 w-4" />
@@ -1222,6 +1263,32 @@ export default function StandalonePSHAdmissionWebsite() {
               >
                 Graduate Career Login
               </Link>
+              {isPbmAdmin && (
+                <Link
+                  href="/pbm-staff/users"
+                  className="rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
+                >
+                  Staff Accounts
+                </Link>
+              )}
+              <span className="hidden text-xs text-emerald-100 sm:inline">{staffName}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      const response = await fetch('/api/pbm/staff/session', { method: 'DELETE' });
+                      if (!response.ok) throw new Error('Unable to sign out.');
+                      router.replace('/pbm-staff/login');
+                    } catch {
+                      showToast('Unable to sign out. Please try again.');
+                    }
+                  })();
+                }}
+                className="rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
+              >
+                Sign out
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1377,9 +1444,6 @@ export default function StandalonePSHAdmissionWebsite() {
                   setActiveTab('records');
                 }}
                 initialChild={editingChild}
-                classes={classes}
-                beds={beds}
-                motherMaids={motherMaids}
               />
             </div>
           ) : (
@@ -1548,16 +1612,6 @@ export default function StandalonePSHAdmissionWebsite() {
                           className="hidden"
                         />
                       </label>
-
-                      {/* Reset to Seed Data */}
-                      <button
-                        type="button"
-                        onClick={handleResetToSeedData}
-                        className="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-300 rounded-lg text-xs font-semibold cursor-pointer transition-all hover:rotate-180 duration-300"
-                        title="Restore sample 5 children dataset"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                      </button>
 
                       {/* New Admission Button */}
                       <button
@@ -1791,14 +1845,16 @@ export default function StandalonePSHAdmissionWebsite() {
                                   </button>
 
                                   {/* Delete Record */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteRecord(child.admissionNo)}
-                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
-                                    title="Delete Record"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  {isPbmAdmin && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteRecord(child)}
+                                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                                      title="Delete Record"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1816,6 +1872,32 @@ export default function StandalonePSHAdmissionWebsite() {
         {/* ================= OFFICIAL PRINTABLE CHILD DOSSIER MODAL ================= */}
         {selectedDossierChild && (() => {
           const psh = parseDossierNotes(selectedDossierChild.notes);
+          const resultHistory = Array.isArray(psh?.resultInfoHistory) && psh.resultInfoHistory.length > 0
+            ? psh.resultInfoHistory
+            : psh?.resultInfo
+              ? [psh.resultInfo]
+              : [];
+          const appearanceHistory = Array.isArray(psh?.appearanceHistory) && psh.appearanceHistory.length > 0
+            ? psh.appearanceHistory
+            : Array.isArray(psh?.appearance?.measurements) && psh.appearance.measurements.length > 0
+              ? psh.appearance.measurements
+              : psh?.appearance
+                ? [psh.appearance]
+                : [];
+          const areaOfInterestHistory = Array.isArray(psh?.areaOfInterestHistory) && psh.areaOfInterestHistory.length > 0
+            ? psh.areaOfInterestHistory
+            : psh?.areaOfInterest || psh?.areaOfInterestEntries?.length
+              ? [{
+                  year: selectedDossierChild.admissionDate?.slice(0, 4),
+                  areaOfInterest: psh.areaOfInterest || '',
+                  entries: psh.areaOfInterestEntries || [],
+                }]
+              : [];
+          const profilePhotoHistory = Array.isArray(psh?.profilePhotoHistory) && psh.profilePhotoHistory.length > 0
+            ? psh.profilePhotoHistory
+            : selectedDossierChild.photo
+              ? [{ year: selectedDossierChild.admissionDate?.slice(0, 4), photo: selectedDossierChild.photo }]
+              : [];
           return (
             <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 z-50 overflow-y-auto print:p-0 print:bg-white print:static animate-fade-in">
               <div className="bg-white rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-auto max-h-[92vh] overflow-y-auto print:max-h-none print:overflow-visible print:border-none print:shadow-none print:p-0 animate-modal-pop">
@@ -2037,23 +2119,42 @@ export default function StandalonePSHAdmissionWebsite() {
                     </div>
                   </div>
 
-                  {psh?.appearance && (
+                  {(appearanceHistory.length > 0 || profilePhotoHistory.length > 0) && (
                     <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
-                      <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-2">APPEARANCE</span>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Height:</span>
-                          <span className="font-semibold text-slate-800">{psh.appearance.height || 'N/A'}</span>
+                      <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-2">APPEARANCE & PROFILE PHOTO HISTORY</span>
+                      {appearanceHistory.length > 0 && (
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {appearanceHistory.map((entry: any, index: number) => (
+                            <div key={`${entry.year || 'year'}-${index}`} className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-xs">
+                              <p className="font-bold text-slate-800">
+                                {entry.year || selectedDossierChild.admissionDate?.slice(0, 4) || 'Year not recorded'}
+                              </p>
+                              <p className="mt-1 text-slate-700">
+                                Height: {entry.height || 'N/A'} · Weight: {entry.weight || 'N/A'} · Age: {entry.age || 'N/A'}
+                              </p>
+                            </div>
+                          ))}
                         </div>
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Weight:</span>
-                          <span className="font-semibold text-slate-800">{psh.appearance.weight || 'N/A'}</span>
+                      )}
+                      {profilePhotoHistory.length > 0 && (
+                        <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-3">
+                          {profilePhotoHistory.map((entry: any, index: number) => {
+                            const photoSrc = childPhotoDisplaySrc(entry.photo);
+                            return photoSrc ? (
+                              <div key={`${entry.year || 'year'}-${index}`} className="w-16">
+                                <img
+                                  src={photoSrc}
+                                  alt={`Profile photo from ${entry.year || selectedDossierChild.admissionDate?.slice(0, 4) || 'admission'}`}
+                                  className="h-20 w-16 rounded border border-slate-200 object-cover"
+                                />
+                                <p className="mt-1 text-center text-[10px] text-slate-500">
+                                  {entry.year || selectedDossierChild.admissionDate?.slice(0, 4) || 'Admission'}
+                                </p>
+                              </div>
+                            ) : null;
+                          })}
                         </div>
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Age:</span>
-                          <span className="font-semibold text-slate-800">{psh.appearance.age || 'N/A'}</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )}
 
@@ -2066,8 +2167,7 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">CNIC:</span> <span>{psh?.fatherInfo?.cnic || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Is Alive:</span> <span className="font-semibold">{psh?.fatherInfo?.isAlive || 'No'} {psh?.fatherInfo?.dod ? `(DOD: ${psh.fatherInfo.dod})` : ''}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.fatherInfo?.profession || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Address:</span> <span>{psh?.fatherInfo?.address || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Union Council No. / Name:</span> <span>{[psh?.fatherInfo?.ucNumber, psh?.fatherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Address:</span> <span>{formatAddress(psh?.fatherInfo)}</span></div>
                     </div>
 
                     {/* Mother Info */}
@@ -2077,8 +2177,7 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">CNIC:</span> <span>{psh?.motherInfo?.cnic || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Is Alive:</span> <span className="font-semibold">{psh?.motherInfo?.isAlive || 'Yes'} {psh?.motherInfo?.dod ? `(DOD: ${psh.motherInfo.dod})` : ''}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.motherInfo?.profession || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Address:</span> <span>{psh?.motherInfo?.address || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Union Council No. / Name:</span> <span>{[psh?.motherInfo?.ucNumber, psh?.motherInfo?.ucName].filter(Boolean).join(' / ') || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Address:</span> <span>{formatAddress(psh?.motherInfo)}</span></div>
                     </div>
                   </div>
 
@@ -2091,20 +2190,8 @@ export default function StandalonePSHAdmissionWebsite() {
                       <div><span className="text-slate-400">Contact:</span> <span>{psh?.guardianInfo?.contact || selectedDossierChild.guardianContact || 'N/A'}</span></div>
                       <div><span className="text-slate-400">CNIC:</span> <span>{psh?.guardianInfo?.cnic || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Profession:</span> <span>{psh?.guardianInfo?.profession || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Address:</span> <span>{psh?.guardianInfo?.address || selectedDossierChild.address || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Permanent Address Type:</span> <span>{psh?.guardianInfo?.addressType || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Post Office / Colony:</span> <span>{psh?.guardianInfo?.addressType === 'Village' ? psh.guardianInfo.postOffice || 'N/A' : psh?.guardianInfo?.addressType === 'City' ? psh.guardianInfo.colony || 'N/A' : 'N/A'}</span></div>
-                      <div><span className="text-slate-400">District:</span> <span>{psh?.guardianInfo?.district || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Tehsil:</span> <span>{psh?.guardianInfo?.tehsil || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Union Council No.:</span> <span>{psh?.guardianInfo?.ucNumber || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Union Council Name:</span> <span>{psh?.guardianInfo?.ucName || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Street No.:</span> <span>{psh?.guardianInfo?.streetNumber || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">House No.:</span> <span>{psh?.guardianInfo?.houseNumber || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Current / Present Address:</span> <span>{psh?.guardianInfo?.currentAddress?.address || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Current Address Type:</span> <span>{psh?.guardianInfo?.currentAddress?.addressType || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Current Post Office / Colony:</span> <span>{psh?.guardianInfo?.currentAddress?.addressType === 'Village' ? psh.guardianInfo.currentAddress.postOffice || 'N/A' : psh?.guardianInfo?.currentAddress?.addressType === 'City' ? psh.guardianInfo.currentAddress.colony || 'N/A' : 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Current Union Council No. / Name:</span> <span>{[psh?.guardianInfo?.currentAddress?.ucNumber, psh?.guardianInfo?.currentAddress?.ucName].filter(Boolean).join(' / ') || 'N/A'}</span></div>
-                      <div><span className="text-slate-400">Current District / Tehsil / Street / House:</span> <span>{[psh?.guardianInfo?.currentAddress?.district, psh?.guardianInfo?.currentAddress?.tehsil, psh?.guardianInfo?.currentAddress?.streetNumber, psh?.guardianInfo?.currentAddress?.houseNumber].filter(Boolean).join(' / ') || 'N/A'}</span></div>
+                      <div><span className="text-slate-400">Address:</span> <span>{formatAddress(psh?.guardianInfo, selectedDossierChild.address || 'N/A')}</span></div>
+                      <div><span className="text-slate-400">Current Address:</span> <span>{formatAddress(psh?.guardianInfo?.currentAddress)}</span></div>
                     </div>
                   </div>
                   {Array.isArray(psh?.additionalGuardians) && psh.additionalGuardians.map((guardian: any, index: number) => (
@@ -2119,13 +2206,7 @@ export default function StandalonePSHAdmissionWebsite() {
                         <div><span className="text-slate-400">CNIC:</span> <span>{guardian.cnic || 'N/A'}</span></div>
                         <div><span className="text-slate-400">Qualification:</span> <span>{guardian.qualification || 'N/A'}</span></div>
                         <div><span className="text-slate-400">Profession:</span> <span>{guardian.profession || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Address:</span> <span>{guardian.address || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">District:</span> <span>{guardian.district || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Tehsil:</span> <span>{guardian.tehsil || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Union Council No.:</span> <span>{guardian.ucNumber || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Union Council Name:</span> <span>{guardian.ucName || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Street No.:</span> <span>{guardian.streetNumber || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">House No.:</span> <span>{guardian.houseNumber || 'N/A'}</span></div>
+                        <div><span className="text-slate-400">Address:</span> <span>{formatAddress(guardian)}</span></div>
                       </div>
                     </div>
                   ))}
@@ -2142,7 +2223,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th>CNIC</th>
                             <th>Contact</th>
                             <th>Schedule</th>
-                            <th>Union Council No. / Name</th>
+                            <th>Address</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2153,7 +2234,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{p.cnic || 'N/A'}</td>
                               <td>{p.contact || 'N/A'}</td>
                               <td>{p.dateTime || 'Scheduled'}</td>
-                              <td>{[p.ucNumber, p.ucName].filter(Boolean).join(' / ') || 'N/A'}</td>
+                              <td>{formatAddress(p)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2174,7 +2255,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th>Profession</th>
                             <th>Grade / Class</th>
                             <th>Institution</th>
-                            <th>Union Council No. / Name</th>
+                            <th>Address</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2186,7 +2267,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{s.profession || 'N/A'}</td>
                               <td>{s.gradeClass || 'N/A'}</td>
                               <td>{s.institution || 'N/A'}</td>
-                              <td>{[s.ucNumber, s.ucName].filter(Boolean).join(' / ') || 'N/A'}</td>
+                              <td>{formatAddress(s)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2206,7 +2287,7 @@ export default function StandalonePSHAdmissionWebsite() {
                             <th>Father Name</th>
                             <th>Contact</th>
                             <th>Profession</th>
-                            <th>Address Details</th>
+                            <th>Address</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2218,9 +2299,7 @@ export default function StandalonePSHAdmissionWebsite() {
                               <td>{w.contact || 'N/A'}</td>
                               <td>{w.profession || 'N/A'}</td>
                               <td>
-                                {[w.address, w.district && `District: ${w.district}`, w.tehsil && `Tehsil: ${w.tehsil}`, w.ucNumber && `UC No.: ${w.ucNumber}`, w.ucName && `UC Name: ${w.ucName}`, w.streetNumber && `Street No.: ${w.streetNumber}`, w.houseNumber && `House No.: ${w.houseNumber}`]
-                                  .filter(Boolean)
-                                  .join(' · ') || 'N/A'}
+                                {formatAddress(w)}
                               </td>
                             </tr>
                           ))}
@@ -2230,35 +2309,41 @@ export default function StandalonePSHAdmissionWebsite() {
                   )}
 
                   {/* Section 11: Result Info */}
-                  {psh?.resultInfo && (
+                  {resultHistory.length > 0 && (
                     <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs">
-                      <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">11. RESULT INFO</span>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-                        <div><span className="text-slate-400">School:</span> <span className="font-bold">{psh.resultInfo.school || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Class:</span> <span>{psh.resultInfo.gradeClass || 'N/A'}</span></div>
-                        <div><span className="text-slate-400">Exam Type:</span> <span>{psh.resultInfo.examType || 'Annual'}</span></div>
-                        <div><span className="text-slate-400">Score:</span> <span className="font-bold text-emerald-800">{psh.resultInfo.passingScore || 'N/A'}</span></div>
-                      </div>
-                      {psh.resultInfo.subjectResults && psh.resultInfo.subjectResults.length > 0 && (
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="text-slate-400 border-b border-slate-100 text-[10px]">
-                              <th className="py-1">Subject</th>
-                              <th>Obtained Marks</th>
-                              <th>Total Marks</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {psh.resultInfo.subjectResults.map((sub: any, idx: number) => (
-                              <tr key={idx} className="border-b border-slate-50">
-                                <td className="py-1 font-semibold">{sub.subject}</td>
-                                <td className="font-bold text-slate-900">{sub.obtainedMarks}</td>
-                                <td className="text-slate-500">{sub.totalMarks}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
+                      <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">11. RESULT INFO HISTORY</span>
+                      {resultHistory.map((result: any, resultIndex: number) => (
+                        <div key={result.id || `${result.year}-${resultIndex}`} className="space-y-2 border-b border-slate-100 pb-3 last:border-0">
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                            <div><span className="text-slate-400">Year:</span> <span className="font-bold">{result.year || result.examDate?.slice(0, 4) || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">School:</span> <span className="font-bold">{result.school || result.schoolName || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">Class:</span> <span>{result.gradeClass || result.class || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">Exam:</span> <span>{result.examType || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">Date:</span> <span>{result.examDate || 'N/A'}</span></div>
+                            <div><span className="text-slate-400">Score:</span> <span className="font-bold text-emerald-800">{result.passingScore || 'N/A'}</span></div>
+                          </div>
+                          {Array.isArray(result.subjectResults) && result.subjectResults.length > 0 && (
+                            <table className="w-full text-left">
+                              <thead>
+                                <tr className="text-slate-400 border-b border-slate-100 text-[10px]">
+                                  <th className="py-1">Subject</th>
+                                  <th>Obtained Marks</th>
+                                  <th>Total Marks</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {result.subjectResults.map((sub: any, idx: number) => (
+                                  <tr key={sub.id || idx} className="border-b border-slate-50">
+                                    <td className="py-1 font-semibold">{sub.subject}</td>
+                                    <td className="font-bold text-slate-900">{sub.obtainedMarks}</td>
+                                    <td className="text-slate-500">{sub.totalMarks}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -2304,14 +2389,23 @@ export default function StandalonePSHAdmissionWebsite() {
                   {/* Section 14: Area of Interest – Child */}
                   <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-1 text-xs">
                     <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">14. AREA OF INTEREST – CHILD</span>
-                    <p className="text-slate-800 font-medium pt-1">
-                      {psh?.areaOfInterest || 'No specific interest recorded.'}
-                    </p>
-                    {psh?.areaOfInterestEntries?.map((entry: any, idx: number) => (
-                      <p key={`interest-${idx}`} className="text-slate-800 font-medium pt-1">
-                        {entry.details}
-                      </p>
-                    ))}
+                    {areaOfInterestHistory.length > 0 ? areaOfInterestHistory.map((entry: any, yearIndex: number) => (
+                      <div key={`${entry.year || 'year'}-${yearIndex}`} className="border-b border-slate-100 py-2 last:border-0">
+                        <p className="font-bold text-[#0D5C3A]">
+                          {entry.year || selectedDossierChild.admissionDate?.slice(0, 4) || 'Year not recorded'}
+                        </p>
+                        {entry.areaOfInterest && (
+                          <p className="whitespace-pre-wrap pt-1 text-slate-800">{entry.areaOfInterest}</p>
+                        )}
+                        {(entry.entries || entry.areaOfInterestEntries || []).map((interest: any, idx: number) => (
+                          <p key={interest.id || `${yearIndex}-${idx}`} className="whitespace-pre-wrap pt-1 text-slate-800">
+                            {interest.details}
+                          </p>
+                        ))}
+                      </div>
+                    )) : (
+                      <p className="pt-1 text-slate-500">No specific interest recorded.</p>
+                    )}
                   </div>
 
                   {/* Section 15: Attachments Summary */}

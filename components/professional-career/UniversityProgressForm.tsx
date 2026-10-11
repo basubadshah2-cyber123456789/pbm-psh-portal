@@ -53,7 +53,7 @@ export function UniversityProgressForm() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/professional-career/university-progress')
+    fetch('/api/pbm/career/university-progress')
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'Unable to load university records.');
@@ -76,7 +76,7 @@ export function UniversityProgressForm() {
     setError('');
     setSuccess('');
     try {
-      const response = await fetch('/api/professional-career/university-progress', {
+      const response = await fetch('/api/pbm/career/university-progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),

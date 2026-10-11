@@ -67,7 +67,7 @@ export function AcademicManagement({ children }: { children: AcademicChild[] }) 
     setError('');
     setSuccess('');
     try {
-      const response = await fetch(`/api/children/${selectedChild.id}/college-progress`, {
+      const response = await fetch(`/api/pbm/children/${selectedChild.id}/college-progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
