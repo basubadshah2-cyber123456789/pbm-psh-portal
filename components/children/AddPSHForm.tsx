@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Plus,
@@ -18,6 +18,40 @@ import { ProfessionalCareerAccountModal } from './ProfessionalCareerAccountModal
 import { CameraCaptureModal } from '@/components/common/CameraCaptureModal';
 import { formatCNIC, formatPhone } from '@/lib/formatters';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
+
+type RepeatableFormControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
+function getRepeatableFieldKey(control: RepeatableFormControl): string {
+  if (control instanceof HTMLInputElement && ['file', 'checkbox', 'radio', 'submit', 'button'].includes(control.type)) {
+    return '';
+  }
+
+  const label = control.closest('.relative')?.querySelector('label')?.textContent;
+  const identifier = label || control.getAttribute('placeholder') || control.getAttribute('aria-label') || '';
+
+  return identifier
+    .replace(/\*/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\bno\b/g, 'number')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function updateRepeatableControl(control: RepeatableFormControl, value: string): void {
+  if (control.disabled || control.value === value) return;
+
+  const prototype = control instanceof HTMLInputElement
+    ? HTMLInputElement.prototype
+    : control instanceof HTMLSelectElement
+      ? HTMLSelectElement.prototype
+      : HTMLTextAreaElement.prototype;
+  const valueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+  if (!valueSetter) return;
+
+  valueSetter.call(control, value);
+  control.dispatchEvent(new Event(control instanceof HTMLSelectElement ? 'change' : 'input', { bubbles: true }));
+}
 
 function normalizeChildStatus(value: string): string {
   switch (value.trim().toUpperCase()) {
@@ -563,11 +597,69 @@ function SectionHeading({
 
 export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProps) {
   const generateAdmissionNo = () => `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+  const repeatableFieldGroupId = useId();
+  const repeatedValues = useRef(new Map<string, string>());
+  const isSyncingRepeatedValues = useRef(false);
   const persistedInitialChildId = initialChild?.id &&
     !String(initialChild.id).startsWith('seed-') &&
     !String(initialChild.id).startsWith('demo-')
       ? String(initialChild.id)
       : undefined;
+
+  const getRepeatableFieldControls = (form: HTMLFormElement) => {
+    const groupId = form.dataset.repeatableFieldGroup;
+    return Array.from(document.querySelectorAll<RepeatableFormControl>(
+      '[data-repeatable-field-group] input, [data-repeatable-field-group] select, [data-repeatable-field-group] textarea'
+    )).filter((control) =>
+      control.closest<HTMLElement>('[data-repeatable-field-group]')?.dataset.repeatableFieldGroup === groupId
+    );
+  };
+
+  const handleRepeatedFieldChange = (event: React.ChangeEvent<HTMLFormElement>) => {
+    if (isSyncingRepeatedValues.current) return;
+
+    const source = event.target;
+    if (!(source instanceof HTMLInputElement || source instanceof HTMLSelectElement || source instanceof HTMLTextAreaElement)) return;
+
+    const fieldKey = getRepeatableFieldKey(source);
+    if (!fieldKey) return;
+
+    repeatedValues.current.set(fieldKey, source.value);
+    isSyncingRepeatedValues.current = true;
+    try {
+      getRepeatableFieldControls(event.currentTarget).forEach((control) => {
+        if (control === source || getRepeatableFieldKey(control) !== fieldKey) return;
+        updateRepeatableControl(control, source.value);
+      });
+    } finally {
+      isSyncingRepeatedValues.current = false;
+    }
+  };
+
+  const handleRepeatedFieldFocus = (event: React.FocusEvent<HTMLFormElement>) => {
+    if (isSyncingRepeatedValues.current) return;
+
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)) return;
+    if (target.value) {
+      const fieldKey = getRepeatableFieldKey(target);
+      if (fieldKey && !repeatedValues.current.has(fieldKey)) repeatedValues.current.set(fieldKey, target.value);
+      return;
+    }
+
+    const fieldKey = getRepeatableFieldKey(target);
+    if (!fieldKey) return;
+
+    const previousValue = repeatedValues.current.get(fieldKey) ??
+      getRepeatableFieldControls(event.currentTarget)
+        .find((control) =>
+          control !== target &&
+          getRepeatableFieldKey(control) === fieldKey &&
+          Boolean(control.value)
+        )?.value;
+
+    if (previousValue) updateRepeatableControl(target, previousValue);
+  };
 
   // ================= 1. ENROLLMENT TYPE =================
   const [enrollmentType, setEnrollmentType] = useState<string>('New Enrollment');
@@ -1534,6 +1626,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
   // Load existing child data for editing
   useEffect(() => {
+    repeatedValues.current.clear();
     if (initialChild) {
       setResultEntryId('new-result');
       setResultSchool('');
@@ -1954,6 +2047,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   }, [initialChild]);
 
   const handleClearForm = () => {
+    repeatedValues.current.clear();
     setEnrollmentType('New Enrollment');
     setReplacedRegistrationNo('');
     setReplacedClass('');
@@ -3126,7 +3220,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 text-slate-800">
+    <form
+      onSubmit={handleSubmit}
+      onChangeCapture={handleRepeatedFieldChange}
+      onFocusCapture={handleRepeatedFieldFocus}
+      data-repeatable-field-group={repeatableFieldGroupId}
+      className="space-y-6 text-slate-800"
+    >
       <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-4 sm:p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-xs sm:text-sm text-slate-700">
@@ -4870,7 +4970,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       </div>
 
       {isFollowUpOpen && createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6">
+        <div data-repeatable-field-group={repeatableFieldGroupId} className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6">
           <div
             role="dialog"
             aria-modal="true"
@@ -4949,7 +5049,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       )}
 
       {isDisciplinaryProceedingsOpen && createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6">
+        <div data-repeatable-field-group={repeatableFieldGroupId} className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6">
           <div
             role="dialog"
             aria-modal="true"
