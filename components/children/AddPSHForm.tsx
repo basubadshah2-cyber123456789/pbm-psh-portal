@@ -1448,6 +1448,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
+  const [isDemoDataLoaded, setIsDemoDataLoaded] = useState(false);
   const [followUpRecords, setFollowUpRecords] = useState<FollowUpRecord[]>([]);
   const [followUpDraft, setFollowUpDraft] = useState<FollowUpRecord>(createEmptyFollowUp());
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
@@ -2048,6 +2049,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
   const handleClearForm = () => {
     repeatedValues.current.clear();
+    setIsDemoDataLoaded(false);
     setEnrollmentType('New Enrollment');
     setReplacedRegistrationNo('');
     setReplacedClass('');
@@ -3245,6 +3247,21 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => {
+                handleAutoFillDemo('orphan');
+                setIsDemoDataLoaded(true);
+                setFormError(null);
+                setFormSuccess(null);
+              }}
+              disabled={isSubmitting || Boolean(initialChild)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-violet-300 bg-violet-600 px-3 py-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              title={initialChild ? 'Demo data is available only when creating a new child dossier' : 'Fill this form with sample data to demonstrate it'}
+            >
+              <Sparkles className="h-4 w-4" />
+              Demo Data
+            </button>
+            <button
+              type="button"
               onClick={() => openCareerAccountSetup()}
               disabled={isSubmitting}
               className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50"
@@ -3308,6 +3325,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           </div>
         </div>
       </div>
+
+      {isDemoDataLoaded && (
+        <p role="status" className="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs font-semibold text-violet-800">
+          Sample demo data is loaded for presentation only. It has not been saved; do not save this example as a real child record.
+        </p>
+      )}
 
       <div className="rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-slate-50 to-indigo-50 p-4 shadow-[0_10px_24px_rgba(16,185,129,0.08)] transition-all">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs mb-2 font-bold">
