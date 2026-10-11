@@ -4997,6 +4997,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   ['name', 'Name'],
                   ['fatherName', 'Father Name'],
                   ['pshName', 'Which PBM Sweet Home'],
+                  ['pshRegistrationNumber', 'PSH Registration No.'],
                   ['className', 'Class'],
                   ['rollNumber', 'Roll No.'],
                   ['instituteName', 'Institute'],

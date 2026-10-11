@@ -376,6 +376,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   ['Name', disciplinaryProceedings.name],
                   ['Father Name', disciplinaryProceedings.fatherName],
                   ['Which PBM Sweet Home', disciplinaryProceedings.pshName],
+                  ['PSH Registration No.', disciplinaryProceedings.pshRegistrationNumber],
                   ['Class', disciplinaryProceedings.className],
                   ['Roll No.', disciplinaryProceedings.rollNumber],
                   ['Institute', disciplinaryProceedings.instituteName],
