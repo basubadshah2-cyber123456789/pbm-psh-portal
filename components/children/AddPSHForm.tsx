@@ -290,7 +290,7 @@ function AddressFields({
         </>
       ) : values.addressType === 'City' ? (
         <FormInput
-          label="City Name"
+          label="City Name / Colony"
           value={values.colony}
           onChange={(event) => onChange('colony', event.target.value)}
           disabled={disabled}
