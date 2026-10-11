@@ -989,7 +989,6 @@ export default function StandalonePSHAdmissionWebsite() {
     setEnrolledChildren((current) =>
       current.map((record) => record.id === child.id ? { ...record, notes: result.notes } : record)
     );
-    setSelectedFollowUpChild(null);
     showToast(`Follow-up added for ${child.fullName}.`);
   };
 
