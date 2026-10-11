@@ -356,7 +356,21 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
           <Section label="DISCIPLINARY PROCEEDINGS" title={disciplinaryType} tone="red">
             {disciplinaryProceedings ? (
               <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 lg:grid-cols-3">
-                {([
+                {(disciplinaryType === 'DROPPED' ? [
+                  ['Name', disciplinaryProceedings.name],
+                  ['Father Name', disciplinaryProceedings.fatherName],
+                  ['Class', disciplinaryProceedings.className],
+                  ['Class Section', disciplinaryProceedings.classSection],
+                  ['Roll No.', disciplinaryProceedings.rollNumber],
+                  ['Attendance', disciplinaryProceedings.attendance],
+                  ['Institute', disciplinaryProceedings.instituteName],
+                  ['Total Marks', disciplinaryProceedings.totalMarks],
+                  ['Obtained Marks', disciplinaryProceedings.obtainedMarks],
+                  ['Date of Dropped', disciplinaryProceedings.date],
+                  ['Reason of Dropped', disciplinaryProceedings.reason],
+                  ['Approved', disciplinaryProceedings.approved],
+                  ['Remarks', disciplinaryProceedings.remarks],
+                ] : [
                   ['Name', disciplinaryProceedings.name],
                   ['Father Name', disciplinaryProceedings.fatherName],
                   ['Which PBM Sweet Home', disciplinaryProceedings.pshName],
@@ -365,8 +379,8 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   ['Institute', disciplinaryProceedings.instituteName],
                   ['Total Marks', disciplinaryProceedings.totalMarks],
                   ['Obtained Marks', disciplinaryProceedings.obtainedMarks],
-                  ['Reason', disciplinaryProceedings.reason],
-                  ['Date', disciplinaryProceedings.date],
+                  ['Reason of Expulsion', disciplinaryProceedings.reason],
+                  ['Date of Expulsion', disciplinaryProceedings.date],
                   ['Remarks', disciplinaryProceedings.remarks],
                 ] as const).map(([label, value]) => (
                   <div key={label}>

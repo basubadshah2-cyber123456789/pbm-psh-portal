@@ -122,12 +122,15 @@ type DisciplinaryProceedingRecord = {
   fatherName: string;
   pshName: string;
   className: string;
+  classSection: string;
   rollNumber: string;
+  attendance: string;
   instituteName: string;
   totalMarks: string;
   obtainedMarks: string;
   reason: string;
   date: string;
+  approved: string;
   remarks: string;
 };
 
@@ -152,12 +155,15 @@ const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
   fatherName: '',
   pshName: '',
   className: '',
+  classSection: '',
   rollNumber: '',
+  attendance: '',
   instituteName: '',
   totalMarks: '',
   obtainedMarks: '',
   reason: '',
   date: '',
+  approved: '',
   remarks: '',
 });
 
@@ -1389,11 +1395,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   const saveDisciplinaryProceeding = () => {
-    setDisciplinaryProceeding(
-      disciplinaryDraft.type === 'DROPPED'
-        ? { ...createEmptyDisciplinaryProceeding(), type: 'DROPPED' }
-        : disciplinaryDraft
-    );
+    setDisciplinaryProceeding(disciplinaryDraft);
     setIsDisciplinaryProceedingsOpen(false);
   };
 
@@ -5016,9 +5018,43 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 ))}
               </div>
             ) : disciplinaryDraft.type === 'DROPPED' ? (
-              <p className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                DROPPED details fields will be added after they are provided.
-              </p>
+              <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                {([
+                  ['name', 'Name'],
+                  ['fatherName', 'Father Name'],
+                  ['className', 'Class'],
+                  ['classSection', 'Class Section'],
+                  ['rollNumber', 'Roll No.'],
+                  ['attendance', 'Attendance'],
+                  ['instituteName', 'Institute'],
+                  ['totalMarks', 'Total Marks'],
+                  ['obtainedMarks', 'Obtained Marks'],
+                  ['date', 'Date of Dropped'],
+                  ['reason', 'Reason of Dropped'],
+                  ['remarks', 'Remarks'],
+                ] as const).map(([field, label]) => (
+                  <FormInput
+                    key={field}
+                    label={label}
+                    type={field === 'date' ? 'date' : field === 'totalMarks' || field === 'obtainedMarks' ? 'number' : 'text'}
+                    min={field === 'totalMarks' || field === 'obtainedMarks' ? 0 : undefined}
+                    value={disciplinaryDraft[field]}
+                    onChange={(event) => setDisciplinaryDraft((current) => ({
+                      ...current,
+                      [field]: event.target.value,
+                    }))}
+                  />
+                ))}
+                <FormSelect
+                  label="Approved"
+                  value={disciplinaryDraft.approved}
+                  onChange={(event) => setDisciplinaryDraft((current) => ({
+                    ...current,
+                    approved: event.target.value,
+                  }))}
+                  options={['Yes', 'No']}
+                />
+              </div>
             ) : null}
 
             <div className="mt-6 flex flex-col-reverse justify-end gap-2 sm:flex-row">
