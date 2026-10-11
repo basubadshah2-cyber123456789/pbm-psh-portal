@@ -278,7 +278,10 @@ function AddressFields({
         label={typeLabel}
         value={values.addressType}
         onChange={(event) => onChange('addressType', event.target.value)}
-        options={['City', 'Village']}
+        options={[
+          { label: 'Urban', value: 'City' },
+          { label: 'Rural', value: 'Village' },
+        ]}
         disabled={disabled}
       />
       {values.addressType === 'Village' ? (
