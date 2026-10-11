@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, LogOut } from 'lucide-react';
 import { CollegeLifeForm, UniversityLifeForm } from '@/components/professional-career/UniversityProgressForm';
+import { ProfessionalLifeForm } from '@/components/professional-career/ProfessionalLifeForm';
 
 export default function ProfessionalCareerProfilePage() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function ProfessionalCareerProfilePage() {
             <span className="rounded-2xl bg-white/15 p-3"><BriefcaseBusiness className="h-6 w-6" /></span>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-100">Pakistan Sweet Home</p>
-              <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">Enrollment in New Class Form — 1st Year Onward</h1>
+              <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">Education &amp; Professional Growth Portal</h1>
             </div>
           </div>
           <button
@@ -73,6 +74,7 @@ export default function ProfessionalCareerProfilePage() {
         {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
         <CollegeLifeForm />
         <UniversityLifeForm />
+        <ProfessionalLifeForm />
       </div>
     </main>
   );
