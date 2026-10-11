@@ -24,6 +24,7 @@ type AddressDetails = {
   addressType?: string | null;
   villageName?: string | null;
   postOffice?: string | null;
+  cityName?: string | null;
   colony?: string | null;
   district?: string | null;
   tehsil?: string | null;
@@ -41,9 +42,10 @@ export function formatAddress(details: AddressDetails | null | undefined, fallba
     details.addressType === 'Village'
       ? details.villageName
       : details.addressType === 'City'
-        ? details.colony
+        ? details.cityName
         : details.postOffice || details.colony,
     details.addressType === 'Village' ? details.postOffice : null,
+    details.addressType === 'City' ? details.colony : null,
     details.district,
     details.tehsil,
     details.ucNumber,

@@ -515,6 +515,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                           addressType: s.marriedAddressType,
                           villageName: s.marriedVillageName,
                           postOffice: s.marriedPostOffice,
+                          cityName: s.marriedCityName,
                           colony: s.marriedColony,
                           district: s.marriedDistrict,
                           tehsil: s.marriedTehsil,

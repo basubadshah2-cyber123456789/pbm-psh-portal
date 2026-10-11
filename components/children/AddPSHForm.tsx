@@ -51,6 +51,7 @@ export interface MeetingPersonRecord {
   addressType?: string;
   villageName?: string;
   postOffice?: string;
+  cityName?: string;
   colony?: string;
   dateTime: string;
   startDateTime: string;
@@ -77,6 +78,7 @@ export interface SiblingRecord {
   addressType?: string;
   villageName?: string;
   postOffice?: string;
+  cityName?: string;
   colony?: string;
   district: string;
   tehsil: string;
@@ -88,6 +90,7 @@ export interface SiblingRecord {
   marriedAddressType?: string;
   marriedVillageName?: string;
   marriedPostOffice?: string;
+  marriedCityName?: string;
   marriedColony?: string;
   marriedDistrict?: string;
   marriedTehsil?: string;
@@ -146,6 +149,7 @@ export interface WitnessRecord {
   addressType?: string;
   villageName?: string;
   postOffice?: string;
+  cityName?: string;
   colony?: string;
 }
 
@@ -161,6 +165,7 @@ export interface AdditionalGuardianRecord {
   addressType?: string;
   villageName?: string;
   postOffice?: string;
+  cityName?: string;
   colony?: string;
   district: string;
   tehsil: string;
@@ -181,6 +186,7 @@ type AddressRecord = {
   addressType: string;
   villageName: string;
   postOffice: string;
+  cityName: string;
   colony: string;
   district: string;
   tehsil: string;
@@ -197,6 +203,7 @@ const addressComponentFields = new Set<string>([
   'addressType',
   'villageName',
   'postOffice',
+  'cityName',
   'colony',
   'district',
   'tehsil',
@@ -211,8 +218,9 @@ const composeAddress = (parts: Array<string | null | undefined>) =>
 
 const composeLocationAddress = (location: Partial<AddressRecord>) => composeAddress([
   location.addressType,
-  location.addressType === 'Village' ? location.villageName : location.colony,
+  location.addressType === 'Village' ? location.villageName : location.cityName,
   location.addressType === 'Village' ? location.postOffice : '',
+  location.addressType === 'City' ? location.colony : '',
   location.district,
   location.tehsil,
   location.ucNumber,
@@ -289,12 +297,20 @@ function AddressFields({
           />
         </>
       ) : values.addressType === 'City' ? (
-        <FormInput
-          label="City Name / Colony"
-          value={values.colony}
-          onChange={(event) => onChange('colony', event.target.value)}
-          disabled={disabled}
-        />
+        <>
+          <FormInput
+            label="City Name"
+            value={values.cityName}
+            onChange={(event) => onChange('cityName', event.target.value)}
+            disabled={disabled}
+          />
+          <FormInput
+            label="Colony"
+            value={values.colony}
+            onChange={(event) => onChange('colony', event.target.value)}
+            disabled={disabled}
+          />
+        </>
       ) : <div />}
       <FormInput label="District" value={values.district} onChange={(event) => onChange('district', event.target.value)} disabled={disabled} />
       <FormInput label="Tehsil" value={values.tehsil} onChange={(event) => onChange('tehsil', event.target.value)} disabled={disabled} />
@@ -599,6 +615,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [fatherAddressType, setFatherAddressType] = useState('');
   const [fatherVillageName, setFatherVillageName] = useState('');
   const [fatherPostOffice, setFatherPostOffice] = useState('');
+  const [fatherCityName, setFatherCityName] = useState('');
   const [fatherColony, setFatherColony] = useState('');
   const [fatherDistrict, setFatherDistrict] = useState<string>('');
   const [fatherTehsil, setFatherTehsil] = useState<string>('');
@@ -618,6 +635,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         addressType: fatherAddressType,
         villageName: fatherVillageName,
         postOffice: fatherPostOffice,
+        cityName: fatherCityName,
         colony: fatherColony,
         district: fatherDistrict,
         tehsil: fatherTehsil,
@@ -630,6 +648,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       if (field === 'addressType') setFatherAddressType(value);
       if (field === 'villageName') setFatherVillageName(value);
       if (field === 'postOffice') setFatherPostOffice(value);
+      if (field === 'cityName') setFatherCityName(value);
       if (field === 'colony') setFatherColony(value);
       if (field === 'district') setFatherDistrict(value);
       if (field === 'tehsil') setFatherTehsil(value);
@@ -648,6 +667,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: motherAddressType,
       villageName: motherVillageName,
       postOffice: motherPostOffice,
+      cityName: motherCityName,
       colony: motherColony,
       district: motherDistrict,
       tehsil: motherTehsil,
@@ -660,6 +680,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (field === 'addressType') setMotherAddressType(value);
     if (field === 'villageName') setMotherVillageName(value);
     if (field === 'postOffice') setMotherPostOffice(value);
+    if (field === 'cityName') setMotherCityName(value);
     if (field === 'colony') setMotherColony(value);
     if (field === 'district') setMotherDistrict(value);
     if (field === 'tehsil') setMotherTehsil(value);
@@ -686,6 +707,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [motherAddressType, setMotherAddressType] = useState('');
   const [motherVillageName, setMotherVillageName] = useState('');
   const [motherPostOffice, setMotherPostOffice] = useState('');
+  const [motherCityName, setMotherCityName] = useState('');
   const [motherColony, setMotherColony] = useState('');
   const [motherDistrict, setMotherDistrict] = useState<string>('');
   const [motherTehsil, setMotherTehsil] = useState<string>('');
@@ -712,12 +734,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [guardianAddressType, setGuardianAddressType] = useState('');
   const [guardianVillageName, setGuardianVillageName] = useState('');
   const [guardianPostOffice, setGuardianPostOffice] = useState('');
+  const [guardianCityName, setGuardianCityName] = useState('');
   const [guardianColony, setGuardianColony] = useState('');
   const [sameAsPermanentAddress, setSameAsPermanentAddress] = useState(false);
   const [currentGuardianAddress, setCurrentGuardianAddress] = useState({
     addressType: '',
     villageName: '',
     postOffice: '',
+    cityName: '',
     colony: '',
     address: '',
     district: '',
@@ -737,6 +761,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: guardianAddressType,
       villageName: guardianVillageName,
       postOffice: guardianPostOffice,
+      cityName: guardianCityName,
       colony: guardianColony,
       district: guardianDistrict,
       tehsil: guardianTehsil,
@@ -749,6 +774,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (field === 'addressType') setGuardianAddressType(value);
     if (field === 'villageName') setGuardianVillageName(value);
     if (field === 'postOffice') setGuardianPostOffice(value);
+    if (field === 'cityName') setGuardianCityName(value);
     if (field === 'colony') setGuardianColony(value);
     if (field === 'district') setGuardianDistrict(value);
     if (field === 'tehsil') setGuardianTehsil(value);
@@ -768,6 +794,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: guardianAddressType,
       villageName: guardianVillageName,
       postOffice: guardianPostOffice,
+      cityName: guardianCityName,
       colony: guardianColony,
       address: guardianAddress,
       district: guardianDistrict,
@@ -782,6 +809,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     guardianAddressType,
     guardianVillageName,
     guardianPostOffice,
+    guardianCityName,
     guardianColony,
     guardianAddress,
     guardianDistrict,
@@ -825,6 +853,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         addressType: '',
         villageName: '',
         postOffice: '',
+        cityName: '',
         colony: '',
         district: '',
         tehsil: '',
@@ -866,6 +895,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: '',
       villageName: '',
       postOffice: '',
+      cityName: '',
       colony: '',
       dateTime: '',
       startDateTime: '',
@@ -894,6 +924,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         addressType: '',
         villageName: '',
         postOffice: '',
+        cityName: '',
         colony: '',
         dateTime: '',
         startDateTime: '',
@@ -946,6 +977,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: '',
       villageName: '',
       postOffice: '',
+      cityName: '',
       colony: '',
       district: '',
       tehsil: '',
@@ -973,6 +1005,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         addressType: '',
         villageName: '',
         postOffice: '',
+        cityName: '',
         colony: '',
         district: '',
         tehsil: '',
@@ -1009,6 +1042,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: 'marriedAddressType',
       villageName: 'marriedVillageName',
       postOffice: 'marriedPostOffice',
+      cityName: 'marriedCityName',
       colony: 'marriedColony',
       district: 'marriedDistrict',
       tehsil: 'marriedTehsil',
@@ -1034,6 +1068,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           addressType: updated.marriedAddressType || '',
           villageName: updated.marriedVillageName || '',
           postOffice: updated.marriedPostOffice || '',
+          cityName: updated.marriedCityName || '',
           colony: updated.marriedColony || '',
           district: updated.marriedDistrict || '',
           tehsil: updated.marriedTehsil || '',
@@ -1059,6 +1094,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       addressType: '',
       villageName: '',
       postOffice: '',
+      cityName: '',
       colony: '',
       district: '',
       tehsil: '',
@@ -1084,6 +1120,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         addressType: '',
         villageName: '',
         postOffice: '',
+        cityName: '',
         colony: '',
         district: '',
         tehsil: '',
@@ -1567,6 +1604,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setFatherAddressType(psh.fatherInfo.addressType || '');
           setFatherVillageName(psh.fatherInfo.villageName || '');
           setFatherPostOffice(psh.fatherInfo.postOffice || '');
+          setFatherCityName(psh.fatherInfo.cityName || '');
           setFatherColony(psh.fatherInfo.colony || '');
           setFatherDistrict(psh.fatherInfo.district || '');
           setFatherTehsil(psh.fatherInfo.tehsil || '');
@@ -1590,6 +1628,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setMotherAddressType(psh.motherInfo.addressType || '');
           setMotherVillageName(psh.motherInfo.villageName || '');
           setMotherPostOffice(psh.motherInfo.postOffice || '');
+          setMotherCityName(psh.motherInfo.cityName || '');
           setMotherColony(psh.motherInfo.colony || '');
           setMotherDistrict(psh.motherInfo.district || '');
           setMotherTehsil(psh.motherInfo.tehsil || '');
@@ -1617,12 +1656,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setGuardianAddressType(psh.guardianInfo.addressType || '');
           setGuardianVillageName(psh.guardianInfo.villageName || '');
           setGuardianPostOffice(psh.guardianInfo.postOffice || '');
+          setGuardianCityName(psh.guardianInfo.cityName || '');
           setGuardianColony(psh.guardianInfo.colony || '');
           setSameAsPermanentAddress(Boolean(psh.guardianInfo.sameAsPermanentAddress));
           setCurrentGuardianAddress({
             addressType: psh.guardianInfo.currentAddress?.addressType || '',
             villageName: psh.guardianInfo.currentAddress?.villageName || '',
             postOffice: psh.guardianInfo.currentAddress?.postOffice || '',
+            cityName: psh.guardianInfo.currentAddress?.cityName || '',
             colony: psh.guardianInfo.currentAddress?.colony || '',
             address: psh.guardianInfo.currentAddress?.address || '',
             district: psh.guardianInfo.currentAddress?.district || '',
@@ -1648,6 +1689,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 addressType: guardian.addressType || '',
                 villageName: guardian.villageName || '',
                 postOffice: guardian.postOffice || '',
+                cityName: guardian.cityName || '',
                 colony: guardian.colony || '',
                 district: guardian.district || '',
                 tehsil: guardian.tehsil || '',
@@ -1665,6 +1707,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             addressType: person.addressType || '',
             villageName: person.villageName || '',
             postOffice: person.postOffice || '',
+            cityName: person.cityName || '',
             colony: person.colony || '',
             district: person.district || '',
             tehsil: person.tehsil || '',
@@ -1683,6 +1726,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             addressType: sibling.addressType || '',
             villageName: sibling.villageName || '',
             postOffice: sibling.postOffice || '',
+            cityName: sibling.cityName || '',
             colony: sibling.colony || '',
             district: sibling.district || '',
             tehsil: sibling.tehsil || '',
@@ -1699,6 +1743,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             addressType: w.addressType || '',
             villageName: w.villageName || '',
             postOffice: w.postOffice || '',
+            cityName: w.cityName || '',
             colony: w.colony || '',
             district: w.district || '',
             tehsil: w.tehsil || '',
@@ -1885,6 +1930,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setFatherAddressType('');
     setFatherVillageName('');
     setFatherPostOffice('');
+    setFatherCityName('');
     setFatherColony('');
     setFatherDistrict('');
     setFatherTehsil('');
@@ -1905,6 +1951,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setMotherAddressType('');
     setMotherVillageName('');
     setMotherPostOffice('');
+    setMotherCityName('');
     setMotherColony('');
     setMotherDistrict('');
     setMotherTehsil('');
@@ -1929,12 +1976,14 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setGuardianAddressType('');
     setGuardianVillageName('');
     setGuardianPostOffice('');
+    setGuardianCityName('');
     setGuardianColony('');
     setSameAsPermanentAddress(false);
     setCurrentGuardianAddress({
       addressType: '',
       villageName: '',
       postOffice: '',
+      cityName: '',
       colony: '',
       address: '',
       district: '',
@@ -1945,9 +1994,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       houseNumber: '',
     });
     setAdditionalGuardians([]);
-    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', addressType: '', villageName: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', addressType: '', villageName: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
-    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', addressType: '', villageName: '', postOffice: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setMeetingPersons([{ id: '1', name: '', relation: '', cnic: '', contact: '', qualification: '', profession: '', dateTime: '', startDateTime: '', endDateTime: '', addressType: '', villageName: '', postOffice: '', cityName: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setSiblings([{ id: '1', name: '', gender: '', age: '', qualification: '', profession: '', institution: '', gradeClass: '', maritalStatus: '', addressType: '', villageName: '', postOffice: '', cityName: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
+    setWitnesses([{ id: '1', name: '', cnic: '', fatherName: '', contact: '', qualification: '', profession: '', addressType: '', villageName: '', postOffice: '', cityName: '', colony: '', district: '', tehsil: '', ucNumber: '', ucName: '', streetNumber: '', houseNumber: '', address: '' }]);
     setResultSchool('');
     setResultClass('');
     setResultExamDate('');
@@ -2736,6 +2785,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           addressType: fatherAddressType,
           villageName: fatherVillageName,
           postOffice: fatherPostOffice,
+          cityName: fatherCityName,
           colony: fatherColony,
           district: fatherDistrict,
           tehsil: fatherTehsil,
@@ -2758,6 +2808,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           addressType: motherAddressType,
           villageName: motherVillageName,
           postOffice: motherPostOffice,
+          cityName: motherCityName,
           colony: motherColony,
           district: motherDistrict,
           tehsil: motherTehsil,
@@ -2784,6 +2835,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           addressType: guardianAddressType,
           villageName: guardianVillageName,
           postOffice: guardianPostOffice,
+          cityName: guardianCityName,
           colony: guardianColony,
           sameAsPermanentAddress,
           currentAddress: currentGuardianAddress,
@@ -3611,6 +3663,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 addressType: fatherAddressType,
                 villageName: fatherVillageName,
                 postOffice: fatherPostOffice,
+                cityName: fatherCityName,
                 colony: fatherColony,
                 district: fatherDistrict,
                 tehsil: fatherTehsil,
@@ -3695,6 +3748,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 addressType: motherAddressType,
                 villageName: motherVillageName,
                 postOffice: motherPostOffice,
+                cityName: motherCityName,
                 colony: motherColony,
                 district: motherDistrict,
                 tehsil: motherTehsil,
@@ -3756,6 +3810,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                       addressType: s.addressType || '',
                       villageName: s.villageName || '',
                       postOffice: s.postOffice || '',
+                      cityName: s.cityName || '',
                       colony: s.colony || '',
                       district: s.district,
                       tehsil: s.tehsil,
@@ -3777,6 +3832,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                           addressType: s.marriedAddressType || '',
                           villageName: s.marriedVillageName || '',
                           postOffice: s.marriedPostOffice || '',
+                          cityName: s.marriedCityName || '',
                           colony: s.marriedColony || '',
                           district: s.marriedDistrict || '',
                           tehsil: s.marriedTehsil || '',
@@ -3853,6 +3909,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 addressType: guardianAddressType,
                 villageName: guardianVillageName,
                 postOffice: guardianPostOffice,
+                cityName: guardianCityName,
                 colony: guardianColony,
                 district: guardianDistrict,
                 tehsil: guardianTehsil,
@@ -3920,6 +3977,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                     addressType: guardian.addressType || '',
                     villageName: guardian.villageName || '',
                     postOffice: guardian.postOffice || '',
+                    cityName: guardian.cityName || '',
                     colony: guardian.colony || '',
                     district: guardian.district,
                     tehsil: guardian.tehsil,
@@ -4029,6 +4087,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                       addressType: p.addressType || '',
                       villageName: p.villageName || '',
                       postOffice: p.postOffice || '',
+                      cityName: p.cityName || '',
                       colony: p.colony || '',
                       district: p.district,
                       tehsil: p.tehsil,
@@ -4119,6 +4178,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                       addressType: w.addressType || '',
                       villageName: w.villageName || '',
                       postOffice: w.postOffice || '',
+                      cityName: w.cityName || '',
                       colony: w.colony || '',
                       district: w.district || '',
                       tehsil: w.tehsil || '',
