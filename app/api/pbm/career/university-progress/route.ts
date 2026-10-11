@@ -8,10 +8,32 @@ const MAX_DOCUMENT_BYTES = 12 * 1024 * 1024;
 const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 const allowedPrograms = new Set(['Medical', 'Engineering', 'BS / General', 'Commerce']);
 const allowedCollegeTypes = new Set(['Government', 'Private']);
+const allowedUniversityTypes = new Set(['Public Sector', 'Private', 'Affiliated College']);
+const allowedDegreeLevels = new Set(['Associate Degree', 'Bachelor / Undergraduate', 'Professional Degree', 'Other']);
+const allowedDegreePrograms = new Set([
+  'Associate Degree', 'BA / BS Arts and Humanities', 'BS Computer Science / IT', 'BS Natural Sciences',
+  'BBA / Business Administration', 'BCom / Accounting and Finance', 'LLB / Law', 'MBBS', 'BDS',
+  'Pharm-D', 'DPT / Allied Health Sciences', 'BE / Engineering', 'BEd / Education',
+  'Agriculture and Veterinary Sciences', 'Other',
+]);
+const allowedEnrollmentStatuses = new Set(['Enrolled', 'On Leave', 'Completed', 'Withdrawn']);
+const allowedProvinces = new Set([
+  'Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan', 'Islamabad Capital Territory',
+  'Azad Jammu and Kashmir', 'Gilgit-Baltistan',
+]);
 
 interface SubjectMark {
   id: string;
   subject: string;
+  totalMarks: string;
+  obtainedMarks: string;
+}
+
+interface UniversityCourse {
+  id: string;
+  courseName: string;
+  creditHours: string;
+  grade: string;
   totalMarks: string;
   obtainedMarks: string;
 }
@@ -61,6 +83,47 @@ function validateSubjects(value: FormDataEntryValue | null): SubjectMark[] | nul
     });
   }
   return subjects;
+}
+
+function validateUniversityCourses(value: FormDataEntryValue | null): UniversityCourse[] | null {
+  if (typeof value !== 'string') return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed) || parsed.length < 1 || parsed.length > 100) return null;
+  const courses: UniversityCourse[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+    const course = item as Record<string, unknown>;
+    if (
+      typeof course.courseName !== 'string' || !course.courseName.trim() || course.courseName.length > 100 ||
+      typeof course.creditHours !== 'string' || typeof course.grade !== 'string' ||
+      typeof course.totalMarks !== 'string' || typeof course.obtainedMarks !== 'string' ||
+      course.grade.length > 10
+    ) return null;
+    if (Boolean(course.totalMarks) !== Boolean(course.obtainedMarks)) return null;
+    if (course.creditHours) {
+      const creditHours = Number(course.creditHours);
+      if (!Number.isFinite(creditHours) || creditHours < 0.5 || creditHours > 20) return null;
+    }
+    if (course.totalMarks || course.obtainedMarks) {
+      const totalMarks = Number(course.totalMarks);
+      const obtainedMarks = Number(course.obtainedMarks);
+      if (!Number.isFinite(totalMarks) || totalMarks <= 0 || !Number.isFinite(obtainedMarks) || obtainedMarks < 0 || obtainedMarks > totalMarks) return null;
+    }
+    courses.push({
+      id: randomUUID(),
+      courseName: course.courseName.trim(),
+      creditHours: course.creditHours,
+      grade: course.grade.trim(),
+      totalMarks: course.totalMarks,
+      obtainedMarks: course.obtainedMarks,
+    });
+  }
+  return courses;
 }
 
 export async function GET(request: Request) {
@@ -115,10 +178,20 @@ export async function POST(request: Request) {
     if (!graduate) return NextResponse.json({ error: 'Please sign in to continue.' }, { status: 401 });
 
     const formData = await request.formData();
-    const data = {
+    const recordType = readText(formData, 'recordType', 20) || 'college';
+    if (recordType !== 'college' && recordType !== 'university') {
+      return NextResponse.json({ error: 'Select College Life or University Life.' }, { status: 400 });
+    }
+    const commonData = {
       studentName: readText(formData, 'studentName', 200),
       fatherName: readText(formData, 'fatherName', 200),
       pshRegistrationNumber: readText(formData, 'pshRegistrationNumber', 100),
+    };
+    if (Object.values(commonData).some((value) => value === null || value === '')) {
+      return NextResponse.json({ error: 'Complete the student information, including PSH Registration No.' }, { status: 400 });
+    }
+
+    const collegeData = {
       collegeType: readText(formData, 'collegeType', 30),
       collegeName: readText(formData, 'collegeName', 200),
       program: readText(formData, 'program', 50),
@@ -127,21 +200,74 @@ export async function POST(request: Request) {
       academicPeriod: readText(formData, 'academicPeriod', 100),
       passingYear: readText(formData, 'passingYear', 4),
     };
-    if (Object.values(data).some((value) => value === null || value === '')) {
-      return NextResponse.json({ error: 'Complete all required College Life fields.' }, { status: 400 });
-    }
-    if (
-      !allowedCollegeTypes.has(data.collegeType!) ||
-      !allowedPrograms.has(data.program!) ||
-      !/^\d{4}$/.test(data.passingYear!) ||
-      Number(data.passingYear) < 1900 ||
-      Number(data.passingYear) > 2100
-    ) {
-      return NextResponse.json({ error: 'Select a valid college type and program, and enter a valid passing year.' }, { status: 400 });
-    }
-    const subjects = validateSubjects(formData.get('subjects'));
-    if (!subjects) {
-      return NextResponse.json({ error: 'Enter valid subject names and marks. Obtained marks cannot exceed total marks.' }, { status: 400 });
+    const universityData = {
+      institutionType: readText(formData, 'institutionType', 30),
+      universityName: readText(formData, 'universityName', 200),
+      campus: readText(formData, 'campus', 200),
+      city: readText(formData, 'city', 100),
+      province: readText(formData, 'province', 60),
+      degreeLevel: readText(formData, 'degreeLevel', 50),
+      degreeProgram: readText(formData, 'degreeProgram', 80),
+      majorSubjects: readText(formData, 'majorSubjects', 200),
+      universityRegistrationNumber: readText(formData, 'universityRegistrationNumber', 100),
+      rollNumber: readText(formData, 'rollNumber', 100),
+      admissionYear: readText(formData, 'admissionYear', 4),
+      classYear: readText(formData, 'classYear', 100),
+      academicPeriod: readText(formData, 'academicPeriod', 100),
+      currentStatus: readText(formData, 'currentStatus', 30),
+      gpa: readText(formData, 'gpa', 10),
+      cgpa: readText(formData, 'cgpa', 10),
+      passingYear: readText(formData, 'passingYear', 4),
+      remarks: readText(formData, 'remarks', 1000),
+    };
+    let subjects: SubjectMark[] | null = null;
+    let courses: UniversityCourse[] | null = null;
+    if (recordType === 'college') {
+      if (Object.values(collegeData).some((value) => value === null || value === '')) {
+        return NextResponse.json({ error: 'Complete all required College Life fields.' }, { status: 400 });
+      }
+      if (
+        !allowedCollegeTypes.has(collegeData.collegeType!) ||
+        !allowedPrograms.has(collegeData.program!) ||
+        !/^\d{4}$/.test(collegeData.passingYear!) ||
+        Number(collegeData.passingYear) < 1900 ||
+        Number(collegeData.passingYear) > 2100
+      ) {
+        return NextResponse.json({ error: 'Select a valid college type and program, and enter a valid passing year.' }, { status: 400 });
+      }
+      subjects = validateSubjects(formData.get('subjects'));
+      if (!subjects) {
+        return NextResponse.json({ error: 'Enter valid subject names and marks. Obtained marks cannot exceed total marks.' }, { status: 400 });
+      }
+    } else {
+      const requiredUniversityFields = [
+        universityData.institutionType, universityData.universityName, universityData.city, universityData.province,
+        universityData.degreeLevel, universityData.degreeProgram, universityData.majorSubjects, universityData.admissionYear,
+        universityData.classYear, universityData.academicPeriod, universityData.currentStatus,
+      ];
+      if (requiredUniversityFields.some((value) => value === null || value === '')) {
+        return NextResponse.json({ error: 'Complete all required University Life fields.' }, { status: 400 });
+      }
+      const validYear = (value: string | null) => value === null || (/^\d{4}$/.test(value) && Number(value) >= 1900 && Number(value) <= 2100);
+      const validGpa = (value: string | null) => value === null || value === '' || (Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 5);
+      if (
+        !allowedUniversityTypes.has(universityData.institutionType!) ||
+        !allowedProvinces.has(universityData.province!) ||
+        !allowedDegreeLevels.has(universityData.degreeLevel!) ||
+        !allowedDegreePrograms.has(universityData.degreeProgram!) ||
+        !allowedEnrollmentStatuses.has(universityData.currentStatus!) ||
+        !validYear(universityData.admissionYear) ||
+        !validYear(universityData.passingYear) ||
+        (universityData.currentStatus === 'Completed' && !universityData.passingYear) ||
+        !validGpa(universityData.gpa) ||
+        !validGpa(universityData.cgpa)
+      ) {
+        return NextResponse.json({ error: 'Select valid university details and check the admission year, completion year, and GPA values.' }, { status: 400 });
+      }
+      courses = validateUniversityCourses(formData.get('courses'));
+      if (!courses) {
+        return NextResponse.json({ error: 'Enter valid course details. Marks must be provided together and obtained marks cannot exceed total marks.' }, { status: 400 });
+      }
     }
 
     const file = formData.get('resultFile');
@@ -172,18 +298,27 @@ export async function POST(request: Request) {
     const entryId = randomUUID();
     const documentId = randomUUID();
     const resultDocument = { id: documentId, fileName: file.name.slice(0, 255) };
-    const entry = {
-      id: entryId,
-      ...data,
-      collegeType: data.collegeType!,
-      collegeName: data.collegeName!,
-      program: data.program!,
-      subjects,
-      totalMarks: String(subjects.reduce((sum, subject) => sum + Number(subject.totalMarks), 0)),
-      obtainedMarks: String(subjects.reduce((sum, subject) => sum + Number(subject.obtainedMarks), 0)),
-      resultDocument,
-      createdAt: new Date().toISOString(),
-    };
+    const entry = recordType === 'college'
+      ? {
+          id: entryId,
+          recordType,
+          ...commonData,
+          ...collegeData,
+          subjects: subjects!,
+          totalMarks: String(subjects!.reduce((sum, subject) => sum + Number(subject.totalMarks), 0)),
+          obtainedMarks: String(subjects!.reduce((sum, subject) => sum + Number(subject.obtainedMarks), 0)),
+          resultDocument,
+          createdAt: new Date().toISOString(),
+        }
+      : {
+          id: entryId,
+          recordType,
+          ...commonData,
+          ...universityData,
+          courses: courses!,
+          resultDocument,
+          createdAt: new Date().toISOString(),
+        };
 
     await client.$transaction(async (transaction) => {
       await transaction.$executeRaw`
@@ -191,8 +326,8 @@ export async function POST(request: Request) {
         VALUES (
           ${documentId},
           ${graduate.child.id},
-          ${`College Life Result - ${data.academicPeriod}`.slice(0, 120)},
-          'College Life Result',
+          ${`${recordType === 'college' ? 'College Life Result' : 'University Life Transcript'} - ${recordType === 'college' ? collegeData.academicPeriod : universityData.academicPeriod}`.slice(0, 120)},
+          ${recordType === 'college' ? 'College Life Result' : 'University Life Transcript'},
           ${blob.url},
           ${file.name.slice(0, 255)},
           ${file.type},
