@@ -33,6 +33,8 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { AddPSHForm } from '@/components/children/AddPSHForm';
+import { FollowUpModal } from '@/components/children/FollowUpModal';
+import type { FollowUpRecord } from '@/components/children/follow-up';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
 import { formatAddress } from '@/lib/formatters';
 
@@ -868,6 +870,7 @@ export default function StandalonePSHAdmissionWebsite() {
   const [enrolledChildren, setEnrolledChildren] = useState<EnrolledChild[]>([]);
   const [justSubmittedChild, setJustSubmittedChild] = useState<EnrolledChild | null>(null);
   const [selectedDossierChild, setSelectedDossierChild] = useState<EnrolledChild | null>(null);
+  const [selectedFollowUpChild, setSelectedFollowUpChild] = useState<EnrolledChild | null>(null);
   const [editingChild, setEditingChild] = useState<EnrolledChild | null>(null);
 
   // Filter & Search States
@@ -972,6 +975,22 @@ export default function StandalonePSHAdmissionWebsite() {
       ]);
       showToast(`Child record ${childData.admissionNo} saved successfully!`);
     }
+  };
+
+  const handleSaveFollowUp = async (child: EnrolledChild, followUp: FollowUpRecord) => {
+    const response = await fetch(`/api/pbm/children/${child.id}/follow-ups`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(followUp),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Unable to save this follow-up.');
+
+    setEnrolledChildren((current) =>
+      current.map((record) => record.id === child.id ? { ...record, notes: result.notes } : record)
+    );
+    setSelectedFollowUpChild(null);
+    showToast(`Follow-up added for ${child.fullName}.`);
   };
 
   // Delete record handler
@@ -1740,6 +1759,7 @@ export default function StandalonePSHAdmissionWebsite() {
                           const cat = psh?.category?.type || 'Orphan';
                           const isSponsored = psh?.basicInfo?.isSponsored === 'Yes';
                           const sponsorAmt = psh?.basicInfo?.sponsorshipAmount;
+                          const followUpCount = Array.isArray(psh?.followUps) ? psh.followUps.length : 0;
 
                           return (
                             <tr key={child.admissionNo} className="hover:bg-slate-50/80 transition-colors">
@@ -1818,6 +1838,17 @@ export default function StandalonePSHAdmissionWebsite() {
                               {/* Action Buttons */}
                               <td className="py-3 px-4 text-right">
                                 <div className="inline-flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedFollowUpChild(child)}
+                                    disabled={child.id.startsWith('seed-') || child.id.startsWith('demo-')}
+                                    className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded text-xs flex items-center gap-1 border border-indigo-200 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                    title={`Add a follow-up for ${child.fullName}`}
+                                  >
+                                    <Calendar className="w-3.5 h-3.5" />
+                                    <span>Follow Up{followUpCount > 0 ? ` (${followUpCount})` : ''}</span>
+                                  </button>
+
                                   {/* Print Dossier */}
                                   <button
                                     type="button"
@@ -1868,6 +1899,20 @@ export default function StandalonePSHAdmissionWebsite() {
             </div>
           )}
         </main>
+
+        {selectedFollowUpChild && (() => {
+          const psh = parseDossierNotes(selectedFollowUpChild.notes);
+          const resultInfo = psh?.resultInfo || {};
+          return (
+            <FollowUpModal
+              childName={selectedFollowUpChild.fullName}
+              className={resultInfo.gradeClass || ''}
+              instituteName={resultInfo.school || ''}
+              onClose={() => setSelectedFollowUpChild(null)}
+              onSave={(followUp) => handleSaveFollowUp(selectedFollowUpChild, followUp)}
+            />
+          );
+        })()}
 
         {/* ================= OFFICIAL PRINTABLE CHILD DOSSIER MODAL ================= */}
         {selectedDossierChild && (() => {
