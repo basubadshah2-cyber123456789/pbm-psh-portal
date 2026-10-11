@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, LogOut, Save } from 'lucide-react';
-import { UniversityProgressForm } from '@/components/professional-career/UniversityProgressForm';
+import { CollegeLifeForm } from '@/components/professional-career/UniversityProgressForm';
 
 interface CareerProfile {
   name: string;
@@ -123,7 +123,7 @@ export default function ProfessionalCareerProfilePage() {
             <span className="rounded-2xl bg-white/15 p-3"><BriefcaseBusiness className="h-6 w-6" /></span>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-100">Pakistan Sweet Home</p>
-              <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">Professional Career Profile</h1>
+              <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">Enrollment in New Class Form — 1st Year Onward</h1>
             </div>
           </div>
           <button
@@ -136,9 +136,11 @@ export default function ProfessionalCareerProfilePage() {
           </button>
         </header>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+        <CollegeLifeForm />
+
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-900">What are you doing now?</h2>
+            <h2 className="text-lg font-bold text-slate-900">Career Profile</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
               Keep your information current. You can return and update it whenever your studies or work changes.
             </p>
@@ -204,7 +206,6 @@ export default function ProfessionalCareerProfilePage() {
             </div>
           </form>
         </section>
-        <UniversityProgressForm />
       </div>
     </main>
   );

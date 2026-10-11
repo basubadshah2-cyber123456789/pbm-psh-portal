@@ -1905,6 +1905,7 @@ export default function StandalonePSHAdmissionWebsite() {
           const resultInfo = psh?.resultInfo || {};
           return (
             <FollowUpModal
+              childId={selectedFollowUpChild.id}
               childName={selectedFollowUpChild.fullName}
               className={resultInfo.gradeClass || ''}
               instituteName={resultInfo.school || ''}
