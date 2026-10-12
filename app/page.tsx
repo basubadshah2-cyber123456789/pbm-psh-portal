@@ -62,6 +62,15 @@ export interface EnrolledChild {
   notes?: string;
 }
 
+function isFollowUpAvailable(childStatus: string, disciplinaryType: unknown): boolean {
+  const isDroppedOrExpelled = (value: unknown) => {
+    if (typeof value !== 'string') return false;
+    const normalized = value.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    return normalized === 'DROPPED' || normalized === 'EXPELLED';
+  };
+  return !isDroppedOrExpelled(childStatus) && !isDroppedOrExpelled(disciplinaryType);
+}
+
 // ================= REALISTIC DEFAULT SEED CHILDREN DATA =================
 const DEFAULT_SEED_CHILDREN: EnrolledChild[] = [
   {
@@ -1759,6 +1768,7 @@ export default function StandalonePSHAdmissionWebsite() {
                           const isSponsored = psh?.basicInfo?.isSponsored === 'Yes';
                           const sponsorAmt = psh?.basicInfo?.sponsorshipAmount;
                           const followUpCount = Array.isArray(psh?.followUps) ? psh.followUps.length : 0;
+                          const canAddFollowUp = isFollowUpAvailable(child.status, psh?.disciplinaryProceedings?.type);
 
                           return (
                             <tr key={child.admissionNo} className="hover:bg-slate-50/80 transition-colors">
@@ -1837,16 +1847,18 @@ export default function StandalonePSHAdmissionWebsite() {
                               {/* Action Buttons */}
                               <td className="py-3 px-4 text-right">
                                 <div className="inline-flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedFollowUpChild(child)}
-                                    disabled={child.id.startsWith('seed-') || child.id.startsWith('demo-')}
-                                    className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded text-xs flex items-center gap-1 border border-indigo-200 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                    title={`Add a follow-up for ${child.fullName}`}
-                                  >
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    <span>Follow Up{followUpCount > 0 ? ` (${followUpCount})` : ''}</span>
-                                  </button>
+                                  {canAddFollowUp && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedFollowUpChild(child)}
+                                      disabled={child.id.startsWith('seed-') || child.id.startsWith('demo-')}
+                                      className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold rounded text-xs flex items-center gap-1 border border-indigo-200 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                      title={`Add a follow-up for ${child.fullName}`}
+                                    >
+                                      <Calendar className="w-3.5 h-3.5" />
+                                      <span>Follow Up{followUpCount > 0 ? ` (${followUpCount})` : ''}</span>
+                                    </button>
+                                  )}
 
                                   {/* Print Dossier */}
                                   <button
