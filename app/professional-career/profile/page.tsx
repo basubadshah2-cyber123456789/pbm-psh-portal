@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, LogOut } from 'lucide-react';
 import { CollegeLifeForm, UniversityLifeForm } from '@/components/professional-career/UniversityProgressForm';
 import { ProfessionalLifeForm } from '@/components/professional-career/ProfessionalLifeForm';
+import { ProfessionalProfilePhoto } from '@/components/professional-career/ProfessionalProfilePhoto';
 
 export default function ProfessionalCareerProfilePage() {
   const router = useRouter();
@@ -72,6 +73,7 @@ export default function ProfessionalCareerProfilePage() {
         </header>
 
         {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+        <ProfessionalProfilePhoto />
         <CollegeLifeForm />
         <UniversityLifeForm />
         <ProfessionalLifeForm />
