@@ -6,7 +6,8 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "test": "tsx --test tests/follow-up.test.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

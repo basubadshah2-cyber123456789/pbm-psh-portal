@@ -3,11 +3,10 @@ import { PrismaClient } from '@prisma/client';
 const databaseUrl =
   process.env.DATABASE_URL?.trim() ||
   process.env.POSTGRES_PRISMA_URL?.trim() ||
-  process.env.POSTGRES_URL?.trim() ||
-  'postgresql://postgres:postgres@localhost:5432/postgres';
+  process.env.POSTGRES_URL?.trim();
 
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = databaseUrl;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL or a supported PostgreSQL connection variable must be configured.');
 }
 
 const globalForPrisma = globalThis as unknown as {
@@ -22,4 +21,3 @@ export const prisma =
   });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-

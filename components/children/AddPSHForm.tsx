@@ -275,9 +275,9 @@ const composeLocationAddress = (location: Partial<AddressRecord>) => composeAddr
 const getYearValue = (value?: string | number | null) => {
   if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
   if (!value) return new Date().getFullYear();
-  const yearPrefix = value.match(/^(\d{4})(?:-|$)/);
+  const yearPrefix = String(value).match(/^(\d{4})(?:-|$)/);
   if (yearPrefix) return Number(yearPrefix[1]);
-  const parsedDate = new Date(value);
+  const parsedDate = new Date(String(value));
   if (!Number.isNaN(parsedDate.getTime())) {
     return parsedDate.getFullYear();
   }
@@ -452,6 +452,7 @@ function FormInput({
   className = '',
   name,
   min,
+  max,
   step,
 }: {
   label?: string;
@@ -464,6 +465,7 @@ function FormInput({
   className?: string;
   name?: string;
   min?: number;
+  max?: number;
   step?: string;
 }) {
   return (
@@ -481,6 +483,7 @@ function FormInput({
         required={required}
         disabled={disabled}
         min={min}
+        max={max}
         step={step}
         placeholder={placeholder || (label ? '' : undefined)}
         className="w-full h-12 sm:h-11 px-3.5 py-2 bg-slate-50/90 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.02)] focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed transition-all duration-200"
@@ -1887,7 +1890,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 totalMarks: result.totalMarks || '',
               }))
             : [],
-        })).sort((left, right) => right.year - left.year || right.examDate.localeCompare(left.examDate));
+        })).sort((left: ResultInfoRecord, right: ResultInfoRecord) => right.year - left.year || right.examDate.localeCompare(left.examDate));
         setResultInfoHistory(normalizedResults);
         if (normalizedResults.length > 0) {
           const latestResult = normalizedResults[0];
@@ -1969,7 +1972,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 details: interest.details || '',
               })),
           }))
-          .sort((left, right) => right.year - left.year);
+          .sort((left: AreaOfInterestYearRecord, right: AreaOfInterestYearRecord) => right.year - left.year);
         setAreaOfInterestHistory(normalizedInterestHistory);
         setAreaOfInterest(normalizedInterestHistory[0]?.areaOfInterest || '');
         setAdditionalAreaOfInterestEntries(normalizedInterestHistory[0]?.entries || []);
@@ -3541,7 +3544,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setStatus(e.target.value)}
             options={[
               { label: 'REGULAR', value: 'ACTIVE' },
-              'PASSOUT',
+              { label: 'PASSOUT', value: 'PASSOUT' },
             ]}
             className="md:col-span-2"
           />

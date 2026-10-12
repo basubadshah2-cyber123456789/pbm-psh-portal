@@ -22,22 +22,9 @@ The system is configured with the sanctioned staffing hierarchy of 23 personnel:
 
 ---
 
-## Default Seed Accounts
+## Seeded Accounts
 
-| Role | Username / Email | Default Password | Access Level |
-|---|---|---|---|
-| **Incharge (Admin)** | `incharge@sweethome.pbm.gov.pk` | `PBM@Admin2026!` | Global Full Access |
-| **Account Assistant** | `accounts@sweethome.pbm.gov.pk` | `PBM@Accounts2026!` | Full Operational Access |
-| **HR Representative** | `hr@sweethome.pbm.gov.pk` | `PBM@Staff2026!` | Staff & Attendance |
-| **Clerk** | `clerk@sweethome.pbm.gov.pk` | `PBM@Staff2026!` | Admissions, Hostel, Education |
-| **Mother Maid 1..9** | `mothermaid1`..`9@sweethome.pbm.gov.pk`| `PBM@Staff2026!` | Assigned Children Care & Logs |
-| **Cook 1 & 2** | `cook1`, `cook2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` | Kitchen & Ration Consumption |
-| **Waiter 1 & 2** | `waiter1`, `waiter2@sweethome.pbm.gov.pk`| `PBM@Staff2026!` | Dining & Meal Serving |
-| **Cook Helper 1 & 2** | `cookhelper1`, `2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` | Kitchen Preparation |
-| **Sweeper 1 & 2** | `sweeper1`, `2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` | Sanitation Logs |
-| **Security Guard 1 & 2**| `guard1`, `2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` | Gate & Visitor Registers |
-
----
+The seed script does not contain default passwords. Set unique `SEED_ADMIN_PASSWORD`, `SEED_ACCOUNTS_PASSWORD`, and `SEED_STAFF_PASSWORD` values in your untracked environment file before deliberately running the seed. Never publish or reuse seed credentials.
 
 ## Local Development Quickstart
 
@@ -46,10 +33,10 @@ The system is configured with the sanctioned staffing hierarchy of 23 personnel:
 npm install
 
 # 2. Push schema to local database
-npm run db:push
+npx prisma migrate dev
 
 # 3. Seed initial staff, children, classes, beds, and inventory
-npm run db:seed
+npx tsx prisma/seed.ts
 
 # 4. Start the development server
 npm run dev
@@ -101,7 +88,7 @@ git push -u origin main
 ### STEP 6: Configure Environment Variables in Vercel
 In the Vercel project configuration screen under **Environment Variables**, add:
 - `DATABASE_URL` = `postgresql://...`
-- `JWT_SECRET` = `your-secret-key-32-chars`
+- `JWT_SECRET` = a unique random secret of at least 32 characters
 - `NEXT_PUBLIC_APP_NAME` = `Pakistan Bait-ul-Maal Sweet Home Multan`
 - `NEXT_PUBLIC_APP_LOCATION` = `Multan, Punjab, Pakistan`
 - `NEXT_PUBLIC_APP_URL` = `https://your-domain.vercel.app`

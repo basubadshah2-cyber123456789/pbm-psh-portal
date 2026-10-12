@@ -1,13 +1,27 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { signSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
+import { getJwtSecret, signSessionToken, SESSION_COOKIE_NAME } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+
+type LoginUser = Prisma.UserGetPayload<{ include: { employee: true } }>;
 
 export async function POST(request: Request) {
   try {
-    const { loginId, password } = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Request body must be valid JSON.' }, { status: 400 });
+    }
 
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Email/Username and Password are required' }, { status: 400 });
+    }
+    const input = body as Record<string, unknown>;
+    const loginId = typeof input.loginId === 'string' ? input.loginId.trim() : '';
+    const password = typeof input.password === 'string' ? input.password : '';
     if (!loginId || !password) {
       return NextResponse.json(
         { error: 'Email/Username and Password are required' },
@@ -15,16 +29,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const cleanLoginId = loginId.trim();
+    try {
+      getJwtSecret();
+    } catch {
+      console.error('JWT_SECRET is missing or too short; staff login is unavailable.');
+      return NextResponse.json({ error: 'Authentication service unavailable.' }, { status: 503 });
+    }
+
     // 1. Try querying Database for user
-    let user: any = null;
+    let user: LoginUser | null = null;
 
     try {
       user = await prisma.user.findFirst({
         where: {
           OR: [
-            { email: cleanLoginId.toLowerCase() },
-            { username: cleanLoginId.toLowerCase() },
+            { email: loginId.toLowerCase() },
+            { username: loginId.toLowerCase() },
           ],
         },
         include: {
@@ -122,12 +142,11 @@ export async function POST(request: Request) {
       { error: 'Staff account not found. Please verify your email or username.' },
       { status: 401 }
     );
-  } catch {
-
+  } catch (error) {
+    console.error('Staff login failed unexpectedly:', error);
     return NextResponse.json(
-      { error: 'Authentication failed. Please verify your credentials and try again.' },
-      { status: 401 }
+      { error: 'Authentication service unavailable.' },
+      { status: 500 }
     );
   }
 }
-

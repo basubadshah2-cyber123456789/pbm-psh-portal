@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '@/lib/auth';
+import { getJwtSecret } from '@/lib/auth';
 
 export const PROFESSIONAL_CAREER_COOKIE = 'psh_professional_career_session';
 
@@ -93,12 +93,12 @@ export function redactProfessionalCareerAccount(notes: string | null): string | 
 }
 
 export function signProfessionalCareerSession(session: ProfessionalCareerSession): string {
-  return jwt.sign({ ...session, type: 'professional-career' }, JWT_SECRET, { expiresIn: '12h' });
+  return jwt.sign({ ...session, type: 'professional-career' }, getJwtSecret(), { expiresIn: '12h' });
 }
 
 export function verifyProfessionalCareerSession(token: string): ProfessionalCareerSession | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, getJwtSecret());
     if (
       typeof payload === 'object' &&
       payload !== null &&

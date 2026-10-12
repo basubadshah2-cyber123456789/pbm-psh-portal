@@ -14,8 +14,15 @@ import {
 
 export { type ERPModule, type PermissionCode, hasModuleAccess, hasPermission, ROLE_DISPLAY_NAMES } from './permissions';
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'pbm-sweet-home-multan-jwt-secret-key-2026';
 export const SESSION_COOKIE_NAME = 'pbm_session';
+
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET?.trim();
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET must contain at least 32 characters.');
+  }
+  return secret;
+}
 
 export interface SessionPayload {
   userId: string;
@@ -27,12 +34,12 @@ export interface SessionPayload {
 }
 
 export function signSessionToken(payload: SessionPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' });
 }
 
 export function verifySessionToken(token: string): SessionPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as SessionPayload;
+    return jwt.verify(token, getJwtSecret()) as SessionPayload;
   } catch {
     return null;
   }

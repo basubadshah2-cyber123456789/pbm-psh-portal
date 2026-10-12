@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Role } from '@prisma/client';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-const authorizedRoles = [
+const authorizedRoles: Role[] = [
   Role.INCHARGE,
   Role.ACCOUNT_ASSISTANT,
   Role.HR_REPRESENTATIVE,
@@ -11,6 +12,14 @@ const authorizedRoles = [
 
 export async function GET() {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+    if (!authorizedRoles.includes(currentUser.role)) {
+      return NextResponse.json({ error: 'Unauthorized to view login profiles.' }, { status: 403 });
+    }
+
     const users = await prisma.user.findMany({
       where: {
         status: 'ACTIVE',

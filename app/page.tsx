@@ -37,6 +37,7 @@ import { FollowUpModal } from '@/components/children/FollowUpModal';
 import type { FollowUpRecord } from '@/components/children/follow-up';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
 import { formatAddress } from '@/lib/formatters';
+import { isFollowUpAvailable } from '@/lib/follow-up';
 
 // ================= TYPES =================
 export interface EnrolledChild {
@@ -60,15 +61,6 @@ export interface EnrolledChild {
   heightCm?: number;
   weightKg?: number;
   notes?: string;
-}
-
-function isFollowUpAvailable(childStatus: string, disciplinaryType: unknown): boolean {
-  const isDroppedOrExpelled = (value: unknown) => {
-    if (typeof value !== 'string') return false;
-    const normalized = value.trim().toUpperCase().replace(/[^A-Z]/g, '');
-    return normalized === 'DROPPED' || normalized === 'EXPELLED';
-  };
-  return !isDroppedOrExpelled(childStatus) && !isDroppedOrExpelled(disciplinaryType);
 }
 
 // ================= REALISTIC DEFAULT SEED CHILDREN DATA =================

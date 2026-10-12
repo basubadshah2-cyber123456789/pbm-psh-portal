@@ -21,26 +21,12 @@ The system adheres strictly to the sanctioned institutional staffing structure:
 
 ---
 
-## 2. Default Seed Credentials
+## 2. Seeded Accounts
 
-All accounts are pre-seeded in the database:
-
-| Role | Username | Email | Default Password |
-|---|---|---|---|
-| **Incharge (Admin)** | `incharge` | `incharge@sweethome.pbm.gov.pk` | `PBM@Admin2026!` |
-| **Account Assistant** | `accounts` | `accounts@sweethome.pbm.gov.pk` | `PBM@Accounts2026!` |
-| **HR Representative** | `hr` | `hr@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Clerk** | `clerk` | `clerk@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Mother Maid 1** | `mothermaid1` | `mothermaid1@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Mother Maid 2** | `mothermaid2` | `mothermaid2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Mother Maid 3..9**| `mothermaid3`..`mothermaid9` | `mothermaidX@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Head Cook** | `cook1` | `cook1@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Assistant Cook** | `cook2` | `cook2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Waiter 1** | `waiter1` | `waiter1@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Waiter 2** | `waiter2` | `waiter2@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Cook Helper 1 & 2**| `cookhelper1`, `cookhelper2` | `cookhelperX@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Sweeper 1 & 2** | `sweeper1`, `sweeper2` | `sweeperX@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
-| **Security Guard 1 & 2**| `guard1`, `guard2` | `guardX@sweethome.pbm.gov.pk` | `PBM@Staff2026!` |
+The seed script requires `SEED_ADMIN_PASSWORD`, `SEED_ACCOUNTS_PASSWORD`, and
+`SEED_STAFF_PASSWORD`; it does not provide default passwords. Set unique,
+high-entropy values only when deliberately seeding the database. Never publish
+seed credentials or reuse them for production accounts.
 
 ---
 
@@ -49,11 +35,12 @@ All accounts are pre-seeded in the database:
 Create `.env` file in the root directory:
 
 ```env
-# Database Connection (PostgreSQL for production or SQLite for local dev)
+# PostgreSQL database connection
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
 DATABASE_URL="postgresql://username:password@ep-host.region.aws.neon.tech/sweethome_db?sslmode=require"
 
-# JWT Secret for Session Signing
-JWT_SECRET="pbm-sweet-home-multan-jwt-secret-key-2026-production"
+# JWT Secret for Session Signing (at least 32 random characters)
+JWT_SECRET="<set-a-unique-random-secret-outside-source-control>"
 
 # Base Application URL
 NEXT_PUBLIC_APP_URL="https://sweet-home-erp.vercel.app"
@@ -70,11 +57,11 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_rw_..."
 # 1. Install dependencies
 npm install
 
-# 2. Push schema to database
-npm run db:push
+# 2. Apply migrations to the development database
+npx prisma migrate dev
 
-# 3. Seed initial institutional data
-npm run db:seed
+# 3. Set the three SEED_*_PASSWORD variables and seed initial institutional data
+npx tsx prisma/seed.ts
 
 # 4. Start local development server
 npm run dev
@@ -89,7 +76,7 @@ Create a free PostgreSQL instance on **Neon.tech**, **Supabase**, or **Vercel Po
 Copy the Connection String URI (with SSL enabled).
 
 ### Step 2: Apply Prisma Migrations
-Set `DATABASE_URL` in Vercel Production to the existing Supabase PostgreSQL connection string. The production build applies only pending migrations:
+Set the production database connection strings, then apply pending migrations explicitly before deployment:
 ```bash
 npx prisma migrate deploy
 ```
@@ -99,10 +86,14 @@ Do not use `prisma db push` or `prisma migrate reset` in production. Run the see
 1. Import repository into Vercel.
 2. In Project Settings > **Environment Variables**, configure:
    - `DATABASE_URL`: Your PostgreSQL URI.
-   - `JWT_SECRET`: A secure 64-character string.
+   - `JWT_SECRET`: A unique random secret of at least 32 characters. Do not reuse any previously documented fallback; changing it invalidates existing ERP sessions.
+   - `DIRECT_URL`: Direct PostgreSQL connection for Prisma migrations.
+   - `PBM_DATABASE_URL`: Database for the separate PBM child portal.
+   - `PBM_SESSION_SECRET`: Unique random secret of at least 32 characters for PBM sessions.
+   - `PBM_SETUP_KEY`: Separate high-entropy key for initial PBM staff setup.
    - `NEXT_PUBLIC_APP_URL`: Your Vercel deployment URL.
    - `BLOB_READ_WRITE_TOKEN`: Vercel Blob read/write token for child profile photos.
-3. Set Build Command: `npm run build` (the repository build script runs `prisma migrate deploy`, then `prisma generate`, then `next build`).
+3. Set Build Command: `npm run build`. Apply pending migrations separately with `npx prisma migrate deploy`.
 4. Click **Deploy**.
 
 ---

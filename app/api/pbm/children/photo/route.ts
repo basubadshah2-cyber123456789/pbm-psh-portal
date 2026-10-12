@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const staff = await getPbmStaffSession();
     if (!staff) return NextResponse.json({ error: 'Sign in required.' }, { status: 401 });
     const photoUrl = new URL(request.url).searchParams.get('url');
-    if (!isPersistedChildPhotoUrl(photoUrl)) {
+    if (!photoUrl || !isPersistedChildPhotoUrl(photoUrl)) {
       return NextResponse.json({ error: 'Photo URL is invalid.' }, { status: 400 });
     }
     const client = await getPbmPrismaReady();
