@@ -1438,6 +1438,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [droppedAffidavitFile, setDroppedAffidavitFile] = useState<File | null>(null);
   const [droppedApplicationFile, setDroppedApplicationFile] = useState<File | null>(null);
   const [droppedAttachmentError, setDroppedAttachmentError] = useState('');
+  const [expelledAffidavitFile, setExpelledAffidavitFile] = useState<File | null>(null);
+  const [expelledApplicationFile, setExpelledApplicationFile] = useState<File | null>(null);
+  const [expelledAttachmentError, setExpelledAttachmentError] = useState('');
   const [isProfessionalCareerOpen, setIsProfessionalCareerOpen] = useState(false);
   const [careerAccountChildId, setCareerAccountChildId] = useState<string | undefined>(persistedInitialChildId);
   const [careerSetupAfterSave, setCareerSetupAfterSave] = useState(false);
@@ -3104,6 +3107,20 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               file: droppedApplicationFile,
               title: 'Application',
               documentType: 'DROPPED_APPLICATION',
+            }]
+          : []),
+        ...(disciplinaryProceeding.type === 'EXPELLED' && expelledAffidavitFile
+          ? [{
+              file: expelledAffidavitFile,
+              title: 'Affidavit',
+              documentType: 'EXPELLED_AFFIDAVIT',
+            }]
+          : []),
+        ...(disciplinaryProceeding.type === 'EXPELLED' && expelledApplicationFile
+          ? [{
+              file: expelledApplicationFile,
+              title: 'Application',
+              documentType: 'EXPELLED_APPLICATION',
             }]
           : []),
         ...([
@@ -5180,6 +5197,61 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                     </a>
                   )}
                 </label>
+                <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:col-span-2 lg:col-span-3">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold text-slate-800">Attachments</h3>
+                    <p className="mt-1 text-xs font-normal text-slate-600">Upload an affidavit and application (PDF or image, up to 12 MB each).</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {([
+                      { title: 'Affidavit', documentType: 'EXPELLED_AFFIDAVIT', file: expelledAffidavitFile, setFile: setExpelledAffidavitFile },
+                      { title: 'Application', documentType: 'EXPELLED_APPLICATION', file: expelledApplicationFile, setFile: setExpelledApplicationFile },
+                    ] as const).map((attachment) => {
+                      const savedDocument = getSavedDocument(attachment.documentType);
+                      return (
+                        <label key={attachment.documentType} className="block text-sm font-semibold text-slate-700">
+                          {attachment.title}
+                          <input
+                            type="file"
+                            accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] || null;
+                              setExpelledAttachmentError('');
+                              if (file && !['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                                setExpelledAttachmentError('Choose a PDF, JPEG, PNG, or WebP file.');
+                                attachment.setFile(null);
+                                event.target.value = '';
+                                return;
+                              }
+                              if (file && file.size > 12 * 1024 * 1024) {
+                                setExpelledAttachmentError('Each attachment must be no larger than 12 MB.');
+                                attachment.setFile(null);
+                                event.target.value = '';
+                                return;
+                              }
+                              attachment.setFile(file);
+                            }}
+                            className="mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-normal text-slate-900 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:text-xs file:font-bold file:text-amber-900"
+                          />
+                          {attachment.file && <span className="mt-1 block text-xs font-normal text-slate-500">{attachment.file.name}</span>}
+                          {savedDocument && (
+                            <a
+                              href={`/api/pbm/children/${initialChild?.id}/documents?documentId=${savedDocument.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 inline-block text-xs font-bold text-amber-800 underline"
+                            >
+                              View previously uploaded {attachment.title.toLowerCase()}
+                            </a>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {expelledAttachmentError && (
+                    <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{expelledAttachmentError}</p>
+                  )}
+                </section>
               </div>
             ) : disciplinaryDraft.type === 'DROPPED' ? (
               <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
