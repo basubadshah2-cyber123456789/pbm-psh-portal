@@ -94,28 +94,50 @@ export async function PATCH(request: Request) {
     }
     const input = body as Record<string, unknown>;
     const id = typeof input.id === 'string' ? input.id : '';
+    const hasActive = input.active !== undefined;
     const active = input.active;
-    if (!id || typeof active !== 'boolean') {
-      return NextResponse.json({ error: 'Staff account and active status are required.' }, { status: 400 });
+    if (!id || (hasActive && typeof active !== 'boolean')) {
+      return NextResponse.json({ error: 'Enter a valid staff account and update.' }, { status: 400 });
     }
-    if (!active && id === current.id) {
+    if (active === false && id === current.id) {
       return NextResponse.json({ error: 'You cannot disable your own account.' }, { status: 400 });
     }
 
+    const hasUsername = typeof input.username === 'string';
+    const username = hasUsername ? (input.username as string).trim().toLowerCase() : null;
+    if (username !== null && !/^[a-z0-9][a-z0-9._-]{3,31}$/.test(username)) {
+      return NextResponse.json({ error: 'Username must be 4–32 characters using letters, numbers, dots, underscores, or hyphens.' }, { status: 400 });
+    }
+    const hasDisplayName = typeof input.displayName === 'string';
+    const displayName = hasDisplayName ? (input.displayName as string).trim() : null;
+    if (displayName !== null && (!displayName || displayName.length > 120)) {
+      return NextResponse.json({ error: 'Enter the staff member’s name (up to 120 characters).' }, { status: 400 });
+    }
+    const password = input.password === undefined ? null : input.password;
+    if (password !== null && (typeof password !== 'string' || password.length < 12 || password.length > 128)) {
+      return NextResponse.json({ error: 'Password must be between 12 and 128 characters.' }, { status: 400 });
+    }
+    if (!hasActive && !hasUsername && !hasDisplayName && password === null) {
+      return NextResponse.json({ error: 'Choose at least one account detail to update.' }, { status: 400 });
+    }
+    const passwordHash = typeof password === 'string' ? await createPbmPasswordHash(password) : null;
+
     const client = await getPbmPrismaReady();
     const user = await client.$transaction(async (transaction) => {
-      await transaction.$queryRaw<Array<{ acquired: boolean }>>`
-        SELECT pg_advisory_xact_lock(741238910247) IS NOT NULL AS acquired
-      `;
-      const targets = await transaction.$queryRaw<Array<{ role: 'ADMIN' | 'STAFF' }>>`
-        SELECT role FROM "PbmStaffUser" WHERE id = ${id} LIMIT 1
-      `;
-      if (!targets[0]) return { status: 'missing' as const };
-      if (!active && targets[0].role === 'ADMIN') {
-        const admins = await transaction.$queryRaw<Array<{ count: bigint }>>`
-          SELECT COUNT(*) AS count FROM "PbmStaffUser" WHERE role = 'ADMIN' AND active = TRUE
+      if (hasActive) {
+        await transaction.$queryRaw<Array<{ acquired: boolean }>>`
+          SELECT pg_advisory_xact_lock(741238910247) IS NOT NULL AS acquired
         `;
-        if (Number(admins[0]?.count || 0) <= 1) return { status: 'last-admin' as const };
+        const targets = await transaction.$queryRaw<Array<{ role: 'ADMIN' | 'STAFF' }>>`
+          SELECT role FROM "PbmStaffUser" WHERE id = ${id} LIMIT 1
+        `;
+        if (!targets[0]) return { status: 'missing' as const };
+        if (active === false && targets[0].role === 'ADMIN') {
+          const admins = await transaction.$queryRaw<Array<{ count: bigint }>>`
+            SELECT COUNT(*) AS count FROM "PbmStaffUser" WHERE role = 'ADMIN' AND active = TRUE
+          `;
+          if (Number(admins[0]?.count || 0) <= 1) return { status: 'last-admin' as const };
+        }
       }
       const changed = await transaction.$queryRaw<Array<{
         id: string;
@@ -125,7 +147,11 @@ export async function PATCH(request: Request) {
         active: boolean;
         createdAt: Date;
       }>>`
-        UPDATE "PbmStaffUser" SET active = ${active}
+        UPDATE "PbmStaffUser"
+        SET username = COALESCE(${username}, username),
+            "displayName" = COALESCE(${displayName}, "displayName"),
+            "passwordHash" = COALESCE(${passwordHash}, "passwordHash"),
+            active = COALESCE(${hasActive ? active as boolean : null}, active)
         WHERE id = ${id}
         RETURNING id, username, "displayName", role, active, "createdAt"
       `;
