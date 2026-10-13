@@ -73,9 +73,9 @@ export default function ProfessionalCareerProfilePage() {
         </header>
 
         {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+        <ProfessionalProfilePhoto />
         <CollegeLifeForm />
         <UniversityLifeForm />
-        <ProfessionalProfilePhoto />
         <ProfessionalLifeForm />
       </div>
     </main>
