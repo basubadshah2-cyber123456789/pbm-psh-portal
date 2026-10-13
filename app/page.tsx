@@ -1259,7 +1259,7 @@ export default function StandalonePSHAdmissionWebsite() {
               </div>
               <div>
                 <div className="text-[11px] uppercase tracking-widest text-emerald-200 font-semibold leading-tight">
-                  Government of Pakistan • Pakistan Bait-ul-Mal
+                  Sponsored by Pakistan Bait-ul-Mal • Regional Office Multan
                 </div>
                 <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white leading-tight">
                   Pakistan Sweet Home (PSH) Admission Portal
