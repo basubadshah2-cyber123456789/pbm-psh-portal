@@ -153,6 +153,7 @@ type DisciplinaryProceedingRecord = {
   date: string;
   approved: string;
   remarks: string;
+  expulsionCommitteeMinutes: string;
 };
 
 const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
@@ -172,6 +173,7 @@ const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
   date: '',
   approved: '',
   remarks: '',
+  expulsionCommitteeMinutes: '',
 });
 
 export interface WitnessRecord {
@@ -1429,6 +1431,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [followUpRecords, setFollowUpRecords] = useState<FollowUpRecord[]>([]);
   const [disciplinaryDraft, setDisciplinaryDraft] = useState<DisciplinaryProceedingRecord>(createEmptyDisciplinaryProceeding);
   const [isDisciplinaryProceedingsOpen, setIsDisciplinaryProceedingsOpen] = useState(false);
+  const [expulsionMinutesPhotoFile, setExpulsionMinutesPhotoFile] = useState<File | null>(null);
+  const [expulsionMinutesPhotoError, setExpulsionMinutesPhotoError] = useState('');
   const [isProfessionalCareerOpen, setIsProfessionalCareerOpen] = useState(false);
   const [careerAccountChildId, setCareerAccountChildId] = useState<string | undefined>(persistedInitialChildId);
   const [careerSetupAfterSave, setCareerSetupAfterSave] = useState(false);
@@ -3069,6 +3073,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       const documentsToUpload = [
         { file: bFormFrontFile, title: 'B-Form Front', documentType: 'B_FORM_FRONT' },
         { file: bFormBackFile, title: 'B-Form Back', documentType: 'B_FORM_BACK' },
+        ...(disciplinaryProceeding.type === 'EXPELLED' && expulsionMinutesPhotoFile
+          ? [{
+              file: expulsionMinutesPhotoFile,
+              title: 'Minutes of the Expulsion Committee',
+              documentType: 'EXPULSION_COMMITTEE_MINUTES',
+            }]
+          : []),
         ...([
           ['fatherCnicFront', 'FATHER_CNIC_FRONT'],
           ['fatherCnicBack', 'FATHER_CNIC_BACK'],
@@ -5015,6 +5026,62 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   }))}
                   options={['Yes', 'No']}
                 />
+                <label className="block text-sm font-semibold text-slate-700 sm:col-span-2 lg:col-span-3">
+                  Minutes of the Expulsion Committee
+                  <textarea
+                    rows={4}
+                    maxLength={5000}
+                    value={disciplinaryDraft.expulsionCommitteeMinutes}
+                    onChange={(event) => setDisciplinaryDraft((current) => ({
+                      ...current,
+                      expulsionCommitteeMinutes: event.target.value,
+                    }))}
+                    placeholder="Enter the written minutes of the expulsion committee"
+                    className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-normal text-slate-900 outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100"
+                  />
+                </label>
+                <label className="block text-sm font-semibold text-slate-700 sm:col-span-2 lg:col-span-3">
+                  Upload Photo of Written Minutes
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setExpulsionMinutesPhotoError('');
+                      if (file && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                        setExpulsionMinutesPhotoError('Choose a JPEG, PNG, or WebP photo.');
+                        setExpulsionMinutesPhotoFile(null);
+                        event.target.value = '';
+                        return;
+                      }
+                      if (file && file.size > 8 * 1024 * 1024) {
+                        setExpulsionMinutesPhotoError('Choose a photo no larger than 8 MB.');
+                        setExpulsionMinutesPhotoFile(null);
+                        event.target.value = '';
+                        return;
+                      }
+                      setExpulsionMinutesPhotoFile(file);
+                    }}
+                    className="mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-normal text-slate-900 file:mr-3 file:rounded-lg file:border-0 file:bg-red-50 file:px-3 file:py-2 file:text-xs file:font-bold file:text-red-800"
+                  />
+                  <span className="mt-1 block text-xs font-normal text-slate-500">
+                    JPEG, PNG, or WebP; maximum 8 MB.
+                    {expulsionMinutesPhotoFile ? ` Selected: ${expulsionMinutesPhotoFile.name}` : ''}
+                  </span>
+                  {expulsionMinutesPhotoError && (
+                    <span role="alert" className="mt-1 block text-xs font-semibold text-red-700">{expulsionMinutesPhotoError}</span>
+                  )}
+                  {getSavedDocument('EXPULSION_COMMITTEE_MINUTES') && (
+                    <a
+                      href={`/api/pbm/children/${initialChild?.id}/documents?documentId=${getSavedDocument('EXPULSION_COMMITTEE_MINUTES').id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-block text-xs font-bold text-red-700 underline"
+                    >
+                      View previously uploaded minutes photo
+                    </a>
+                  )}
+                </label>
               </div>
             ) : disciplinaryDraft.type === 'DROPPED' ? (
               <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">

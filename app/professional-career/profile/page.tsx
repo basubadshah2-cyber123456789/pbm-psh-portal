@@ -76,6 +76,7 @@ export default function ProfessionalCareerProfilePage() {
         <ProfessionalProfilePhoto />
         <CollegeLifeForm />
         <UniversityLifeForm />
+        <ProfessionalProfilePhoto />
         <ProfessionalLifeForm />
       </div>
     </main>

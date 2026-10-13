@@ -384,7 +384,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   ['Obtained Marks', disciplinaryProceedings.obtainedMarks],
                   ['Reason of Expulsion', disciplinaryProceedings.reason],
                   ['Date of Expulsion', disciplinaryProceedings.date],
+                  ['Approved', disciplinaryProceedings.approved],
                   ['Remarks', disciplinaryProceedings.remarks],
+                  ['Minutes of the Expulsion Committee', disciplinaryProceedings.expulsionCommitteeMinutes],
                 ] as const).map(([label, value]) => (
                   <div key={label}>
                     <dt className="text-slate-400">{label}</dt>
