@@ -412,6 +412,7 @@ interface ProfilePhotoYearRecord {
 interface HealthCareEntry {
   id: string;
   checkFrequency: string;
+  disease: string;
   medicineDetails: string;
   antibioticMedicine: string;
   doctorName: string;
@@ -1320,6 +1321,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
   // ================= 11. NEW HEALTH SECTION =================
   const [checkFrequency, setCheckFrequency] = useState<string>('');
+  const [disease, setDisease] = useState<string>('');
   const [medicineDetails, setMedicineDetails] = useState<string>('');
   const [antibioticMedicine, setAntibioticMedicine] = useState<string>('');
   const [doctorName, setDoctorName] = useState<string>('');
@@ -1335,6 +1337,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {
         id: `${Date.now()}-${current.length}`,
         checkFrequency: '',
+        disease: '',
         medicineDetails: '',
         antibioticMedicine: '',
         doctorName: '',
@@ -1496,7 +1499,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     if (resultSchool || subjectResults.some((s) => !!s.subject.trim())) filled++;
     // 12. Health Care
     if (
-      checkFrequency || medicineDetails || antibioticMedicine || doctorName || hospitalName || doctorContactNo || hospitalType ||
+      checkFrequency || disease || medicineDetails || antibioticMedicine || doctorName || hospitalName || doctorContactNo || hospitalType ||
       additionalHealthCareEntries.some((entry) => Object.values(entry).some((value) => value.trim()))
     ) filled++;
     // 13. Report
@@ -1523,7 +1526,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       isWitnessComplete: witnesses.some((w) => !!w.name.trim()),
       isResultComplete: !!(resultSchool || subjectResults.some((s) => !!s.subject.trim())),
       isHealthCareComplete: !!(
-        checkFrequency || medicineDetails || antibioticMedicine || doctorName || hospitalName || doctorContactNo || hospitalType ||
+        checkFrequency || disease || medicineDetails || antibioticMedicine || doctorName || hospitalName || doctorContactNo || hospitalType ||
         additionalHealthCareEntries.some((entry) => Object.values(entry).some((value) => value.trim()))
       ),
       isReportComplete: !!(reportCategory || reportDetails || additionalReportEntries.some((entry) => entry.category || entry.details)),
@@ -1553,6 +1556,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     resultSchool,
     subjectResults,
     checkFrequency,
+    disease,
     medicineDetails,
     doctorName,
     hospitalName,
@@ -1917,6 +1921,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
 
         if (psh.healthCare) {
           setCheckFrequency(psh.healthCare.checkFrequency || '');
+          setDisease(psh.healthCare.disease || '');
           setMedicineDetails(psh.healthCare.medicineDetails || '');
           setAntibioticMedicine(psh.healthCare.antibioticMedicine || '');
           setDoctorName(psh.healthCare.doctorName || '');
@@ -1928,6 +1933,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               ? psh.healthCare.additionalEntries.map((entry: Partial<HealthCareEntry>, index: number) => ({
                   id: entry.id || `saved-health-${index}`,
                   checkFrequency: entry.checkFrequency || '',
+                  disease: entry.disease || '',
                   medicineDetails: entry.medicineDetails || '',
                   antibioticMedicine: entry.antibioticMedicine || '',
                   doctorName: entry.doctorName || '',
@@ -2130,6 +2136,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setCareerCredentialsDraft(null);
     setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
     setCheckFrequency('');
+    setDisease('');
     setMedicineDetails('');
     setAntibioticMedicine('');
     setDoctorName('');
@@ -2977,6 +2984,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         followUps: followUpRecords,
         healthCare: {
           checkFrequency,
+          disease,
           medicineDetails,
           antibioticMedicine,
           doctorName,
@@ -4504,6 +4512,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             options={['Daily', 'Weekly', 'Monthly']}
           />
           <FormInput
+            placeholder="Disease"
+            value={disease}
+            onChange={(e) => setDisease(e.target.value)}
+          />
+          <FormInput
             placeholder="Medicine Details"
             value={medicineDetails}
             onChange={(e) => setMedicineDetails(e.target.value)}
@@ -4557,6 +4570,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 value={entry.checkFrequency}
                 onChange={(e) => updateHealthCareEntry(entry.id, 'checkFrequency', e.target.value)}
                 options={['Daily', 'Weekly', 'Monthly']}
+              />
+              <FormInput
+                placeholder="Disease"
+                value={entry.disease}
+                onChange={(e) => updateHealthCareEntry(entry.id, 'disease', e.target.value)}
               />
               <FormInput
                 placeholder="Medicine Details"

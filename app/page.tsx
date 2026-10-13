@@ -2424,6 +2424,7 @@ export default function StandalonePSHAdmissionWebsite() {
                     <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-2 text-xs">
                       <span className="text-[11px] font-bold text-[#0D5C3A] uppercase tracking-wider block border-b border-slate-100 pb-1.5">12. HEALTH CARE</span>
                       <div><span className="text-slate-400">Frequency:</span> <span className="font-semibold">{psh?.healthCare?.checkFrequency || 'Monthly'}</span></div>
+                      <div><span className="text-slate-400">Disease:</span> <span>{psh?.healthCare?.disease || 'N/A'}</span></div>
                       <div><span className="text-slate-400">Medicines:</span> <span>{psh?.healthCare?.medicineDetails || 'None'}</span></div>
                       <div><span className="text-slate-400">Antibiotics:</span> <span>{psh?.healthCare?.antibioticMedicine || 'None'}</span></div>
                       <div><span className="text-slate-400">Doctor Name:</span> <span>{psh?.healthCare?.doctorName || 'N/A'}</span></div>
@@ -2434,6 +2435,7 @@ export default function StandalonePSHAdmissionWebsite() {
                         <div key={`health-${idx}`} className="pt-2 border-t border-slate-100 space-y-1">
                           <div className="font-semibold text-slate-700">Additional Follow-up {idx + 1}</div>
                           {entry.checkFrequency && <div><span className="text-slate-400">Frequency:</span> {entry.checkFrequency}</div>}
+                          {entry.disease && <div><span className="text-slate-400">Disease:</span> {entry.disease}</div>}
                           {entry.medicineDetails && <div><span className="text-slate-400">Medicines:</span> {entry.medicineDetails}</div>}
                           {entry.antibioticMedicine && <div><span className="text-slate-400">Antibiotics:</span> {entry.antibioticMedicine}</div>}
                           {entry.doctorName && <div><span className="text-slate-400">Doctor:</span> {entry.doctorName}</div>}

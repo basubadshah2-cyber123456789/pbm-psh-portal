@@ -783,6 +783,12 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                     <dd className="font-bold text-red-700">{psh.healthCare.checkFrequency}</dd>
                   </div>
                 )}
+                {psh?.healthCare?.disease && (
+                  <div className="flex justify-between">
+                    <dt className="text-slate-500">Disease</dt>
+                    <dd className="font-semibold">{psh.healthCare.disease}</dd>
+                  </div>
+                )}
                 {psh?.healthCare?.medicineDetails && (
                   <div className="pt-1 border-t border-red-100">
                     <dt className="text-slate-500">Routine Medicine</dt>
@@ -822,6 +828,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   <div key={`health-${index}`} className="pt-2 border-t border-red-100 space-y-1">
                     <strong className="text-red-800">Additional Medical Follow-up {index + 1}</strong>
                     {entry.checkFrequency && <div>Check Frequency: {entry.checkFrequency}</div>}
+                    {entry.disease && <div>Disease: {entry.disease}</div>}
                     {entry.medicineDetails && <div>Medicine: {entry.medicineDetails}</div>}
                     {entry.antibioticMedicine && <div>Antibiotic Medicine: {entry.antibioticMedicine}</div>}
                     {entry.doctorName && <div>Doctor: {entry.doctorName}</div>}
