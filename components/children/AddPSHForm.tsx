@@ -4902,14 +4902,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           Disciplinary Proceedings{disciplinaryProceeding.type ? ` (${disciplinaryProceeding.type})` : ''}
         </button>
         <button
-          type="button"
-          onClick={() => openCareerAccountSetup()}
-          disabled={isSubmitting}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs sm:text-sm font-bold hover:bg-emerald-100 transition-all cursor-pointer disabled:opacity-50"
-        >
-          Professional Career
-        </button>
-        <button
           type="submit"
           disabled={isSubmitting}
           className="w-full sm:w-auto px-7 py-2.5 rounded-lg bg-[#0D5C3A] hover:bg-[#0b4d30] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer disabled:opacity-50 hover:scale-105 active:scale-95 shimmer-badge flex items-center justify-center gap-2"

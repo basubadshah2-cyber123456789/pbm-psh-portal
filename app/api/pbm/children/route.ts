@@ -29,11 +29,15 @@ export async function GET() {
       fullName: string;
       payload: Record<string, unknown>;
       collegeProgress: unknown;
+      universityProgress: unknown;
+      professionalLifeEntries: unknown;
       careerUsername: string | null;
       documents: unknown;
     }>>`
       SELECT child.id, child."admissionNo", child."fullName", child.payload,
-             child."collegeProgress", child."careerUsername",
+             child."collegeProgress", child."universityProgress",
+             child."careerProfile"->'professionalLifeEntries' AS "professionalLifeEntries",
+             child."careerUsername",
              COALESCE((
                SELECT jsonb_agg(jsonb_build_object(
                  'id', document.id,
@@ -55,6 +59,8 @@ export async function GET() {
         admissionNo: child.admissionNo,
         fullName: child.fullName,
         collegeProgress: child.collegeProgress,
+        universityProgress: child.universityProgress,
+        careerProfile: { professionalLifeEntries: child.professionalLifeEntries },
         careerUsername: child.careerUsername,
         documents: child.documents,
       })),

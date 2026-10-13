@@ -33,6 +33,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { AddPSHForm } from '@/components/children/AddPSHForm';
+import { ChildHistoryModal } from '@/components/children/ChildHistoryModal';
 import { FollowUpModal } from '@/components/children/FollowUpModal';
 import type { FollowUpRecord } from '@/components/children/follow-up';
 import { childPhotoDisplaySrc } from '@/lib/child-photo';
@@ -61,6 +62,9 @@ export interface EnrolledChild {
   heightCm?: number;
   weightKg?: number;
   notes?: string;
+  collegeProgress?: unknown;
+  universityProgress?: unknown;
+  careerProfile?: unknown;
 }
 
 // ================= REALISTIC DEFAULT SEED CHILDREN DATA =================
@@ -872,6 +876,7 @@ export default function StandalonePSHAdmissionWebsite() {
   const [justSubmittedChild, setJustSubmittedChild] = useState<EnrolledChild | null>(null);
   const [selectedDossierChild, setSelectedDossierChild] = useState<EnrolledChild | null>(null);
   const [selectedFollowUpChild, setSelectedFollowUpChild] = useState<EnrolledChild | null>(null);
+  const [selectedHistoryChild, setSelectedHistoryChild] = useState<EnrolledChild | null>(null);
   const [editingChild, setEditingChild] = useState<EnrolledChild | null>(null);
 
   // Filter & Search States
@@ -1852,6 +1857,16 @@ export default function StandalonePSHAdmissionWebsite() {
                                     </button>
                                   )}
 
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedHistoryChild(child)}
+                                    className="px-2.5 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-800 font-bold rounded text-xs flex items-center gap-1 border border-violet-200 transition-colors"
+                                    title={`View ${child.fullName}'s history`}
+                                  >
+                                    <BookOpen className="w-3.5 h-3.5" />
+                                    <span>History</span>
+                                  </button>
+
                                   {/* Print Dossier */}
                                   <button
                                     type="button"
@@ -1917,6 +1932,14 @@ export default function StandalonePSHAdmissionWebsite() {
             />
           );
         })()}
+
+        {selectedHistoryChild && (
+          <ChildHistoryModal
+            child={selectedHistoryChild}
+            dossier={parseDossierNotes(selectedHistoryChild.notes)}
+            onClose={() => setSelectedHistoryChild(null)}
+          />
+        )}
 
         {/* ================= OFFICIAL PRINTABLE CHILD DOSSIER MODAL ================= */}
         {selectedDossierChild && (() => {
