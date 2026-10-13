@@ -152,7 +152,7 @@ export default function PbmStaffUsersPage() {
               <input required maxLength={120} value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
             <label className="text-sm font-semibold text-slate-700">Username
-              <input required minLength={4} maxLength={32} pattern="[a-z0-9][a-z0-9._-]{3,31}" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase())} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" />
+              <input required minLength={4} maxLength={32} value={username} onChange={(event) => setUsername(event.target.value.toLowerCase())} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" />
             </label>
             <label className="text-sm font-semibold text-slate-700">Temporary password (12+ characters)
               <input required minLength={12} maxLength={128} type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1.5 w-full rounded-xl border border-slate-300 px-3 py-2.5 font-normal" />
@@ -181,7 +181,7 @@ export default function PbmStaffUsersPage() {
                         <input required maxLength={120} value={editingAccount.displayName} onChange={(event) => setEditingAccount({ ...editingAccount, displayName: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal" />
                       </label>
                       <label className="text-xs font-semibold text-slate-700">Username
-                        <input required minLength={4} maxLength={32} pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{3,31}" value={editingAccount.username} onChange={(event) => setEditingAccount({ ...editingAccount, username: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal" />
+                        <input required minLength={4} maxLength={32} value={editingAccount.username} onChange={(event) => setEditingAccount({ ...editingAccount, username: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal" />
                       </label>
                       <label className="text-xs font-semibold text-slate-700 sm:col-span-2">New password (leave blank to keep current; 12+ characters)
                         <input minLength={12} maxLength={128} type="password" autoComplete="new-password" value={editingAccount.password} onChange={(event) => setEditingAccount({ ...editingAccount, password: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal" />
