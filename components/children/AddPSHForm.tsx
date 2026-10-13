@@ -4988,6 +4988,15 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                     }))}
                   />
                 ))}
+                <FormSelect
+                  label="Approved"
+                  value={disciplinaryDraft.approved}
+                  onChange={(event) => setDisciplinaryDraft((current) => ({
+                    ...current,
+                    approved: event.target.value,
+                  }))}
+                  options={['Yes', 'No']}
+                />
               </div>
             ) : disciplinaryDraft.type === 'DROPPED' ? (
               <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
