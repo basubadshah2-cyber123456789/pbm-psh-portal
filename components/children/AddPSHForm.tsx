@@ -4965,7 +4965,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 {([
                   ['name', 'Name'],
                   ['fatherName', 'Father Name'],
-                  ['pshName', 'Which PBM Sweet Home'],
                   ['pshRegistrationNumber', 'PSH Registration No.'],
                   ['className', 'Class'],
                   ['rollNumber', 'Roll No.'],
@@ -5003,7 +5002,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 {([
                   ['name', 'Name'],
                   ['fatherName', 'Father Name'],
-                  ['pshName', 'Which PBM Sweet Home Dropped From'],
                   ['pshRegistrationNumber', 'PSH Registration'],
                   ['className', 'Class'],
                   ['classSection', 'Class Section'],
