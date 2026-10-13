@@ -372,6 +372,12 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   ['Reason of Dropped', disciplinaryProceedings.reason],
                   ['Approved', disciplinaryProceedings.approved],
                   ['Remarks', disciplinaryProceedings.remarks],
+                  ...(Array.isArray(disciplinaryProceedings.counsellingEntries)
+                    ? disciplinaryProceedings.counsellingEntries.map((entry: { date?: string; details?: string }, index: number) => [
+                        `Counselling ${index + 1}`,
+                        [entry.date, entry.details].filter(Boolean).join(' — '),
+                      ] as const)
+                    : []),
                 ] : [
                   ['Name', disciplinaryProceedings.name],
                   ['Father Name', disciplinaryProceedings.fatherName],

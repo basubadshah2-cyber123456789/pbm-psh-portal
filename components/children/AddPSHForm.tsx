@@ -5292,6 +5292,78 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   }))}
                   options={['Yes', 'No']}
                 />
+                <section className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 sm:col-span-2 lg:col-span-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800">Counselling</h3>
+                      <p className="mt-1 text-xs font-normal text-slate-600">Record counselling dates and details.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDisciplinaryDraft((current) => ({
+                        ...current,
+                        counsellingEntries: [
+                          ...current.counsellingEntries,
+                          { id: `${Date.now()}-${current.counsellingEntries.length}`, date: '', details: '' },
+                        ],
+                      }))}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add New
+                    </button>
+                  </div>
+                  {disciplinaryDraft.counsellingEntries.length === 0 ? (
+                    <p className="text-xs text-slate-500">No counselling entries added.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {disciplinaryDraft.counsellingEntries.map((entry, index) => (
+                        <div key={entry.id} className="grid gap-3 rounded-lg border border-indigo-100 bg-white p-3 sm:grid-cols-[180px_1fr_auto] sm:items-start">
+                          <label className="block text-xs font-semibold text-slate-700">
+                            Counselling Date
+                            <input
+                              type="date"
+                              value={entry.date}
+                              onChange={(event) => setDisciplinaryDraft((current) => ({
+                                ...current,
+                                counsellingEntries: current.counsellingEntries.map((item) =>
+                                  item.id === entry.id ? { ...item, date: event.target.value } : item
+                                ),
+                              }))}
+                              className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+                            />
+                          </label>
+                          <label className="block text-xs font-semibold text-slate-700">
+                            Counselling Details
+                            <textarea
+                              rows={3}
+                              maxLength={3000}
+                              value={entry.details}
+                              onChange={(event) => setDisciplinaryDraft((current) => ({
+                                ...current,
+                                counsellingEntries: current.counsellingEntries.map((item) =>
+                                  item.id === entry.id ? { ...item, details: event.target.value } : item
+                                ),
+                              }))}
+                              placeholder={`Counselling details ${index + 1}`}
+                              className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setDisciplinaryDraft((current) => ({
+                              ...current,
+                              counsellingEntries: current.counsellingEntries.filter((item) => item.id !== entry.id),
+                            }))}
+                            aria-label={`Remove counselling entry ${index + 1}`}
+                            className="mt-5 rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
                 <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:col-span-2 lg:col-span-3">
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-slate-800">Attachments</h3>
