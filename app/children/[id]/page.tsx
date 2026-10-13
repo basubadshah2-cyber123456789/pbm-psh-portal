@@ -387,6 +387,12 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   ['Approved', disciplinaryProceedings.approved],
                   ['Remarks', disciplinaryProceedings.remarks],
                   ['Minutes of the Expulsion Committee', disciplinaryProceedings.expulsionCommitteeMinutes],
+                  ...(Array.isArray(disciplinaryProceedings.counsellingEntries)
+                    ? disciplinaryProceedings.counsellingEntries.map((entry: { date?: string; details?: string }, index: number) => [
+                        `Counselling ${index + 1}`,
+                        [entry.date, entry.details].filter(Boolean).join(' — '),
+                      ] as const)
+                    : []),
                 ] as const).map(([label, value]) => (
                   <div key={label}>
                     <dt className="text-slate-400">{label}</dt>

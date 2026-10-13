@@ -154,6 +154,7 @@ type DisciplinaryProceedingRecord = {
   approved: string;
   remarks: string;
   expulsionCommitteeMinutes: string;
+  counsellingEntries: Array<{ id: string; date: string; details: string }>;
 };
 
 const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
@@ -174,6 +175,7 @@ const createEmptyDisciplinaryProceeding = (): DisciplinaryProceedingRecord => ({
   approved: '',
   remarks: '',
   expulsionCommitteeMinutes: '',
+  counsellingEntries: [],
 });
 
 export interface WitnessRecord {
@@ -1433,6 +1435,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [isDisciplinaryProceedingsOpen, setIsDisciplinaryProceedingsOpen] = useState(false);
   const [expulsionMinutesPhotoFile, setExpulsionMinutesPhotoFile] = useState<File | null>(null);
   const [expulsionMinutesPhotoError, setExpulsionMinutesPhotoError] = useState('');
+  const [droppedAffidavitFile, setDroppedAffidavitFile] = useState<File | null>(null);
+  const [droppedApplicationFile, setDroppedApplicationFile] = useState<File | null>(null);
+  const [droppedAttachmentError, setDroppedAttachmentError] = useState('');
   const [isProfessionalCareerOpen, setIsProfessionalCareerOpen] = useState(false);
   const [careerAccountChildId, setCareerAccountChildId] = useState<string | undefined>(persistedInitialChildId);
   const [careerSetupAfterSave, setCareerSetupAfterSave] = useState(false);
@@ -1614,6 +1619,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setDisciplinaryProceeding({
         ...createEmptyDisciplinaryProceeding(),
         ...(psh?.disciplinaryProceedings || {}),
+        counsellingEntries: Array.isArray(psh?.disciplinaryProceedings?.counsellingEntries)
+          ? psh.disciplinaryProceedings.counsellingEntries.map((entry: { id?: string; date?: string; details?: string }, index: number) => ({
+              id: entry.id || `saved-counselling-${index}`,
+              date: entry.date || '',
+              details: entry.details || '',
+            }))
+          : [],
         type: savedDisciplinaryType === 'DROPPED' || savedDisciplinaryType === 'EXPELLED'
           ? savedDisciplinaryType
           : legacyDisciplinaryType,
@@ -3078,6 +3090,20 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               file: expulsionMinutesPhotoFile,
               title: 'Minutes of the Expulsion Committee',
               documentType: 'EXPULSION_COMMITTEE_MINUTES',
+            }]
+          : []),
+        ...(disciplinaryProceeding.type === 'DROPPED' && droppedAffidavitFile
+          ? [{
+              file: droppedAffidavitFile,
+              title: 'Affidavit',
+              documentType: 'DROPPED_AFFIDAVIT',
+            }]
+          : []),
+        ...(disciplinaryProceeding.type === 'DROPPED' && droppedApplicationFile
+          ? [{
+              file: droppedApplicationFile,
+              title: 'Application',
+              documentType: 'DROPPED_APPLICATION',
             }]
           : []),
         ...([
@@ -5026,6 +5052,78 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   }))}
                   options={['Yes', 'No']}
                 />
+                <section className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 sm:col-span-2 lg:col-span-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800">Counselling</h3>
+                      <p className="mt-1 text-xs font-normal text-slate-600">Record counselling dates and details.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDisciplinaryDraft((current) => ({
+                        ...current,
+                        counsellingEntries: [
+                          ...current.counsellingEntries,
+                          { id: `${Date.now()}-${current.counsellingEntries.length}`, date: '', details: '' },
+                        ],
+                      }))}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add New
+                    </button>
+                  </div>
+                  {disciplinaryDraft.counsellingEntries.length === 0 ? (
+                    <p className="text-xs text-slate-500">No counselling entries added.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {disciplinaryDraft.counsellingEntries.map((entry, index) => (
+                        <div key={entry.id} className="grid gap-3 rounded-lg border border-indigo-100 bg-white p-3 sm:grid-cols-[180px_1fr_auto] sm:items-start">
+                          <label className="block text-xs font-semibold text-slate-700">
+                            Counselling Date
+                            <input
+                              type="date"
+                              value={entry.date}
+                              onChange={(event) => setDisciplinaryDraft((current) => ({
+                                ...current,
+                                counsellingEntries: current.counsellingEntries.map((item) =>
+                                  item.id === entry.id ? { ...item, date: event.target.value } : item
+                                ),
+                              }))}
+                              className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+                            />
+                          </label>
+                          <label className="block text-xs font-semibold text-slate-700">
+                            Counselling Details
+                            <textarea
+                              rows={3}
+                              maxLength={3000}
+                              value={entry.details}
+                              onChange={(event) => setDisciplinaryDraft((current) => ({
+                                ...current,
+                                counsellingEntries: current.counsellingEntries.map((item) =>
+                                  item.id === entry.id ? { ...item, details: event.target.value } : item
+                                ),
+                              }))}
+                              placeholder={`Counselling details ${index + 1}`}
+                              className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setDisciplinaryDraft((current) => ({
+                              ...current,
+                              counsellingEntries: current.counsellingEntries.filter((item) => item.id !== entry.id),
+                            }))}
+                            aria-label={`Remove counselling entry ${index + 1}`}
+                            className="mt-5 rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
                 <label className="block text-sm font-semibold text-slate-700 sm:col-span-2 lg:col-span-3">
                   Minutes of the Expulsion Committee
                   <textarea
@@ -5122,6 +5220,61 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   }))}
                   options={['Yes', 'No']}
                 />
+                <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:col-span-2 lg:col-span-3">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold text-slate-800">Attachments</h3>
+                    <p className="mt-1 text-xs font-normal text-slate-600">Upload an affidavit and application (PDF or image, up to 12 MB each).</p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {([
+                      { title: 'Affidavit', documentType: 'DROPPED_AFFIDAVIT', file: droppedAffidavitFile, setFile: setDroppedAffidavitFile },
+                      { title: 'Application', documentType: 'DROPPED_APPLICATION', file: droppedApplicationFile, setFile: setDroppedApplicationFile },
+                    ] as const).map((attachment) => {
+                      const savedDocument = getSavedDocument(attachment.documentType);
+                      return (
+                        <label key={attachment.documentType} className="block text-sm font-semibold text-slate-700">
+                          {attachment.title}
+                          <input
+                            type="file"
+                            accept="application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] || null;
+                              setDroppedAttachmentError('');
+                              if (file && !['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                                setDroppedAttachmentError('Choose a PDF, JPEG, PNG, or WebP file.');
+                                attachment.setFile(null);
+                                event.target.value = '';
+                                return;
+                              }
+                              if (file && file.size > 12 * 1024 * 1024) {
+                                setDroppedAttachmentError('Each attachment must be no larger than 12 MB.');
+                                attachment.setFile(null);
+                                event.target.value = '';
+                                return;
+                              }
+                              attachment.setFile(file);
+                            }}
+                            className="mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-normal text-slate-900 file:mr-2 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:text-xs file:font-bold file:text-amber-900"
+                          />
+                          {attachment.file && <span className="mt-1 block text-xs font-normal text-slate-500">{attachment.file.name}</span>}
+                          {savedDocument && (
+                            <a
+                              href={`/api/pbm/children/${initialChild?.id}/documents?documentId=${savedDocument.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-2 inline-block text-xs font-bold text-amber-800 underline"
+                            >
+                              View previously uploaded {attachment.title.toLowerCase()}
+                            </a>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {droppedAttachmentError && (
+                    <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{droppedAttachmentError}</p>
+                  )}
+                </section>
               </div>
             ) : null}
 
