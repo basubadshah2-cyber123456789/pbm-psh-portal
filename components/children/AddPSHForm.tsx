@@ -327,6 +327,8 @@ function AddressFields({
         ]}
         disabled={disabled}
       />
+      <FormInput label="House No." value={values.houseNumber} onChange={(event) => onChange('houseNumber', event.target.value)} disabled={disabled} />
+      <FormInput label="Street No." value={values.streetNumber} onChange={(event) => onChange('streetNumber', event.target.value)} disabled={disabled} />
       {values.addressType === 'Village' ? (
         <>
           <FormInput
@@ -357,17 +359,15 @@ function AddressFields({
             disabled={disabled}
           />
         </>
-      ) : <div />}
-      <FormInput label="District" value={values.district} onChange={(event) => onChange('district', event.target.value)} disabled={disabled} />
+      ) : null}
       <FormInput label="Tehsil" value={values.tehsil} onChange={(event) => onChange('tehsil', event.target.value)} disabled={disabled} />
+      <FormInput label="District" value={values.district} onChange={(event) => onChange('district', event.target.value)} disabled={disabled} />
       <FormInput
         label="Union Council No./Name"
         value={composeAddress([values.ucNumber, values.ucName])}
         onChange={(event) => onChange('ucNumber', event.target.value)}
         disabled={disabled}
       />
-      <FormInput label="Street No." value={values.streetNumber} onChange={(event) => onChange('streetNumber', event.target.value)} disabled={disabled} />
-      <FormInput label="House No." value={values.houseNumber} onChange={(event) => onChange('houseNumber', event.target.value)} disabled={disabled} />
       <FormInput
         label={addressLabel}
         value={values.address}
