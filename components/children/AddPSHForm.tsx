@@ -4676,7 +4676,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Complain Type"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
-            options={['Discipline', 'Behavior', 'Academic', 'Psychological']}
+            options={['Discipline', 'Behavior', 'Academic', 'Psychological', 'Islamic']}
           />
         </div>
 
@@ -4708,7 +4708,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 label="Complain Type"
                 value={entry.category}
                 onChange={(e) => updateReportEntry(entry.id, 'category', e.target.value)}
-                options={['Discipline', 'Behavior', 'Academic', 'Psychological']}
+                options={['Discipline', 'Behavior', 'Academic', 'Psychological', 'Islamic']}
               />
               <textarea
                 rows={3}
