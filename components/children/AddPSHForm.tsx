@@ -1276,6 +1276,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [resultExamType, setResultExamType] = useState<string>('');
   const [resultPassingScore, setResultPassingScore] = useState<string>('');
   const [resultInfoHistory, setResultInfoHistory] = useState<ResultInfoRecord[]>([]);
+  const [counsellingReport, setCounsellingReport] = useState<string>('');
 
   const [subjectResults, setSubjectResults] = useState<SubjectResultRow[]>([
     { id: '1', subject: '', obtainedMarks: '', totalMarks: '' },
@@ -1597,6 +1598,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setResultPassingScore('');
       setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
       setResultInfoHistory([]);
+      setCounsellingReport('');
       setAreaOfInterest('');
       setAdditionalAreaOfInterestEntries([]);
       setAreaOfInterestHistory([]);
@@ -1897,6 +1899,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           : psh.resultInfo
             ? [psh.resultInfo]
             : [];
+        setCounsellingReport(
+          typeof psh.counsellingReport === 'string'
+            ? psh.counsellingReport
+            : Array.isArray(psh.counsellingEntries)
+              ? psh.counsellingEntries
+                  .map((entry: { date?: string; details?: string }) =>
+                    [entry.date, entry.details].filter(Boolean).join(' — ')
+                  )
+                  .filter(Boolean)
+                  .join('\n\n')
+              : ''
+        );
         const normalizedResults: ResultInfoRecord[] = savedResults.map((entry: any, index: number) => ({
           id: typeof entry.id === 'string' ? entry.id : `saved-result-${index}`,
           year: getYearValue(entry.year ?? entry.examDate ?? legacyDataYear),
@@ -2149,6 +2163,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setResultPassingScore('');
     setResultEntryId('new-result');
     setResultInfoHistory([]);
+    setCounsellingReport('');
     setFollowUpRecords([]);
     setCareerSetupAfterSave(false);
     setChildAfterCareerSetup(null);
@@ -3000,6 +3015,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         })),
         resultInfo: nextResultInfoHistory[0] || resultEntry,
         resultInfoHistory: nextResultInfoHistory,
+        counsellingReport: counsellingReport.trim(),
         followUps: followUpRecords,
         healthCare: {
           checkFrequency,
@@ -4543,6 +4559,19 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             </table>
           </div>
         </div>
+        <section className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
+          <label className="block text-xs font-semibold text-slate-700">
+            Counselling Report
+            <textarea
+              rows={4}
+              maxLength={5000}
+              value={counsellingReport}
+              onChange={(event) => setCounsellingReport(event.target.value)}
+              placeholder="Teacher's counselling report"
+              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"
+            />
+          </label>
+        </section>
       </div>
 
       {/* ================= 12. HEALTH CARE SECTION ================= */}

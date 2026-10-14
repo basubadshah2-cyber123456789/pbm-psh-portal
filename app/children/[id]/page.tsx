@@ -661,6 +661,12 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
           </Section>
         )}
 
+        {typeof psh?.counsellingReport === 'string' && psh.counsellingReport.trim() && (
+          <Section label="COUNSELLING" title="Counselling Report" tone="purple">
+            <p className="whitespace-pre-wrap text-sm text-slate-700">{psh.counsellingReport}</p>
+          </Section>
+        )}
+
         {Array.isArray(psh?.followUps) && psh.followUps.length > 0 && (
           <Section label="FOLLOW UP" title="Academic Follow-Up Records" tone="purple">
             <div className="space-y-3">

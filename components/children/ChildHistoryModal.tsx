@@ -133,6 +133,12 @@ export function ChildHistoryModal({ child, dossier, onClose }: ChildHistoryModal
 
   const sections = [
     { title: 'School & Academic Records', entries: resultHistory },
+    {
+      title: 'Counselling Records',
+      entries: typeof notes.counsellingReport === 'string' && notes.counsellingReport.trim()
+        ? [{ report: notes.counsellingReport }]
+        : [],
+    },
     { title: 'Follow-up Records', entries: asEntries(notes.followUps) },
     { title: 'College & University Progress', entries: [
       ...asEntries(child.collegeProgress),
