@@ -43,7 +43,8 @@ export async function GET() {
                  'id', document.id,
                  'title', document.title,
                  'documentType', document."documentType",
-                 'fileName', document."fileName"
+                 'fileName', document."fileName",
+                 'uploadedAt', document."createdAt"
                ) ORDER BY document."createdAt")
                FROM "PbmChildDocument" AS document
                WHERE document."childId" = child.id

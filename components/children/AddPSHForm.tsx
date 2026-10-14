@@ -21,6 +21,22 @@ import { childPhotoDisplaySrc } from '@/lib/child-photo';
 import { createEmptyFollowUp, type FollowUpRecord } from './follow-up';
 
 type RepeatableFormControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+type SavedChildDocument = { id: string; title: string; documentType: string; uploadedAt: string };
+
+const ATTACHMENT_TYPE_OPTIONS = [
+  { title: 'Father CNIC Front', documentType: 'FATHER_CNIC_FRONT' },
+  { title: 'Father CNIC Back', documentType: 'FATHER_CNIC_BACK' },
+  { title: 'Mother CNIC', documentType: 'MOTHER_CNIC' },
+  { title: 'CNIC (Back)', documentType: 'CNIC_BACK' },
+  { title: 'Guardian CNIC', documentType: 'GUARDIAN_CNIC' },
+  { title: 'Guardian CNIC (Back)', documentType: 'GUARDIAN_CNIC_BACK' },
+  { title: 'Any Medical Certificate', documentType: 'MEDICAL_CERTIFICATE' },
+  { title: 'Witness CNIC (Front)', documentType: 'WITNESS_CNIC_FRONT' },
+  { title: 'Witness CNIC (Back)', documentType: 'WITNESS_CNIC_BACK' },
+  { title: 'Father Death Certificate', documentType: 'FATHER_DEATH_CERTIFICATE' },
+  { title: 'Mother Death Certificate', documentType: 'MOTHER_DEATH_CERTIFICATE' },
+  { title: 'Divorce Certificate', documentType: 'DIVORCE_CERTIFICATE' },
+] as const;
 
 function getRepeatableFieldKey(control: RepeatableFormControl): string {
   if (control instanceof HTMLInputElement && ['file', 'checkbox', 'radio', 'submit', 'button'].includes(control.type)) {
@@ -1404,18 +1420,21 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   };
 
   // ================= 14. ATTACHMENTS =================
-  const [attachments, setAttachments] = useState<Record<string, { file: File | null; title: string }>>({
-    fatherCnicFront: { file: null, title: 'Father CNIC Front' },
-    fatherCnicBack: { file: null, title: 'Father CNIC Back' },
-    motherCnic: { file: null, title: 'Mother CNIC' },
-    cnicBack: { file: null, title: 'CNIC (Back)' },
-    guardianCnic: { file: null, title: 'Guardian CNIC' },
-    guardianCnicBack: { file: null, title: 'Guardian CNIC (Back)' },
-    medicalCertificate: { file: null, title: 'Any Medical Certificate' },
-    witnessCnicFront: { file: null, title: 'Witness CNIC (Front)' },
-    witnessCnicBack: { file: null, title: 'Witness CNIC (Back)' },
-    fatherDeathCertificate: { file: null, title: 'Father Death Certificate' },
+  const [attachments, setAttachments] = useState<Record<string, { file: File | null; title: string; documentType: string }>>({
+    fatherCnicFront: { file: null, title: 'Father CNIC Front', documentType: 'FATHER_CNIC_FRONT' },
+    fatherCnicBack: { file: null, title: 'Father CNIC Back', documentType: 'FATHER_CNIC_BACK' },
+    motherCnic: { file: null, title: 'Mother CNIC', documentType: 'MOTHER_CNIC' },
+    cnicBack: { file: null, title: 'CNIC (Back)', documentType: 'CNIC_BACK' },
+    guardianCnic: { file: null, title: 'Guardian CNIC', documentType: 'GUARDIAN_CNIC' },
+    guardianCnicBack: { file: null, title: 'Guardian CNIC (Back)', documentType: 'GUARDIAN_CNIC_BACK' },
+    medicalCertificate: { file: null, title: 'Any Medical Certificate', documentType: 'MEDICAL_CERTIFICATE' },
+    witnessCnicFront: { file: null, title: 'Witness CNIC (Front)', documentType: 'WITNESS_CNIC_FRONT' },
+    witnessCnicBack: { file: null, title: 'Witness CNIC (Back)', documentType: 'WITNESS_CNIC_BACK' },
+    fatherDeathCertificate: { file: null, title: 'Father Death Certificate', documentType: 'FATHER_DEATH_CERTIFICATE' },
+    motherDeathCertificate: { file: null, title: 'Mother Death Certificate', documentType: 'MOTHER_DEATH_CERTIFICATE' },
+    divorceCertificate: { file: null, title: 'Divorce Certificate', documentType: 'DIVORCE_CERTIFICATE' },
   });
+  const [newAttachmentType, setNewAttachmentType] = useState('');
 
   const handleAttachmentUpload = (key: string, file: File | null) => {
     setAttachments((prev) => ({
@@ -1424,12 +1443,39 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     }));
   };
 
-  const getSavedDocument = (documentType: string) => (
-    Array.isArray(initialChild?.documents)
+  const addAttachment = () => {
+    const selectedType = ATTACHMENT_TYPE_OPTIONS.find((option) => option.documentType === newAttachmentType);
+    if (!selectedType) return;
+
+    setAttachments((current) => {
+      const sameTypeCount = Object.values(current).filter((item) => item.documentType === selectedType.documentType).length;
+      return {
+        ...current,
+        [`additional-${crypto.randomUUID()}`]: {
+          file: null,
+          title: sameTypeCount > 0 ? `${selectedType.title} (${sameTypeCount + 1})` : selectedType.title,
+          documentType: selectedType.documentType,
+        },
+      };
+    });
+    setNewAttachmentType('');
+  };
+
+  const getSavedDocumentsByType = (documentType: string): SavedChildDocument[] => {
+    const documents: SavedChildDocument[] = Array.isArray(initialChild?.documents)
       ? initialChild.documents
-          .filter((document: any) => document.documentType === documentType)
-          .sort((a: any, b: any) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0] || null
-      : null
+      : [];
+    return documents.filter((document) => document.documentType === documentType);
+  };
+
+  const getSavedDocument = (documentType: string) => (
+    getSavedDocumentsByType(documentType)
+      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0] || null
+  );
+
+  const getSavedAttachment = (documentType: string, index: number) => (
+    getSavedDocumentsByType(documentType)
+      .sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime())[index] || null
   );
 
   // Submission State
@@ -3046,14 +3092,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         areaOfInterestEntries: (nextAreaOfInterestHistory[0]?.entries || []).map(({ details }) => ({ details })),
         areaOfInterestHistory: nextAreaOfInterestHistory,
         profilePhotoHistory: archivedProfilePhotoHistory,
-        attachmentsSummary: Object.keys(attachments).map((k) => ({
-          slot: k,
-          title: attachments[k].title,
-          attached: !!attachments[k].file || (
-            (k === 'fatherCnicFront' && !!getSavedDocument('FATHER_CNIC_FRONT')) ||
-            (k === 'fatherCnicBack' && !!getSavedDocument('FATHER_CNIC_BACK'))
-          ),
-        })),
+        attachmentsSummary: Object.entries(attachments).map(([key, attachment], index, entries) => {
+          const sameTypeIndex = entries
+            .slice(0, index)
+            .filter(([, previous]) => previous.documentType === attachment.documentType).length;
+          return {
+            slot: key,
+            title: attachment.title,
+            attached: !!attachment.file || !!getSavedAttachment(attachment.documentType, sameTypeIndex),
+          };
+        }),
       };
 
       const payload = {
@@ -3144,13 +3192,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               documentType: 'EXPELLED_APPLICATION',
             }]
           : []),
-        ...([
-          ['fatherCnicFront', 'FATHER_CNIC_FRONT'],
-          ['fatherCnicBack', 'FATHER_CNIC_BACK'],
-        ] as const).map(([key, documentType]) => ({
-          file: attachments[key].file,
-          title: attachments[key].title,
-          documentType,
+        ...Object.values(attachments).map((attachment) => ({
+          file: attachment.file,
+          title: attachment.title,
+          documentType: attachment.documentType,
         })),
         ...(enrollmentType === 'Replace' && schoolLeavingCertificateFile
           ? [{
@@ -4967,19 +5012,61 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       {/* ================= 15. ATTACHMENTS (FINAL SECTION) ================= */}
       <div>
         <SectionHeading step={15} title="Mandatory Attachments & Verification" isCompleted={completionStats.isAttachmentsComplete} />
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="text-xs font-semibold text-slate-700">
+            Add another document
+            <select
+              value={newAttachmentType}
+              onChange={(event) => setNewAttachmentType(event.target.value)}
+              disabled={isSubmitting}
+              className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs sm:min-w-64"
+            >
+              <option value="">Choose document type</option>
+              {ATTACHMENT_TYPE_OPTIONS.map((option) => (
+                <option key={option.documentType} value={option.documentType}>{option.title}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={addAttachment}
+            disabled={isSubmitting || !newAttachmentType}
+            className="inline-flex items-center justify-center gap-1 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add New
+          </button>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3.5">
-          {Object.entries(attachments).map(([key, item]) => (
-            <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2 shadow-xs">
-              <span className="text-xs font-bold text-slate-800">{item.title}</span>
-              {(() => {
-                const documentType = key === 'fatherCnicFront'
-                  ? 'FATHER_CNIC_FRONT'
-                  : key === 'fatherCnicBack'
-                    ? 'FATHER_CNIC_BACK'
-                    : null;
-                const savedDocument = documentType ? getSavedDocument(documentType) : null;
+          {Object.entries(attachments).map(([key, item], attachmentIndex, entries) => {
+            const sameTypeIndex = entries
+              .slice(0, attachmentIndex)
+              .filter(([, previous]) => previous.documentType === item.documentType).length;
+            const savedDocument = getSavedAttachment(item.documentType, sameTypeIndex);
+            const isAdditional = key.startsWith('additional-');
 
-                return !item.file && savedDocument && initialChild?.id ? (
+            return (
+              <div key={key} className="p-3 border border-slate-700 rounded-lg bg-white flex flex-col justify-between gap-2 shadow-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-800">{item.title}</span>
+                  {isAdditional && (
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => setAttachments((current) => {
+                        const next = { ...current };
+                        delete next[key];
+                        return next;
+                      })}
+                      className="text-[11px] font-semibold text-red-600 hover:text-red-800 disabled:opacity-50"
+                      aria-label={`Remove ${item.title}`}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {!item.file && savedDocument && initialChild?.id && (
                   <a
                     href={`/api/pbm/children/${initialChild.id}/documents?documentId=${savedDocument.id}`}
                     target="_blank"
@@ -4988,48 +5075,47 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   >
                     View saved file: {savedDocument.title}
                   </a>
-                ) : null;
-              })()}
-
-              <div className="flex items-center justify-between pt-1 gap-1">
-                {item.file ? (
-                  <span className="text-xs text-emerald-700 font-semibold truncate max-w-[110px]">
-                    ✓ {item.file.name}
-                  </span>
-                ) : (key === 'fatherCnicFront' && getSavedDocument('FATHER_CNIC_FRONT')) ||
-                  (key === 'fatherCnicBack' && getSavedDocument('FATHER_CNIC_BACK')) ? (
-                  <span className="text-xs text-emerald-700 font-semibold">✓ Saved</span>
-                ) : (
-                  <span className="text-[11px] text-slate-400">No file chosen</span>
                 )}
 
-                <div className="flex items-center gap-1 shrink-0">
-                  <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-medium cursor-pointer transition-colors">
-                    <span>Browse</span>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      className="hidden"
+                <div className="flex items-center justify-between pt-1 gap-1">
+                  {item.file ? (
+                    <span className="text-xs text-emerald-700 font-semibold truncate max-w-[110px]">
+                      ✓ {item.file.name}
+                    </span>
+                  ) : savedDocument ? (
+                    <span className="text-xs text-emerald-700 font-semibold">✓ Saved</span>
+                  ) : (
+                    <span className="text-[11px] text-slate-400">No file chosen</span>
+                  )}
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <label className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded text-xs font-medium cursor-pointer transition-colors">
+                      <span>Browse</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        className="hidden"
+                        disabled={isSubmitting}
+                        onChange={(e) => handleAttachmentUpload(key, e.target.files?.[0] || null)}
+                      />
+                    </label>
+                    <button
+                      type="button"
                       disabled={isSubmitting}
-                      onChange={(e) => handleAttachmentUpload(key, e.target.files?.[0] || null)}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={() => {
-                      setActiveAttachmentKey(key);
-                      setActiveCameraModal('attachment');
-                    }}
-                    className="p-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs transition-colors cursor-pointer disabled:opacity-50"
-                    title={`Snap photo of ${item.title}`}
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
+                      onClick={() => {
+                        setActiveAttachmentKey(key);
+                        setActiveCameraModal('attachment');
+                      }}
+                      className="p-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded text-xs transition-colors cursor-pointer disabled:opacity-50"
+                      title={`Snap photo of ${item.title}`}
+                    >
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
