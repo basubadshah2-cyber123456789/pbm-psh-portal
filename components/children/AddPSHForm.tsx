@@ -3763,7 +3763,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   label="Year"
                   name={`appearance-year-${measurement.id}`}
                   type="number"
-                  min={1900}
+                  min={measurement.year && Number(measurement.year) < 2010 ? Number(measurement.year) : 2010}
                   max={new Date().getFullYear() + 1}
                   value={measurement.year}
                   onChange={(e) => updateAppearanceMeasurement(measurement.id, 'year', e.target.value)}
