@@ -135,9 +135,11 @@ export function ChildHistoryModal({ child, dossier, onClose }: ChildHistoryModal
     { title: 'School & Academic Records', entries: resultHistory },
     {
       title: 'Counselling Records',
-      entries: typeof notes.counsellingReport === 'string' && notes.counsellingReport.trim()
-        ? [{ report: notes.counsellingReport }]
-        : [],
+      entries: asEntries(notes.counsellingEntries).length > 0
+        ? asEntries(notes.counsellingEntries)
+        : typeof notes.counsellingReport === 'string' && notes.counsellingReport.trim()
+          ? [{ report: notes.counsellingReport }]
+          : [],
     },
     { title: 'Follow-up Records', entries: asEntries(notes.followUps) },
     { title: 'College & University Progress', entries: [

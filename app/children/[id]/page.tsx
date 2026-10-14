@@ -661,9 +661,21 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
           </Section>
         )}
 
-        {typeof psh?.counsellingReport === 'string' && psh.counsellingReport.trim() && (
-          <Section label="COUNSELLING" title="Counselling Report" tone="purple">
-            <p className="whitespace-pre-wrap text-sm text-slate-700">{psh.counsellingReport}</p>
+        {((Array.isArray(psh?.counsellingEntries) && psh.counsellingEntries.length > 0) ||
+          (typeof psh?.counsellingReport === 'string' && psh.counsellingReport.trim())) && (
+          <Section label="COUNSELLING" title="Counselling Records" tone="purple">
+            <div className="space-y-3">
+              {Array.isArray(psh?.counsellingEntries) && psh.counsellingEntries.length > 0
+                ? psh.counsellingEntries.map((entry: { id?: string; date?: string; details?: string }, index: number) => (
+                    <article key={entry.id || index} className="rounded-lg border border-purple-100 bg-white p-3">
+                      <p className="text-xs font-semibold text-slate-700">
+                        Counselling {index + 1}{entry.date ? ` · ${formatDate(entry.date)}` : ''}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-slate-600">{entry.details || 'No details recorded.'}</p>
+                    </article>
+                  ))
+                : <p className="whitespace-pre-wrap text-sm text-slate-700">{psh.counsellingReport}</p>}
+            </div>
           </Section>
         )}
 

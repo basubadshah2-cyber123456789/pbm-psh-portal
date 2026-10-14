@@ -402,6 +402,12 @@ interface ResultInfoRecord {
   subjectResults: SubjectResultRow[];
 }
 
+interface GeneralCounsellingEntry {
+  id: string;
+  date: string;
+  details: string;
+}
+
 interface AreaOfInterestYearRecord {
   year: number;
   areaOfInterest: string;
@@ -1276,7 +1282,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [resultExamType, setResultExamType] = useState<string>('');
   const [resultPassingScore, setResultPassingScore] = useState<string>('');
   const [resultInfoHistory, setResultInfoHistory] = useState<ResultInfoRecord[]>([]);
-  const [counsellingReport, setCounsellingReport] = useState<string>('');
+  const [counsellingEntries, setCounsellingEntries] = useState<GeneralCounsellingEntry[]>([]);
 
   const [subjectResults, setSubjectResults] = useState<SubjectResultRow[]>([
     { id: '1', subject: '', obtainedMarks: '', totalMarks: '' },
@@ -1598,7 +1604,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setResultPassingScore('');
       setSubjectResults([{ id: '1', subject: '', obtainedMarks: '', totalMarks: '' }]);
       setResultInfoHistory([]);
-      setCounsellingReport('');
+      setCounsellingEntries([]);
       setAreaOfInterest('');
       setAdditionalAreaOfInterestEntries([]);
       setAreaOfInterestHistory([]);
@@ -1899,17 +1905,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           : psh.resultInfo
             ? [psh.resultInfo]
             : [];
-        setCounsellingReport(
-          typeof psh.counsellingReport === 'string'
-            ? psh.counsellingReport
-            : Array.isArray(psh.counsellingEntries)
-              ? psh.counsellingEntries
-                  .map((entry: { date?: string; details?: string }) =>
-                    [entry.date, entry.details].filter(Boolean).join(' — ')
-                  )
-                  .filter(Boolean)
-                  .join('\n\n')
-              : ''
+        setCounsellingEntries(
+          Array.isArray(psh.counsellingEntries)
+            ? psh.counsellingEntries.map((entry: Partial<GeneralCounsellingEntry>, index: number) => ({
+                id: entry.id || `saved-general-counselling-${index}`,
+                date: entry.date || '',
+                details: entry.details || '',
+              }))
+            : typeof psh.counsellingReport === 'string' && psh.counsellingReport.trim()
+              ? [{ id: 'saved-counselling-report', date: '', details: psh.counsellingReport }]
+              : []
         );
         const normalizedResults: ResultInfoRecord[] = savedResults.map((entry: any, index: number) => ({
           id: typeof entry.id === 'string' ? entry.id : `saved-result-${index}`,
@@ -2163,7 +2168,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setResultPassingScore('');
     setResultEntryId('new-result');
     setResultInfoHistory([]);
-    setCounsellingReport('');
+    setCounsellingEntries([]);
     setFollowUpRecords([]);
     setCareerSetupAfterSave(false);
     setChildAfterCareerSetup(null);
@@ -3015,7 +3020,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         })),
         resultInfo: nextResultInfoHistory[0] || resultEntry,
         resultInfoHistory: nextResultInfoHistory,
-        counsellingReport: counsellingReport.trim(),
+        counsellingEntries: counsellingEntries.filter((entry) => entry.date || entry.details.trim()),
         followUps: followUpRecords,
         healthCare: {
           checkFrequency,
@@ -4560,17 +4565,65 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           </div>
         </div>
         <section className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3">
-          <label className="block text-xs font-semibold text-slate-700">
-            Counselling Report
-            <textarea
-              rows={4}
-              maxLength={5000}
-              value={counsellingReport}
-              onChange={(event) => setCounsellingReport(event.target.value)}
-              placeholder="Teacher's counselling report"
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal"
-            />
-          </label>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800">Counselling</h3>
+              <p className="mt-1 text-xs text-slate-600">Record teacher counselling dates and reports.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCounsellingEntries((current) => [
+                ...current,
+                { id: `${Date.now()}-${current.length}`, date: '', details: '' },
+              ])}
+              className="inline-flex items-center gap-1 rounded bg-[#0D5C3A] px-2.5 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0b4d30]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add New
+            </button>
+          </div>
+          {counsellingEntries.length === 0 ? (
+            <p className="text-xs text-slate-500">No counselling entries added.</p>
+          ) : (
+            <div className="space-y-3">
+              {counsellingEntries.map((entry, index) => (
+                <div key={entry.id} className="grid gap-3 rounded-lg border border-indigo-100 bg-white p-3 sm:grid-cols-[180px_1fr_auto] sm:items-start">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Counselling Date
+                    <input
+                      type="date"
+                      value={entry.date}
+                      onChange={(event) => setCounsellingEntries((current) => current.map((item) =>
+                        item.id === entry.id ? { ...item, date: event.target.value } : item
+                      ))}
+                      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Counselling Details
+                    <textarea
+                      rows={3}
+                      maxLength={3000}
+                      value={entry.details}
+                      onChange={(event) => setCounsellingEntries((current) => current.map((item) =>
+                        item.id === entry.id ? { ...item, details: event.target.value } : item
+                      ))}
+                      placeholder={`Teacher counselling report ${index + 1}`}
+                      className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-normal"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setCounsellingEntries((current) => current.filter((item) => item.id !== entry.id))}
+                    aria-label={`Remove counselling entry ${index + 1}`}
+                    className="mt-5 rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
