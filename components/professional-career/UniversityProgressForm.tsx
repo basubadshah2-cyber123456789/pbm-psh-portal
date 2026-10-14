@@ -8,6 +8,9 @@ interface SubjectMark {
   subject: string;
   totalMarks: string;
   obtainedMarks: string;
+  percentage?: string;
+  grade?: string;
+  result?: string;
 }
 
 interface CollegeLifeEntry {
@@ -54,6 +57,7 @@ interface UniversityCourse {
   grade: string;
   totalMarks: string;
   obtainedMarks: string;
+  percentage?: string;
 }
 
 interface FormValues {
@@ -97,11 +101,18 @@ const collegePrograms = [
 const collegeYears = ['1st Year', '2nd Year'];
 
 function newSubject(): SubjectMark {
-  return { id: crypto.randomUUID(), subject: '', totalMarks: '', obtainedMarks: '' };
+  return { id: crypto.randomUUID(), subject: '', totalMarks: '', obtainedMarks: '', grade: '', result: '' };
 }
 
 function markSum(subjects: SubjectMark[], key: 'totalMarks' | 'obtainedMarks'): number {
   return subjects.reduce((sum, subject) => sum + (Number(subject[key]) || 0), 0);
+}
+
+function subjectPercentage(subject: SubjectMark): string {
+  const totalMarks = Number(subject.totalMarks);
+  const obtainedMarks = Number(subject.obtainedMarks);
+  if (!Number.isFinite(totalMarks) || totalMarks <= 0 || !Number.isFinite(obtainedMarks) || obtainedMarks < 0) return '';
+  return ((obtainedMarks / totalMarks) * 100).toFixed(2);
 }
 
 function isUniversityLifeEntry(entry: CollegeLifeEntry): boolean {
@@ -264,7 +275,7 @@ export function CollegeLifeForm() {
 
           <div className="space-y-3">
             {subjects.map((subject, index) => (
-              <div key={subject.id} className="grid gap-3 rounded-xl border border-emerald-100 bg-white p-3 sm:grid-cols-[minmax(0,1fr)_150px_150px_auto] sm:items-end">
+              <div key={subject.id} className="grid gap-3 rounded-xl border border-emerald-100 bg-white p-3 lg:grid-cols-[minmax(0,1fr)_110px_120px_105px_85px_105px_auto] lg:items-end">
                 <label className="block text-xs font-semibold text-slate-700">
                   Subject {index + 1} <span className="text-red-600">*</span>
                   <input required maxLength={100} value={subject.subject} onChange={(event) => updateSubject(subject.id, 'subject', event.target.value)} className={inputClassName} />
@@ -276,6 +287,22 @@ export function CollegeLifeForm() {
                 <label className="block text-xs font-semibold text-slate-700">
                   Obtained Marks <span className="text-red-600">*</span>
                   <input required type="number" min="0" step="any" value={subject.obtainedMarks} onChange={(event) => updateSubject(subject.id, 'obtainedMarks', event.target.value)} className={inputClassName} />
+                </label>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Percentage
+                  <input readOnly value={subjectPercentage(subject)} className={`${inputClassName} bg-slate-100`} />
+                </label>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Grade
+                  <input maxLength={10} value={subject.grade || ''} onChange={(event) => updateSubject(subject.id, 'grade', event.target.value)} className={inputClassName} />
+                </label>
+                <label className="block text-xs font-semibold text-slate-700">
+                  Pass / Fail
+                  <select value={subject.result || ''} onChange={(event) => updateSubject(subject.id, 'result', event.target.value)} className={inputClassName}>
+                    <option value="">Select result</option>
+                    <option value="Pass">Pass</option>
+                    <option value="Fail">Fail</option>
+                  </select>
                 </label>
                 <button type="button" onClick={() => setSubjects((current) => current.length > 1 ? current.filter((item) => item.id !== subject.id) : current)} disabled={subjects.length === 1} aria-label={`Remove subject ${index + 1}`} className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30">
                   <Trash2 className="h-4 w-4" />
@@ -357,9 +384,9 @@ export function CollegeLifeForm() {
               </dl>
               {entry.subjects?.length ? (
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[360px] text-left text-xs">
-                    <thead className="text-slate-500"><tr><th className="pb-2 pr-3">Subject</th><th className="pb-2 pr-3">Total Marks</th><th className="pb-2">Obtained Marks</th></tr></thead>
-                    <tbody>{entry.subjects.map((subject) => <tr key={subject.id} className="border-t border-emerald-100"><td className="py-2 pr-3 font-semibold text-slate-700">{subject.subject}</td><td className="py-2 pr-3">{subject.totalMarks}</td><td className="py-2">{subject.obtainedMarks}</td></tr>)}</tbody>
+                  <table className="w-full min-w-[700px] text-left text-xs">
+                    <thead className="text-slate-500"><tr><th className="pb-2 pr-3">Subject</th><th className="pb-2 pr-3">Total Marks</th><th className="pb-2 pr-3">Obtained Marks</th><th className="pb-2 pr-3">Percentage</th><th className="pb-2 pr-3">Grade</th><th className="pb-2">Pass / Fail</th></tr></thead>
+                    <tbody>{entry.subjects.map((subject) => <tr key={subject.id} className="border-t border-emerald-100"><td className="py-2 pr-3 font-semibold text-slate-700">{subject.subject}</td><td className="py-2 pr-3">{subject.totalMarks}</td><td className="py-2 pr-3">{subject.obtainedMarks}</td><td className="py-2 pr-3">{subject.percentage ?? subjectPercentage(subject)}%</td><td className="py-2 pr-3">{subject.grade || '—'}</td><td className="py-2">{subject.result || '—'}</td></tr>)}</tbody>
                   </table>
                 </div>
               ) : null}
@@ -426,6 +453,13 @@ const initialUniversityForm: UniversityFormValues = {
 
 function newUniversityCourse(): UniversityCourse {
   return { id: crypto.randomUUID(), courseName: '', creditHours: '', grade: '', totalMarks: '', obtainedMarks: '' };
+}
+
+function coursePercentage(course: UniversityCourse): string {
+  const totalMarks = Number(course.totalMarks);
+  const obtainedMarks = Number(course.obtainedMarks);
+  if (!course.totalMarks || !course.obtainedMarks || !Number.isFinite(totalMarks) || totalMarks <= 0 || !Number.isFinite(obtainedMarks) || obtainedMarks < 0) return '';
+  return ((obtainedMarks / totalMarks) * 100).toFixed(2);
 }
 
 const provinces = ['Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan', 'Islamabad Capital Territory', 'Azad Jammu and Kashmir', 'Gilgit-Baltistan'];
@@ -571,7 +605,7 @@ export function UniversityLifeForm() {
             </label>
             <label className="block text-sm font-semibold text-slate-700">Degree Level <span className="text-red-600">*</span>
               <select required value={form.degreeLevel} onChange={(event) => setField('degreeLevel', event.target.value)} className={inputClassName}>
-                <option value="">Select degree level</option><option>Associate Degree</option><option>Bachelor / Undergraduate</option><option>Professional Degree</option><option>Other</option>
+                <option value="">Select degree level</option><option>Associate Degree</option><option>Bachelor / Undergraduate</option><option>MS</option><option>MPhil</option><option>PhD</option><option>Professional Degree</option><option>Other</option>
               </select>
             </label>
             <label className="block text-sm font-semibold text-slate-700">Degree / Program <span className="text-red-600">*</span>
@@ -630,12 +664,13 @@ export function UniversityLifeForm() {
           </div>
           <div className="space-y-3">
             {courses.map((course, index) => (
-              <div key={course.id} className="grid gap-3 rounded-xl border border-sky-100 bg-white p-3 sm:grid-cols-[minmax(0,1.4fr)_100px_100px_110px_110px_auto] sm:items-end">
+              <div key={course.id} className="grid gap-3 rounded-xl border border-sky-100 bg-white p-3 xl:grid-cols-[minmax(0,1.4fr)_90px_90px_100px_100px_100px_auto] xl:items-end">
                 <label className="block text-xs font-semibold text-slate-700">Course / Subject {index + 1} <span className="text-red-600">*</span><input required maxLength={100} value={course.courseName} onChange={(event) => updateCourse(course.id, 'courseName', event.target.value)} className={inputClassName} /></label>
                 <label className="block text-xs font-semibold text-slate-700">Credit Hours <input type="number" min="0.5" max="20" step="0.5" value={course.creditHours} onChange={(event) => updateCourse(course.id, 'creditHours', event.target.value)} className={inputClassName} /></label>
                 <label className="block text-xs font-semibold text-slate-700">Grade <input maxLength={10} value={course.grade} onChange={(event) => updateCourse(course.id, 'grade', event.target.value)} className={inputClassName} placeholder="A, B+" /></label>
                 <label className="block text-xs font-semibold text-slate-700">Total Marks <input type="number" min="1" step="any" value={course.totalMarks} onChange={(event) => updateCourse(course.id, 'totalMarks', event.target.value)} className={inputClassName} /></label>
                 <label className="block text-xs font-semibold text-slate-700">Obtained <input type="number" min="0" step="any" value={course.obtainedMarks} onChange={(event) => updateCourse(course.id, 'obtainedMarks', event.target.value)} className={inputClassName} /></label>
+                <label className="block text-xs font-semibold text-slate-700">Percentage <input readOnly value={coursePercentage(course)} className={`${inputClassName} bg-slate-100`} /></label>
                 <button type="button" onClick={() => setCourses((current) => current.length > 1 ? current.filter((item) => item.id !== course.id) : current)} disabled={courses.length === 1} aria-label={`Remove course ${index + 1}`} className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"><Trash2 className="h-4 w-4" /></button>
               </div>
             ))}
@@ -677,9 +712,9 @@ export function UniversityLifeForm() {
                       ['Remarks', entry.remarks],
                     ].map(([label, value]) => value ? <div key={label}><dt className="text-xs text-slate-500">{label}</dt><dd className="font-semibold text-slate-700">{value}</dd></div> : null)}
                   </dl>
-                  {entry.courses?.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[540px] text-left text-xs">
-                    <thead className="text-slate-500"><tr><th className="pb-2 pr-3">Course</th><th className="pb-2 pr-3">Credit Hours</th><th className="pb-2 pr-3">Grade</th><th className="pb-2 pr-3">Total Marks</th><th className="pb-2">Obtained</th></tr></thead>
-                    <tbody>{entry.courses.map((course) => <tr key={course.id} className="border-t border-sky-100"><td className="py-2 pr-3 font-semibold text-slate-700">{course.courseName}</td><td className="py-2 pr-3">{course.creditHours || '—'}</td><td className="py-2 pr-3">{course.grade || '—'}</td><td className="py-2 pr-3">{course.totalMarks || '—'}</td><td className="py-2">{course.obtainedMarks || '—'}</td></tr>)}</tbody>
+                  {entry.courses?.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[640px] text-left text-xs">
+                    <thead className="text-slate-500"><tr><th className="pb-2 pr-3">Course</th><th className="pb-2 pr-3">Credit Hours</th><th className="pb-2 pr-3">Grade</th><th className="pb-2 pr-3">Total Marks</th><th className="pb-2 pr-3">Obtained</th><th className="pb-2">Percentage</th></tr></thead>
+                    <tbody>{entry.courses.map((course) => <tr key={course.id} className="border-t border-sky-100"><td className="py-2 pr-3 font-semibold text-slate-700">{course.courseName}</td><td className="py-2 pr-3">{course.creditHours || '—'}</td><td className="py-2 pr-3">{course.grade || '—'}</td><td className="py-2 pr-3">{course.totalMarks || '—'}</td><td className="py-2 pr-3">{course.obtainedMarks || '—'}</td><td className="py-2">{course.percentage ?? coursePercentage(course)}{course.percentage || coursePercentage(course) ? '%' : '—'}</td></tr>)}</tbody>
                   </table></div> : null}
                   {entry.resultDocument && <a href={`/api/pbm/career/university-progress?documentId=${encodeURIComponent(entry.resultDocument.id)}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-sky-800 underline underline-offset-2"><FileText className="h-4 w-4" /> View transcript: {entry.resultDocument.fileName}</a>}
                 </article>

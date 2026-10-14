@@ -24,7 +24,7 @@ const allowedPrograms = new Set([
 const allowedCollegeYears = new Set(['1st Year', '2nd Year']);
 const allowedCollegeTypes = new Set(['Government', 'Private']);
 const allowedUniversityTypes = new Set(['Public Sector', 'Private', 'Affiliated College']);
-const allowedDegreeLevels = new Set(['Associate Degree', 'Bachelor / Undergraduate', 'Professional Degree', 'Other']);
+const allowedDegreeLevels = new Set(['Associate Degree', 'Bachelor / Undergraduate', 'MS', 'MPhil', 'PhD', 'Professional Degree', 'Other']);
 const allowedDegreePrograms = new Set([
   'Associate Degree', 'BA / BS Arts and Humanities', 'BS Computer Science / IT', 'BS Natural Sciences',
   'BBA / Business Administration', 'BCom / Accounting and Finance', 'LLB / Law', 'MBBS', 'BDS',
@@ -42,6 +42,9 @@ interface SubjectMark {
   subject: string;
   totalMarks: string;
   obtainedMarks: string;
+  percentage: string;
+  grade: string;
+  result: string;
 }
 
 interface UniversityCourse {
@@ -51,6 +54,7 @@ interface UniversityCourse {
   grade: string;
   totalMarks: string;
   obtainedMarks: string;
+  percentage: string;
 }
 
 function validFileSignature(bytes: Uint8Array, contentType: string): boolean {
@@ -83,18 +87,25 @@ function validateSubjects(value: FormDataEntryValue | null): SubjectMark[] | nul
     const subject = item as Record<string, unknown>;
     if (
       typeof subject.subject !== 'string' || !subject.subject.trim() || subject.subject.length > 100 ||
-      typeof subject.totalMarks !== 'string' || typeof subject.obtainedMarks !== 'string'
+      typeof subject.totalMarks !== 'string' || typeof subject.obtainedMarks !== 'string' ||
+      (subject.grade !== undefined && (typeof subject.grade !== 'string' || subject.grade.length > 10)) ||
+      (subject.result !== undefined && typeof subject.result !== 'string')
     ) return null;
     const totalMarks = Number(subject.totalMarks);
     const obtainedMarks = Number(subject.obtainedMarks);
     if (!Number.isFinite(totalMarks) || totalMarks <= 0 || !Number.isFinite(obtainedMarks) || obtainedMarks < 0 || obtainedMarks > totalMarks) {
       return null;
     }
+    const result = typeof subject.result === 'string' ? subject.result.trim() : '';
+    if (result && result !== 'Pass' && result !== 'Fail') return null;
     subjects.push({
       id: randomUUID(),
       subject: subject.subject.trim(),
       totalMarks: String(totalMarks),
       obtainedMarks: String(obtainedMarks),
+      percentage: ((obtainedMarks / totalMarks) * 100).toFixed(2),
+      grade: typeof subject.grade === 'string' ? subject.grade.trim() : '',
+      result,
     });
   }
   return subjects;
@@ -136,6 +147,9 @@ function validateUniversityCourses(value: FormDataEntryValue | null): University
       grade: course.grade.trim(),
       totalMarks: course.totalMarks,
       obtainedMarks: course.obtainedMarks,
+      percentage: course.totalMarks && course.obtainedMarks
+        ? ((Number(course.obtainedMarks) / Number(course.totalMarks)) * 100).toFixed(2)
+        : '',
     });
   }
   return courses;
