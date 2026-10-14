@@ -83,6 +83,18 @@ const initialForm: FormValues = {
 };
 
 const inputClassName = 'mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100';
+const collegePrograms = [
+  'FSc (Pre-Medical)',
+  'FSc (Pre-Engineering)',
+  'ICS (Computer Science)',
+  'I.Com (Commerce)',
+  'FA (Arts / Humanities)',
+  'General Science',
+  'DAE (Diploma of Associate Engineering)',
+  'A Levels',
+  'Other',
+];
+const collegeYears = ['1st Year', '2nd Year'];
 
 function newSubject(): SubjectMark {
   return { id: crypto.randomUUID(), subject: '', totalMarks: '', obtainedMarks: '' };
@@ -193,7 +205,7 @@ export function CollegeLifeForm() {
             <input required maxLength={200} value={form.fatherName} onChange={(event) => setForm((current) => ({ ...current, fatherName: event.target.value }))} className={inputClassName} />
           </label>
           <label className="block text-sm font-semibold text-slate-700">
-            PSH Registration No. <span className="text-red-600">*</span>
+            PBM Registration No. <span className="text-red-600">*</span>
             <input required maxLength={100} value={form.pshRegistrationNumber} onChange={(event) => setForm((current) => ({ ...current, pshRegistrationNumber: event.target.value }))} className={inputClassName} />
           </label>
           <label className="block text-sm font-semibold text-slate-700">
@@ -212,19 +224,22 @@ export function CollegeLifeForm() {
             Program <span className="text-red-600">*</span>
             <select required value={form.program} onChange={(event) => setForm((current) => ({ ...current, program: event.target.value }))} className={inputClassName}>
               <option value="">Select program</option>
-              <option value="Medical">Medical</option>
-              <option value="Engineering">Engineering</option>
-              <option value="BS / General">BS / General</option>
-              <option value="Commerce">Commerce</option>
+              {collegePrograms.map((program) => <option key={program} value={program}>{program}</option>)}
             </select>
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Class / Year <span className="text-red-600">*</span>
-            <input required maxLength={100} placeholder="For example, 1st Year or 3rd Semester" value={form.classYear} onChange={(event) => setForm((current) => ({ ...current, classYear: event.target.value }))} className={inputClassName} />
+            <select required value={form.classYear} onChange={(event) => setForm((current) => ({ ...current, classYear: event.target.value }))} className={inputClassName}>
+              <option value="">Select year</option>
+              {collegeYears.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Roll No. <span className="text-red-600">*</span>
-            <input required maxLength={100} value={form.rollNumber} onChange={(event) => setForm((current) => ({ ...current, rollNumber: event.target.value }))} className={inputClassName} />
+            <select required value={form.rollNumber} onChange={(event) => setForm((current) => ({ ...current, rollNumber: event.target.value }))} className={inputClassName}>
+              <option value="">Select year</option>
+              {collegeYears.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Semester / Academic Year <span className="text-red-600">*</span>
@@ -323,7 +338,7 @@ export function CollegeLifeForm() {
                 {[
                   ['Student', entry.studentName],
                   ['Father', entry.fatherName],
-                  ['PSH Registration No.', entry.pshRegistrationNumber],
+                  ['PBM Registration No.', entry.pshRegistrationNumber],
                   ['Roll No.', entry.rollNumber],
                   ['Year of Passing', entry.passingYear],
                   ['Total Marks', entry.totalMarks],

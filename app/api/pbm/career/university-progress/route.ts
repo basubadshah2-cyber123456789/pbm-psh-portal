@@ -3,10 +3,26 @@ import { del, get, put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { verifyPbmChildSession } from '@/lib/pbm-auth';
 import { getPbmPrismaReady } from '@/lib/pbm-db';
+import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 const MAX_DOCUMENT_BYTES = 12 * 1024 * 1024;
 const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
-const allowedPrograms = new Set(['Medical', 'Engineering', 'BS / General', 'Commerce']);
+const allowedPrograms = new Set([
+  'FSc (Pre-Medical)',
+  'FSc (Pre-Engineering)',
+  'ICS (Computer Science)',
+  'I.Com (Commerce)',
+  'FA (Arts / Humanities)',
+  'General Science',
+  'DAE (Diploma of Associate Engineering)',
+  'A Levels',
+  'Other',
+  'Medical',
+  'Engineering',
+  'BS / General',
+  'Commerce',
+]);
+const allowedCollegeYears = new Set(['1st Year', '2nd Year']);
 const allowedCollegeTypes = new Set(['Government', 'Private']);
 const allowedUniversityTypes = new Set(['Public Sector', 'Private', 'Affiliated College']);
 const allowedDegreeLevels = new Set(['Associate Degree', 'Bachelor / Undergraduate', 'Professional Degree', 'Other']);
@@ -188,7 +204,7 @@ export async function POST(request: Request) {
       pshRegistrationNumber: readText(formData, 'pshRegistrationNumber', 100),
     };
     if (Object.values(commonData).some((value) => value === null || value === '')) {
-      return NextResponse.json({ error: 'Complete the student information, including PSH Registration No.' }, { status: 400 });
+      return NextResponse.json({ error: 'Complete the student information, including PBM Registration No.' }, { status: 400 });
     }
 
     const collegeData = {
@@ -229,6 +245,8 @@ export async function POST(request: Request) {
       if (
         !allowedCollegeTypes.has(collegeData.collegeType!) ||
         !allowedPrograms.has(collegeData.program!) ||
+        !allowedCollegeYears.has(collegeData.classYear!) ||
+        !allowedCollegeYears.has(collegeData.rollNumber!) ||
         !/^\d{4}$/.test(collegeData.passingYear!) ||
         Number(collegeData.passingYear) < 1900 ||
         Number(collegeData.passingYear) > 2100
@@ -282,6 +300,7 @@ export async function POST(request: Request) {
     if (!validFileSignature(bytes, file.type)) {
       return NextResponse.json({ error: 'The selected result file does not match its declared file type.' }, { status: 400 });
     }
+    if (file.type.startsWith('image/')) await moderateImage(bytes, file.type);
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json({ error: 'PBM document storage is not configured.' }, { status: 503 });
     }
@@ -353,6 +372,8 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.message === 'PBM_CHILD_SESSION_EXPIRED') {
       return NextResponse.json({ error: 'Your session is no longer valid. Please sign in again.' }, { status: 401 });
     }
+    const moderationFailure = imageModerationFailure(error);
+    if (moderationFailure) return moderationFailure;
     console.error('Save PBM university progress error:', error);
     return NextResponse.json({ error: 'Unable to save your College Life record.' }, { status: 500 });
   }
