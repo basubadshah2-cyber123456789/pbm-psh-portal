@@ -570,7 +570,7 @@ const DEFAULT_SEED_CHILDREN: EnrolledChild[] = [
         ],
       },
       reports: {
-        category: 'Islamic',
+        category: 'Islamic Knowledge',
         details: 'Memorizing Surahs accurately and regular in morning prayers.',
       },
       areaOfInterest: 'Reading, Crafts, and Quran Studies.',

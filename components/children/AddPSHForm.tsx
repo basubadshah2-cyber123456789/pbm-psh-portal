@@ -1984,13 +1984,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         }
 
         if (psh.reports) {
-          setReportCategory(psh.reports.category || '');
+          setReportCategory(psh.reports.category === 'Islamic' ? 'Islamic Knowledge' : psh.reports.category || '');
           setReportDetails(psh.reports.details || '');
           setAdditionalReportEntries(
             Array.isArray(psh.reports.additionalEntries)
               ? psh.reports.additionalEntries.map((entry: Partial<ReportEntry>, index: number) => ({
                   id: entry.id || `saved-report-${index}`,
-                  category: entry.category || '',
+                  category: entry.category === 'Islamic' ? 'Islamic Knowledge' : entry.category || '',
                   details: entry.details || '',
                 }))
               : []
@@ -4645,7 +4645,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Check Frequency"
             value={checkFrequency}
             onChange={(e) => setCheckFrequency(e.target.value)}
-            options={['Daily', 'Weekly', 'Monthly']}
+            options={['Daily', 'Weekly', 'Monthly', 'Annual', 'Bi-Annual']}
           />
           <FormInput
             placeholder="Disease"
@@ -4705,7 +4705,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 label="Check Frequency"
                 value={entry.checkFrequency}
                 onChange={(e) => updateHealthCareEntry(entry.id, 'checkFrequency', e.target.value)}
-                options={['Daily', 'Weekly', 'Monthly']}
+                options={['Daily', 'Weekly', 'Monthly', 'Annual', 'Bi-Annual']}
               />
               <FormInput
                 placeholder="Disease"
@@ -4812,7 +4812,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Complain Type"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
-            options={['Discipline', 'Behavior', 'Academic', 'Psychological', 'Islamic']}
+            options={['Discipline', 'Behavior', 'Academic', 'Psychological', 'Islamic Knowledge']}
           />
         </div>
 
@@ -4844,7 +4844,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 label="Complain Type"
                 value={entry.category}
                 onChange={(e) => updateReportEntry(entry.id, 'category', e.target.value)}
-                options={['Discipline', 'Behavior', 'Academic', 'Psychological', 'Islamic']}
+                options={['Discipline', 'Behavior', 'Academic', 'Psychological', 'Islamic Knowledge']}
               />
               <textarea
                 rows={3}
