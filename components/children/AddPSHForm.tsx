@@ -3164,18 +3164,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               documentType: 'EXPULSION_COMMITTEE_MINUTES',
             }]
           : []),
-        ...(disciplinaryProceeding.type === 'DROPPED' && droppedAffidavitFile
-          ? [{
-              file: droppedAffidavitFile,
-              title: 'Affidavit',
-              documentType: 'DROPPED_AFFIDAVIT',
-            }]
-          : []),
         ...(disciplinaryProceeding.type === 'DROPPED' && droppedApplicationFile
           ? [{
               file: droppedApplicationFile,
               title: 'Application',
               documentType: 'DROPPED_APPLICATION',
+            }]
+          : []),
+        ...(disciplinaryProceeding.type === 'DROPPED' && droppedAffidavitFile
+          ? [{
+              file: droppedAffidavitFile,
+              title: 'Affidavit',
+              documentType: 'DROPPED_AFFIDAVIT',
             }]
           : []),
         ...(disciplinaryProceeding.type === 'EXPELLED' && expelledAffidavitFile
@@ -5426,17 +5426,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 {([
                   ['name', 'Name'],
                   ['fatherName', 'Father Name'],
-                  ['pshName', 'PBM Sweet Home Dropped From'],
-                  ['pshRegistrationNumber', 'PSH Registration'],
+                  ['pshName', 'PBM Sweet Home'],
+                  ['pshRegistrationNumber', 'PBM Registration No.'],
                   ['className', 'Class'],
-                  ['classSection', 'Class Section'],
+                  ['classSection', 'Section'],
                   ['rollNumber', 'Roll No.'],
                   ['attendance', 'Attendance'],
                   ['instituteName', 'Institute'],
                   ['totalMarks', 'Total Marks'],
                   ['obtainedMarks', 'Obtained Marks'],
-                  ['date', 'Date of Dropped'],
-                  ['reason', 'Reason of Dropped'],
+                  ['date', 'Date of Dropped out'],
+                  ['reason', 'Reason of Dropped out'],
                   ['remarks', 'Remarks'],
                 ] as const).map(([field, label]) => (
                   <FormInput
@@ -5535,12 +5535,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:col-span-2 lg:col-span-3">
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-slate-800">Attachments</h3>
-                    <p className="mt-1 text-xs font-normal text-slate-600">Upload an affidavit and application (PDF or image, up to 12 MB each).</p>
+                    <p className="mt-1 text-xs font-normal text-slate-600">Upload an application and affidavit (PDF or image, up to 12 MB each).</p>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {([
-                      { title: 'Affidavit', documentType: 'DROPPED_AFFIDAVIT', file: droppedAffidavitFile, setFile: setDroppedAffidavitFile },
                       { title: 'Application', documentType: 'DROPPED_APPLICATION', file: droppedApplicationFile, setFile: setDroppedApplicationFile },
+                      { title: 'Affidavit', documentType: 'DROPPED_AFFIDAVIT', file: droppedAffidavitFile, setFile: setDroppedAffidavitFile },
                     ] as const).map((attachment) => {
                       const savedDocument = getSavedDocument(attachment.documentType);
                       return (
