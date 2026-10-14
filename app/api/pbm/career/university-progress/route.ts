@@ -3,7 +3,6 @@ import { del, get, put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { verifyPbmChildSession } from '@/lib/pbm-auth';
 import { getPbmPrismaReady } from '@/lib/pbm-db';
-import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 const MAX_DOCUMENT_BYTES = 12 * 1024 * 1024;
 const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
@@ -300,7 +299,6 @@ export async function POST(request: Request) {
     if (!validFileSignature(bytes, file.type)) {
       return NextResponse.json({ error: 'The selected result file does not match its declared file type.' }, { status: 400 });
     }
-    if (file.type.startsWith('image/')) await moderateImage(bytes, file.type);
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json({ error: 'PBM document storage is not configured.' }, { status: 503 });
     }
@@ -372,8 +370,6 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.message === 'PBM_CHILD_SESSION_EXPIRED') {
       return NextResponse.json({ error: 'Your session is no longer valid. Please sign in again.' }, { status: 401 });
     }
-    const moderationFailure = imageModerationFailure(error);
-    if (moderationFailure) return moderationFailure;
     console.error('Save PBM university progress error:', error);
     return NextResponse.json({ error: 'Unable to save your College Life record.' }, { status: 500 });
   }
