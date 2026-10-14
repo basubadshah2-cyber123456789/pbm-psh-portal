@@ -3178,18 +3178,18 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               documentType: 'DROPPED_AFFIDAVIT',
             }]
           : []),
-        ...(disciplinaryProceeding.type === 'EXPELLED' && expelledAffidavitFile
-          ? [{
-              file: expelledAffidavitFile,
-              title: 'Affidavit',
-              documentType: 'EXPELLED_AFFIDAVIT',
-            }]
-          : []),
         ...(disciplinaryProceeding.type === 'EXPELLED' && expelledApplicationFile
           ? [{
               file: expelledApplicationFile,
               title: 'Application',
               documentType: 'EXPELLED_APPLICATION',
+            }]
+          : []),
+        ...(disciplinaryProceeding.type === 'EXPELLED' && expelledAffidavitFile
+          ? [{
+              file: expelledAffidavitFile,
+              title: 'Affidavit',
+              documentType: 'EXPELLED_AFFIDAVIT',
             }]
           : []),
         ...Object.values(attachments).map((attachment) => ({
@@ -5206,7 +5206,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   ['name', 'Name'],
                   ['fatherName', 'Father Name'],
                   ['pshName', 'PBM Sweet Home'],
-                  ['pshRegistrationNumber', 'PSH Registration No.'],
+                  ['pshRegistrationNumber', 'PBM Registration No.'],
                   ['className', 'Class'],
                   ['rollNumber', 'Roll No.'],
                   ['instituteName', 'Institute'],
@@ -5368,12 +5368,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:col-span-2 lg:col-span-3">
                   <div className="mb-3">
                     <h3 className="text-sm font-bold text-slate-800">Attachments</h3>
-                    <p className="mt-1 text-xs font-normal text-slate-600">Upload an affidavit and application (PDF or image, up to 12 MB each).</p>
+                    <p className="mt-1 text-xs font-normal text-slate-600">Upload an application and affidavit (PDF or image, up to 12 MB each).</p>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {([
-                      { title: 'Affidavit', documentType: 'EXPELLED_AFFIDAVIT', file: expelledAffidavitFile, setFile: setExpelledAffidavitFile },
                       { title: 'Application', documentType: 'EXPELLED_APPLICATION', file: expelledApplicationFile, setFile: setExpelledApplicationFile },
+                      { title: 'Affidavit', documentType: 'EXPELLED_AFFIDAVIT', file: expelledAffidavitFile, setFile: setExpelledAffidavitFile },
                     ] as const).map((attachment) => {
                       const savedDocument = getSavedDocument(attachment.documentType);
                       return (
