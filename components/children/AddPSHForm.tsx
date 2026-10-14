@@ -3384,13 +3384,6 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             >
               ⚡ Replace Seat
             </button>
-            <button
-              type="button"
-              onClick={() => handleAutoFillDemo('posthumous')}
-              className="rounded-lg bg-violet-600 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-violet-700"
-            >
-              ⚡ Posthumous
-            </button>
           </div>
         </div>
       </div>
