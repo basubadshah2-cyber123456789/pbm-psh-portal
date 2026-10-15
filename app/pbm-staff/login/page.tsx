@@ -82,6 +82,9 @@ export default function PbmStaffLoginPage() {
         <p className="mt-5 text-center text-xs text-slate-500">
           First-time setup? <Link href="/pbm-staff/setup" className="font-semibold text-emerald-700 hover:underline">Create the PBM administrator account</Link>
         </p>
+        <p className="mt-3 text-center text-xs font-medium text-slate-500">
+          Developed by Haider Bhatti
+        </p>
       </section>
     </main>
   );
