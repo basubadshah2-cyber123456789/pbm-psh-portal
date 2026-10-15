@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test tests/follow-up.test.ts",
+    "test": "tsx --test tests/follow-up.test.ts tests/image-moderation.test.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

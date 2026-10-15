@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { fetchChildDocument, removeChildDocument, storeChildDocument } from '@/lib/child-document';
+import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 const viewRoles: Role[] = [Role.INCHARGE, Role.ACCOUNT_ASSISTANT, Role.CLERK, Role.MOTHER_MAID];
 const manageRoles: Role[] = [Role.INCHARGE, Role.ACCOUNT_ASSISTANT, Role.CLERK];
@@ -18,6 +19,8 @@ async function authorized(id: string, manage = false) {
 }
 
 function failure(error: unknown) {
+  const moderationFailure = imageModerationFailure(error);
+  if (moderationFailure) return moderationFailure;
   if (error instanceof Error && error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Child not found' }, { status: 404 });
   if (error instanceof Error && error.message === 'UNAUTHORIZED') return NextResponse.json({ error: 'Unauthorized to access child documents' }, { status: 403 });
   if (error instanceof Error && error.message === 'CHILD_DOCUMENT_STORAGE_NOT_CONFIGURED') return NextResponse.json({ error: 'Document storage is not configured' }, { status: 503 });
@@ -52,6 +55,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const title = String(formData.get('title') || '').trim();
     const documentType = String(formData.get('documentType') || 'OTHER').trim();
     if (!(file instanceof File) || !title) return NextResponse.json({ error: 'Document title and file are required' }, { status: 400 });
+    if (file.type.startsWith('image/')) {
+      await moderateImage(new Uint8Array(await file.arrayBuffer()), file.type);
+    } else if (file.type === 'application/pdf') {
+      const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      if (new TextDecoder().decode(header) !== '%PDF-') {
+        return NextResponse.json({ error: 'The selected file does not match its declared file type' }, { status: 400 });
+      }
+    }
     const fileUrl = await storeChildDocument(file, id);
     const document = await prisma.childDocument.create({ data: { childId: id, title, documentType, fileUrl, fileSize: `${Math.round(file.size / 1024)} KB` } });
     await logAudit({ userId: user.id, userEmail: user.email, action: 'UPLOAD_CHILD_DOCUMENT', module: 'CHILDREN', recordId: document.id, details: `Uploaded ${documentType} document for ${child.fullName} (${child.childId})` });

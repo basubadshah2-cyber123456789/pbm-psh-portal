@@ -3,6 +3,7 @@ import { del, get, put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { getPbmStaffSession } from '@/lib/pbm-auth';
 import { getPbmPrismaReady } from '@/lib/pbm-db';
+import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 const MAX_DOCUMENT_BYTES = 12 * 1024 * 1024;
 const allowedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
@@ -50,6 +51,7 @@ export async function POST(
     if (!validFileSignature(bytes, file.type)) {
       return NextResponse.json({ error: 'The selected file does not match its declared file type.' }, { status: 400 });
     }
+    if (file.type.startsWith('image/')) await moderateImage(bytes, file.type);
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json({ error: 'PBM document storage is not configured.' }, { status: 503 });
     }
@@ -74,6 +76,8 @@ export async function POST(
     if (!rows[0]) throw new Error('PBM document metadata insert returned no row.');
     return NextResponse.json({ success: true, document: rows[0] }, { status: 201 });
   } catch (error) {
+    const moderationFailure = imageModerationFailure(error);
+    if (moderationFailure) return moderationFailure;
     if (blobUrl && process.env.BLOB_READ_WRITE_TOKEN) {
       await del(blobUrl, { token: process.env.BLOB_READ_WRITE_TOKEN }).catch((cleanupError: unknown) => {
         console.error('Clean up unattached PBM document error:', cleanupError);

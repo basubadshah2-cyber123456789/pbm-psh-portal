@@ -23,6 +23,9 @@ const allowedPrograms = new Set([
 ]);
 const allowedCollegeYears = new Set(['1st Year', '2nd Year']);
 const allowedCollegeTypes = new Set(['Government', 'Private']);
+const allowedCollegeSponsorshipSources = new Set(['Sponsored by PBM', 'Sponsored by Donor']);
+const allowedDisciplinaryTypes = new Set(['DROPPED', 'EXPELLED']);
+const allowedDisciplinaryApprovals = new Set(['Yes', 'No']);
 const allowedUniversityTypes = new Set(['Public Sector', 'Private', 'Affiliated College']);
 const allowedDegreeLevels = new Set(['Associate Degree', 'Bachelor / Undergraduate', 'MS', 'MPhil', 'PhD', 'Professional Degree', 'Other']);
 const allowedDegreePrograms = new Set([
@@ -57,6 +60,43 @@ interface UniversityCourse {
   percentage: string;
 }
 
+interface CounsellingEntry {
+  id: string;
+  date: string;
+  details: string;
+}
+
+interface CollegeDisciplinaryProceeding {
+  type: 'DROPPED' | 'EXPELLED';
+  name: string;
+  fatherName: string;
+  pshName: string;
+  className: string;
+  classSection: string;
+  rollNumber: string;
+  attendance: string;
+  pshRegistrationNumber: string;
+  instituteName: string;
+  totalMarks: string;
+  obtainedMarks: string;
+  reason: string;
+  date: string;
+  approved: string;
+  remarks: string;
+  expulsionCommitteeMinutes: string;
+}
+
+interface UploadedDisciplinaryDocument {
+  id: string;
+  title: string;
+  documentType: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  bytes: Uint8Array;
+  blobUrl?: string;
+}
+
 function validFileSignature(bytes: Uint8Array, contentType: string): boolean {
   if (contentType === 'application/pdf') return new TextDecoder().decode(bytes.slice(0, 5)) === '%PDF-';
   if (contentType === 'image/jpeg') return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
@@ -70,6 +110,74 @@ function readText(formData: FormData, key: string, maxLength: number): string | 
   const value = formData.get(key);
   if (typeof value !== 'string' || value.length > maxLength) return null;
   return value.trim();
+}
+
+function validateCounsellingEntries(value: FormDataEntryValue | null): CounsellingEntry[] | null {
+  if (value === null) return [];
+  if (typeof value !== 'string') return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed) || parsed.length > 100) return null;
+  const entries: CounsellingEntry[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+    const entry = item as Record<string, unknown>;
+    if (
+      typeof entry.date !== 'string' ||
+      (entry.date !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) ||
+      typeof entry.details !== 'string' ||
+      entry.details.length > 3000
+    ) return null;
+    entries.push({
+      id: randomUUID(),
+      date: entry.date,
+      details: entry.details.trim(),
+    });
+  }
+  return entries;
+}
+
+function validateDisciplinaryProceeding(value: FormDataEntryValue | null): CollegeDisciplinaryProceeding | null | false {
+  if (value === null) return null;
+  if (typeof value !== 'string') return false;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return false;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+  const entry = parsed as Record<string, unknown>;
+  const textFields = [
+    'name', 'fatherName', 'pshName', 'className', 'classSection', 'rollNumber', 'attendance',
+    'pshRegistrationNumber', 'instituteName', 'totalMarks', 'obtainedMarks', 'reason', 'date',
+    'approved', 'remarks', 'expulsionCommitteeMinutes',
+  ] as const;
+  if (textFields.some((field) => typeof entry[field] !== 'string' || entry[field].length > (field === 'expulsionCommitteeMinutes' ? 5000 : 500))) {
+    return false;
+  }
+  const type = entry.type;
+  if (type === '') {
+    return textFields.some((field) => Boolean(entry[field])) ? false : null;
+  }
+  if (typeof type !== 'string' || !allowedDisciplinaryTypes.has(type)) return false;
+  if (entry.approved && !allowedDisciplinaryApprovals.has(String(entry.approved))) return false;
+  if (entry.date && !/^\d{4}-\d{2}-\d{2}$/.test(String(entry.date))) return false;
+  const totalMarks = entry.totalMarks ? Number(entry.totalMarks) : null;
+  const obtainedMarks = entry.obtainedMarks ? Number(entry.obtainedMarks) : null;
+  if (
+    (totalMarks !== null && (!Number.isFinite(totalMarks) || totalMarks < 0)) ||
+    (obtainedMarks !== null && (!Number.isFinite(obtainedMarks) || obtainedMarks < 0)) ||
+    (totalMarks !== null && obtainedMarks !== null && obtainedMarks > totalMarks)
+  ) return false;
+  return {
+    type,
+    ...Object.fromEntries(textFields.map((field) => [field, String(entry[field]).trim()])),
+  } as CollegeDisciplinaryProceeding;
 }
 
 function validateSubjects(value: FormDataEntryValue | null): SubjectMark[] | null {
@@ -201,7 +309,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let blobUrl: string | null = null;
+  const uploadedBlobUrls: string[] = [];
   try {
     const graduate = await verifyPbmChildSession();
     if (!graduate) return NextResponse.json({ error: 'Please sign in to continue.' }, { status: 401 });
@@ -224,6 +332,7 @@ export async function POST(request: Request) {
       collegeType: readText(formData, 'collegeType', 30),
       collegeName: readText(formData, 'collegeName', 200),
       program: readText(formData, 'program', 50),
+      sponsorshipSource: readText(formData, 'sponsorshipSource', 30),
       classYear: readText(formData, 'classYear', 100),
       rollNumber: readText(formData, 'rollNumber', 100),
       academicPeriod: readText(formData, 'academicPeriod', 100),
@@ -251,6 +360,8 @@ export async function POST(request: Request) {
     };
     let subjects: SubjectMark[] | null = null;
     let courses: UniversityCourse[] | null = null;
+    let counsellingEntries: CounsellingEntry[] = [];
+    let disciplinaryProceedings: CollegeDisciplinaryProceeding | null = null;
     if (recordType === 'college') {
       if (Object.values(collegeData).some((value) => value === null || value === '')) {
         return NextResponse.json({ error: 'Complete all required College Life fields.' }, { status: 400 });
@@ -258,8 +369,8 @@ export async function POST(request: Request) {
       if (
         !allowedCollegeTypes.has(collegeData.collegeType!) ||
         !allowedPrograms.has(collegeData.program!) ||
+        !allowedCollegeSponsorshipSources.has(collegeData.sponsorshipSource!) ||
         !allowedCollegeYears.has(collegeData.classYear!) ||
-        !allowedCollegeYears.has(collegeData.rollNumber!) ||
         !/^\d{4}$/.test(collegeData.passingYear!) ||
         Number(collegeData.passingYear) < 1900 ||
         Number(collegeData.passingYear) > 2100
@@ -301,6 +412,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const validatedCounsellingEntries = validateCounsellingEntries(formData.get('counsellingEntries'));
+    if (!validatedCounsellingEntries) {
+      return NextResponse.json({ error: 'Enter valid counselling dates and details.' }, { status: 400 });
+    }
+    counsellingEntries = validatedCounsellingEntries;
+    const validatedDisciplinaryProceedings = validateDisciplinaryProceeding(formData.get('disciplinaryProceedings'));
+    if (validatedDisciplinaryProceedings === false) {
+      return NextResponse.json({ error: 'Enter valid disciplinary proceeding details.' }, { status: 400 });
+    }
+    disciplinaryProceedings = validatedDisciplinaryProceedings;
+
     const file = formData.get('resultFile');
     if (!(file instanceof File)) return NextResponse.json({ error: 'Upload the semester or year result.' }, { status: 400 });
     if (file.size <= 0 || file.size > MAX_DOCUMENT_BYTES) {
@@ -313,6 +435,59 @@ export async function POST(request: Request) {
     if (!validFileSignature(bytes, file.type)) {
       return NextResponse.json({ error: 'The selected result file does not match its declared file type.' }, { status: 400 });
     }
+    const disciplinaryFiles = [
+      {
+        key: 'applicationFile',
+        title: 'Application',
+        documentType: recordType === 'college' ? 'COLLEGE_LIFE_DISCIPLINARY_APPLICATION' : 'UNIVERSITY_LIFE_DISCIPLINARY_APPLICATION',
+        allowedTypes,
+        maxBytes: MAX_DOCUMENT_BYTES,
+      },
+      {
+        key: 'affidavitFile',
+        title: 'Affidavit',
+        documentType: recordType === 'college' ? 'COLLEGE_LIFE_DISCIPLINARY_AFFIDAVIT' : 'UNIVERSITY_LIFE_DISCIPLINARY_AFFIDAVIT',
+        allowedTypes,
+        maxBytes: MAX_DOCUMENT_BYTES,
+      },
+      {
+        key: 'minutesPhotoFile',
+        title: 'Minutes of the Expulsion Committee',
+        documentType: recordType === 'college' ? 'COLLEGE_LIFE_EXPULSION_MINUTES' : 'UNIVERSITY_LIFE_EXPULSION_MINUTES',
+        allowedTypes: new Set(['image/jpeg', 'image/png', 'image/webp']),
+        maxBytes: 8 * 1024 * 1024,
+      },
+    ];
+    const optionalDocuments: UploadedDisciplinaryDocument[] = [];
+    for (const attachment of disciplinaryFiles) {
+      const value = formData.get(attachment.key);
+      if (value === null) continue;
+      if (!(value instanceof File)) {
+        return NextResponse.json({ error: `Choose a valid ${attachment.title.toLowerCase()} file.` }, { status: 400 });
+      }
+      if (!disciplinaryProceedings) {
+        return NextResponse.json({ error: 'Select a proceeding type before adding disciplinary attachments.' }, { status: 400 });
+      }
+      if (attachment.key === 'minutesPhotoFile' && disciplinaryProceedings.type !== 'EXPELLED') {
+        return NextResponse.json({ error: 'Expulsion committee minutes can only be added for an expelled proceeding.' }, { status: 400 });
+      }
+      if (value.size <= 0 || value.size > attachment.maxBytes || !attachment.allowedTypes.has(value.type)) {
+        return NextResponse.json({ error: `The ${attachment.title.toLowerCase()} must be a supported file within the size limit.` }, { status: 400 });
+      }
+      const documentBytes = new Uint8Array(await value.arrayBuffer());
+      if (!validFileSignature(documentBytes, value.type)) {
+        return NextResponse.json({ error: `The ${attachment.title.toLowerCase()} does not match its declared file type.` }, { status: 400 });
+      }
+      optionalDocuments.push({
+        id: randomUUID(),
+        title: attachment.title,
+        documentType: attachment.documentType,
+        fileName: value.name.slice(0, 255),
+        contentType: value.type,
+        size: value.size,
+        bytes: documentBytes,
+      });
+    }
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       return NextResponse.json({ error: 'PBM document storage is not configured.' }, { status: 503 });
     }
@@ -323,7 +498,19 @@ export async function POST(request: Request) {
       addRandomSuffix: false,
       contentType: file.type,
     });
-    blobUrl = blob.url;
+    uploadedBlobUrls.push(blob.url);
+    for (const document of optionalDocuments) {
+      const documentExtension = document.fileName.split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin';
+      const documentBuffer = new ArrayBuffer(document.bytes.byteLength);
+      new Uint8Array(documentBuffer).set(document.bytes);
+      const documentBlob = await put(
+        `pbm/children/${graduate.child.id}/${randomUUID()}.${documentExtension}`,
+        new Blob([documentBuffer], { type: document.contentType }),
+        { access: 'private', addRandomSuffix: false, contentType: document.contentType }
+      );
+      document.blobUrl = documentBlob.url;
+      uploadedBlobUrls.push(documentBlob.url);
+    }
 
     const client = await getPbmPrismaReady();
     const entryId = randomUUID();
@@ -339,6 +526,9 @@ export async function POST(request: Request) {
           totalMarks: String(subjects!.reduce((sum, subject) => sum + Number(subject.totalMarks), 0)),
           obtainedMarks: String(subjects!.reduce((sum, subject) => sum + Number(subject.obtainedMarks), 0)),
           resultDocument,
+          counsellingEntries,
+          disciplinaryProceedings,
+          disciplinaryDocuments: optionalDocuments.map(({ id, title, documentType, fileName }) => ({ id, title, documentType, fileName })),
           createdAt: new Date().toISOString(),
         }
       : {
@@ -348,6 +538,9 @@ export async function POST(request: Request) {
           ...universityData,
           courses: courses!,
           resultDocument,
+          counsellingEntries,
+          disciplinaryProceedings,
+          disciplinaryDocuments: optionalDocuments.map(({ id, title, documentType, fileName }) => ({ id, title, documentType, fileName })),
           createdAt: new Date().toISOString(),
         };
 
@@ -365,6 +558,22 @@ export async function POST(request: Request) {
           ${file.size}
         )
       `;
+      for (const document of optionalDocuments) {
+        if (!document.blobUrl) throw new Error('COLLEGE_LIFE_DOCUMENT_UPLOAD_FAILED');
+        await transaction.$executeRaw`
+          INSERT INTO "PbmChildDocument" (id, "childId", title, "documentType", "blobUrl", "fileName", "contentType", "byteSize")
+          VALUES (
+            ${document.id},
+            ${graduate.child.id},
+            ${`${document.title} - ${recordType === 'college' ? collegeData.academicPeriod : universityData.academicPeriod}`.slice(0, 120)},
+            ${document.documentType},
+            ${document.blobUrl},
+            ${document.fileName},
+            ${document.contentType},
+            ${document.size}
+          )
+        `;
+      }
       const updated = await transaction.$executeRaw`
         UPDATE "PbmChildRecord"
         SET "universityProgress" = COALESCE("universityProgress", '[]'::jsonb) || ${JSON.stringify([entry])}::jsonb,
@@ -376,10 +585,12 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ success: true, entry }, { status: 201 });
   } catch (error) {
-    if (blobUrl && process.env.BLOB_READ_WRITE_TOKEN) {
-      await del(blobUrl, { token: process.env.BLOB_READ_WRITE_TOKEN }).catch((cleanupError: unknown) => {
-        console.error('Clean up unattached College Life result error:', cleanupError);
-      });
+    if (uploadedBlobUrls.length > 0 && process.env.BLOB_READ_WRITE_TOKEN) {
+      await Promise.all(uploadedBlobUrls.map((blobUrl) =>
+        del(blobUrl, { token: process.env.BLOB_READ_WRITE_TOKEN }).catch((cleanupError: unknown) => {
+          console.error('Clean up unattached College Life document error:', cleanupError);
+        })
+      ));
     }
     if (error instanceof Error && error.message === 'PBM_CHILD_SESSION_EXPIRED') {
       return NextResponse.json({ error: 'Your session is no longer valid. Please sign in again.' }, { status: 401 });

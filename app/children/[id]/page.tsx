@@ -34,6 +34,14 @@ function calculateAge(dateOfBirth: Date) {
   return Math.max(0, age);
 }
 
+function formatAppearanceAge(age: string | number | null | undefined) {
+  if (age === null || age === undefined || age === '') return 'N/A';
+  const numericAge = Number(age);
+  return Number.isFinite(numericAge)
+    ? `${numericAge} ${numericAge === 1 ? 'year' : 'years'}`
+    : String(age);
+}
+
 function Section({
   label,
   title,
@@ -276,7 +284,7 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                   <p className="mt-1 text-slate-700">
                     Height: {entry.height ? `${entry.height} cm` : 'N/A'} · Weight: {entry.weight ? `${entry.weight} kg` : 'N/A'}
                   </p>
-                  <p className="mt-1 text-slate-600">Age: {entry.age ? `${entry.age} years` : 'N/A'}</p>
+                  <p className="mt-1 text-slate-600">Age: {formatAppearanceAge(entry.age)}</p>
                 </div>
               ))}
             </div>
@@ -806,7 +814,9 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
                 <div className="flex justify-between">
                   <dt className="text-slate-500">Age</dt>
                   <dd className="font-semibold">
-                    {psh?.appearance?.age ? `${psh.appearance.age} years` : `${calculateAge(child.dateOfBirth)} years`}
+                    {psh?.appearance?.age
+                      ? formatAppearanceAge(psh.appearance.age)
+                      : `${calculateAge(child.dateOfBirth)} years`}
                   </dd>
                 </div>
                 {psh?.healthCare?.checkFrequency && (

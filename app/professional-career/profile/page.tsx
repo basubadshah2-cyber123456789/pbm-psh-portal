@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { BriefcaseBusiness, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { CollegeLifeForm, UniversityLifeForm } from '@/components/professional-career/UniversityProgressForm';
 import { ProfessionalLifeForm } from '@/components/professional-career/ProfessionalLifeForm';
 import { ProfessionalProfilePhoto } from '@/components/professional-career/ProfessionalProfilePhoto';
@@ -56,9 +57,17 @@ export default function ProfessionalCareerProfilePage() {
       <div className="mx-auto max-w-4xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-emerald-800 p-5 text-white shadow-lg sm:p-7">
           <div className="flex items-center gap-3">
-            <span className="rounded-2xl bg-white/15 p-3"><BriefcaseBusiness className="h-6 w-6" /></span>
+            <span className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/30 bg-white p-1.5 shadow-inner">
+              <Image
+                src="/pbm-sweet-home-seal.png"
+                alt="PBM Sweet Home logo"
+                width={56}
+                height={56}
+                className="h-full w-full object-contain"
+              />
+            </span>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-100">Pakistan Sweet Home</p>
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-emerald-100">PBM SWEET HOME</p>
               <h1 className="mt-1 text-xl font-extrabold sm:text-2xl">Education &amp; Professional Growth Portal</h1>
             </div>
           </div>

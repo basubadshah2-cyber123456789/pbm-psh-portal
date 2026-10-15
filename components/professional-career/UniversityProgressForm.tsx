@@ -22,6 +22,7 @@ interface CollegeLifeEntry {
   collegeType?: string;
   collegeName?: string;
   program?: string;
+  sponsorshipSource?: string;
   classYear?: string;
   rollNumber?: string;
   academicPeriod?: string;
@@ -30,6 +31,9 @@ interface CollegeLifeEntry {
   obtainedMarks?: string;
   subjects?: SubjectMark[];
   resultDocument?: { id: string; fileName: string } | null;
+  counsellingEntries?: CounsellingEntry[];
+  disciplinaryProceedings?: CollegeDisciplinaryProceeding | null;
+  disciplinaryDocuments?: Array<{ id: string; title: string; fileName: string }>;
   createdAt: string;
   universityName?: string;
   degreeProgram?: string;
@@ -50,6 +54,49 @@ interface CollegeLifeEntry {
   cgpa?: string;
 }
 
+interface CounsellingEntry {
+  id: string;
+  date: string;
+  details: string;
+}
+
+interface CollegeDisciplinaryProceeding {
+  type: '' | 'DROPPED' | 'EXPELLED';
+  name: string;
+  fatherName: string;
+  pshName: string;
+  className: string;
+  classSection: string;
+  rollNumber: string;
+  attendance: string;
+  pshRegistrationNumber: string;
+  instituteName: string;
+  totalMarks: string;
+  obtainedMarks: string;
+  reason: string;
+  date: string;
+  approved: string;
+  remarks: string;
+  expulsionCommitteeMinutes: string;
+}
+
+type DisciplinaryField = Exclude<keyof CollegeDisciplinaryProceeding, 'type'>;
+
+const droppedDisciplinaryFields: Array<[DisciplinaryField, string]> = [
+  ['name', 'Name'], ['fatherName', 'Father Name'], ['pshName', 'PBM Sweet Home'],
+  ['pshRegistrationNumber', 'PBM Registration No.'], ['className', 'Class'],
+  ['classSection', 'Section'], ['rollNumber', 'Roll No.'], ['attendance', 'Attendance'],
+  ['instituteName', 'Institute'], ['totalMarks', 'Total Marks'], ['obtainedMarks', 'Obtained Marks'],
+  ['date', 'Date of Dropped out'], ['reason', 'Reason of Dropped out'], ['remarks', 'Remarks'],
+];
+const expelledDisciplinaryFields: Array<[DisciplinaryField, string]> = [
+  ['name', 'Name'], ['fatherName', 'Father Name'], ['pshName', 'PBM Sweet Home'],
+  ['pshRegistrationNumber', 'PBM Registration No.'], ['className', 'Class'],
+  ['rollNumber', 'Roll No.'], ['instituteName', 'Institute'], ['totalMarks', 'Total Marks'],
+  ['obtainedMarks', 'Obtained Marks'], ['reason', 'Reason of Expulsion'],
+  ['date', 'Date of Expulsion'], ['remarks', 'Remarks'],
+];
+
 interface UniversityCourse {
   id: string;
   courseName: string;
@@ -67,6 +114,7 @@ interface FormValues {
   collegeType: string;
   collegeName: string;
   program: string;
+  sponsorshipSource: string;
   classYear: string;
   rollNumber: string;
   academicPeriod: string;
@@ -80,11 +128,34 @@ const initialForm: FormValues = {
   collegeType: '',
   collegeName: '',
   program: '',
+  sponsorshipSource: '',
   classYear: '',
   rollNumber: '',
   academicPeriod: '',
   passingYear: '',
 };
+
+function emptyDisciplinaryProceeding(): CollegeDisciplinaryProceeding {
+  return {
+    type: '',
+    name: '',
+    fatherName: '',
+    pshName: '',
+    className: '',
+    classSection: '',
+    rollNumber: '',
+    attendance: '',
+    pshRegistrationNumber: '',
+    instituteName: '',
+    totalMarks: '',
+    obtainedMarks: '',
+    reason: '',
+    date: '',
+    approved: '',
+    remarks: '',
+    expulsionCommitteeMinutes: '',
+  };
+}
 
 const inputClassName = 'mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100';
 const collegePrograms = [
@@ -127,6 +198,11 @@ export function CollegeLifeForm() {
   const [entries, setEntries] = useState<CollegeLifeEntry[]>([]);
   const [form, setForm] = useState<FormValues>(initialForm);
   const [subjects, setSubjects] = useState<SubjectMark[]>([newSubject()]);
+  const [counsellingEntries, setCounsellingEntries] = useState<CounsellingEntry[]>([]);
+  const [disciplinaryProceeding, setDisciplinaryProceeding] = useState<CollegeDisciplinaryProceeding>(emptyDisciplinaryProceeding);
+  const [applicationFile, setApplicationFile] = useState<File | null>(null);
+  const [affidavitFile, setAffidavitFile] = useState<File | null>(null);
+  const [minutesPhotoFile, setMinutesPhotoFile] = useState<File | null>(null);
   const [resultFile, setResultFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -159,6 +235,10 @@ export function CollegeLifeForm() {
     setSubjects((current) => current.map((subject) => subject.id === id ? { ...subject, [key]: value } : subject));
   };
 
+  const setDisciplinaryField = (field: DisciplinaryField, value: string) => {
+    setDisciplinaryProceeding((current) => ({ ...current, [field]: value }));
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -168,7 +248,12 @@ export function CollegeLifeForm() {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => formData.append(key, value));
       formData.append('subjects', JSON.stringify(subjects));
+      formData.append('counsellingEntries', JSON.stringify(counsellingEntries));
+      formData.append('disciplinaryProceedings', JSON.stringify(disciplinaryProceeding));
       if (resultFile) formData.append('resultFile', resultFile);
+      if (applicationFile) formData.append('applicationFile', applicationFile);
+      if (affidavitFile) formData.append('affidavitFile', affidavitFile);
+      if (minutesPhotoFile) formData.append('minutesPhotoFile', minutesPhotoFile);
 
       const response = await fetch('/api/pbm/career/university-progress', {
         method: 'POST',
@@ -179,9 +264,18 @@ export function CollegeLifeForm() {
       setEntries((current) => [...current, result.entry]);
       setForm((current) => ({ ...initialForm, studentName: current.studentName }));
       setSubjects([newSubject()]);
+      setCounsellingEntries([]);
+      setDisciplinaryProceeding(emptyDisciplinaryProceeding());
+      setApplicationFile(null);
+      setAffidavitFile(null);
+      setMinutesPhotoFile(null);
       setResultFile(null);
       const fileInput = document.getElementById('college-life-result-file');
       if (fileInput instanceof HTMLInputElement) fileInput.value = '';
+      ['college-life-application-file', 'college-life-affidavit-file', 'college-life-minutes-photo-file'].forEach((id) => {
+        const input = document.getElementById(id);
+        if (input instanceof HTMLInputElement) input.value = '';
+      });
       setSuccess('College Life record and result card saved to your history.');
     } catch (saveError: unknown) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save College Life record.');
@@ -193,12 +287,21 @@ export function CollegeLifeForm() {
   return (
     <section className="rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-8">
       <div className="mb-6 rounded-2xl bg-emerald-50 p-4 sm:p-5">
-        <div className="flex items-center gap-3">
-          <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-800"><GraduationCap className="h-5 w-5" /></span>
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900">College Life</h2>
-            <p className="mt-1 text-sm font-semibold text-emerald-800">Recommended for Sponsorship by PBM through IFA</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-800"><GraduationCap className="h-5 w-5" /></span>
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">College Life</h2>
+            </div>
           </div>
+          <label className="block w-full text-sm font-semibold text-slate-700 sm:w-64">
+            Sponsored By <span className="text-red-600">*</span>
+            <select required value={form.sponsorshipSource} onChange={(event) => setForm((current) => ({ ...current, sponsorshipSource: event.target.value }))} className={inputClassName}>
+              <option value="">Select sponsor</option>
+              <option value="Sponsored by PBM">Sponsored by PBM</option>
+              <option value="Sponsored by Donor">Sponsored by Donor</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -246,11 +349,8 @@ export function CollegeLifeForm() {
             </select>
           </label>
           <label className="block text-sm font-semibold text-slate-700">
-            Roll No. <span className="text-red-600">*</span>
-            <select required value={form.rollNumber} onChange={(event) => setForm((current) => ({ ...current, rollNumber: event.target.value }))} className={inputClassName}>
-              <option value="">Select year</option>
-              {collegeYears.map((year) => <option key={year} value={year}>{year}</option>)}
-            </select>
+            Roll Number <span className="text-red-600">*</span>
+            <input required maxLength={100} value={form.rollNumber} onChange={(event) => setForm((current) => ({ ...current, rollNumber: event.target.value }))} className={inputClassName} />
           </label>
           <label className="block text-sm font-semibold text-slate-700">
             Semester / Academic Year <span className="text-red-600">*</span>
@@ -322,6 +422,178 @@ export function CollegeLifeForm() {
           </div>
         </section>
 
+        <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-slate-900">Counselling</h3>
+              <p className="mt-1 text-xs text-slate-600">Add counselling dates and details for this College Life record.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCounsellingEntries((current) => [
+                ...current,
+                { id: crypto.randomUUID(), date: '', details: '' },
+              ])}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add New
+            </button>
+          </div>
+          {counsellingEntries.length === 0 ? (
+            <p className="text-xs text-slate-500">No counselling entries added.</p>
+          ) : (
+            <div className="space-y-3">
+              {counsellingEntries.map((entry, index) => (
+                <div key={entry.id} className="grid gap-3 rounded-xl border border-indigo-100 bg-white p-3 sm:grid-cols-[180px_1fr_auto] sm:items-start">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Counselling Date
+                    <input
+                      type="date"
+                      value={entry.date}
+                      onChange={(event) => setCounsellingEntries((current) => current.map((item) =>
+                        item.id === entry.id ? { ...item, date: event.target.value } : item
+                      ))}
+                      className={inputClassName}
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Counselling Details
+                    <textarea
+                      rows={3}
+                      maxLength={3000}
+                      value={entry.details}
+                      onChange={(event) => setCounsellingEntries((current) => current.map((item) =>
+                        item.id === entry.id ? { ...item, details: event.target.value } : item
+                      ))}
+                      placeholder={`Counselling details ${index + 1}`}
+                      className={inputClassName}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setCounsellingEntries((current) => current.filter((item) => item.id !== entry.id))}
+                    aria-label={`Remove counselling entry ${index + 1}`}
+                    className="mt-5 rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-red-200 bg-red-50/40 p-4 sm:p-5">
+          <div className="mb-4">
+            <h3 className="font-bold text-slate-900">Disciplinary Proceedings</h3>
+            <p className="mt-1 text-xs text-slate-600">Optional; these details will be saved with this College Life record.</p>
+          </div>
+          <label className="block max-w-sm text-sm font-semibold text-slate-700">
+            Proceeding Type
+            <select
+              value={disciplinaryProceeding.type}
+              onChange={(event) => {
+                const type = event.target.value as CollegeDisciplinaryProceeding['type'];
+                setDisciplinaryProceeding((current) => type
+                  ? ({
+                      ...current,
+                      type,
+                      name: current.name || form.studentName,
+                      fatherName: current.fatherName || form.fatherName,
+                      pshRegistrationNumber: current.pshRegistrationNumber || form.pshRegistrationNumber,
+                      className: current.className || form.classYear,
+                      rollNumber: current.rollNumber || form.rollNumber,
+                      instituteName: current.instituteName || form.collegeName,
+                      expulsionCommitteeMinutes: type === 'EXPELLED' ? current.expulsionCommitteeMinutes : '',
+                    })
+                  : emptyDisciplinaryProceeding());
+                if (!type) {
+                  setApplicationFile(null);
+                  setAffidavitFile(null);
+                  setMinutesPhotoFile(null);
+                } else if (type !== 'EXPELLED') {
+                  setMinutesPhotoFile(null);
+                }
+              }}
+              className={inputClassName}
+            >
+              <option value="">Select proceeding type</option>
+              <option value="DROPPED">DROPPED</option>
+              <option value="EXPELLED">EXPELLED</option>
+            </select>
+          </label>
+
+          {disciplinaryProceeding.type && (
+            <>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {(disciplinaryProceeding.type === 'DROPPED' ? droppedDisciplinaryFields : expelledDisciplinaryFields).map(([field, label]) => (
+                  <label key={field} className="block text-sm font-semibold text-slate-700">
+                    {label}
+                    <input
+                      type={field === 'date' ? 'date' : field === 'totalMarks' || field === 'obtainedMarks' ? 'number' : 'text'}
+                      min={field === 'totalMarks' || field === 'obtainedMarks' ? 0 : undefined}
+                      value={disciplinaryProceeding[field]}
+                      onChange={(event) => setDisciplinaryField(field, event.target.value)}
+                      className={inputClassName}
+                    />
+                  </label>
+                ))}
+                <label className="block text-sm font-semibold text-slate-700">
+                  Approved
+                  <select value={disciplinaryProceeding.approved} onChange={(event) => setDisciplinaryField('approved', event.target.value)} className={inputClassName}>
+                    <option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option>
+                  </select>
+                </label>
+              </div>
+
+              {disciplinaryProceeding.type === 'EXPELLED' && (
+                <label className="mt-4 block text-sm font-semibold text-slate-700">
+                  Minutes of the Expulsion Committee
+                  <textarea
+                    rows={4}
+                    maxLength={5000}
+                    value={disciplinaryProceeding.expulsionCommitteeMinutes}
+                    onChange={(event) => setDisciplinaryField('expulsionCommitteeMinutes', event.target.value)}
+                    className={inputClassName}
+                  />
+                </label>
+              )}
+
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {[
+                  { id: 'college-life-application-file', title: 'Application', file: applicationFile, setFile: setApplicationFile },
+                  { id: 'college-life-affidavit-file', title: 'Affidavit', file: affidavitFile, setFile: setAffidavitFile },
+                ].map((attachment) => (
+                  <label key={attachment.id} className="block text-sm font-semibold text-slate-700">
+                    {attachment.title}
+                    <input
+                      id={attachment.id}
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                      onChange={(event) => attachment.setFile(event.target.files?.[0] || null)}
+                      className={inputClassName}
+                    />
+                    <span className="mt-1 block text-xs font-normal text-slate-500">PDF or image; maximum 12 MB.{attachment.file ? ` Selected: ${attachment.file.name}` : ''}</span>
+                  </label>
+                ))}
+                {disciplinaryProceeding.type === 'EXPELLED' && (
+                  <label className="block text-sm font-semibold text-slate-700 sm:col-span-2">
+                    Upload Photo of Written Minutes
+                    <input
+                      id="college-life-minutes-photo-file"
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onChange={(event) => setMinutesPhotoFile(event.target.files?.[0] || null)}
+                      className={inputClassName}
+                    />
+                    <span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG, or WebP; maximum 8 MB.{minutesPhotoFile ? ` Selected: ${minutesPhotoFile.name}` : ''}</span>
+                  </label>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+
         <label className="block text-sm font-semibold text-slate-700">
           Upload Semester / Year Result <span className="text-red-600">*</span>
           <span className="mt-1 block text-xs font-normal text-slate-500">PDF, JPEG, PNG, or WebP; maximum 12 MB.</span>
@@ -373,6 +645,7 @@ export function CollegeLifeForm() {
                   ['College', entry.collegeName],
                   ['College Type', entry.collegeType],
                   ['Program', entry.program],
+                  ['Sponsored By', entry.sponsorshipSource],
                   ['Class / Year', entry.classYear],
                   ['Semester / Academic Year', entry.academicPeriod],
                 ].map(([label, value]) => value ? (
@@ -390,6 +663,65 @@ export function CollegeLifeForm() {
                   </table>
                 </div>
               ) : null}
+              {entry.counsellingEntries?.length ? (
+                <section className="mt-4 rounded-xl border border-indigo-100 bg-white p-3">
+                  <h5 className="text-sm font-bold text-indigo-900">Counselling</h5>
+                  <div className="mt-2 space-y-2">
+                    {entry.counsellingEntries.map((counselling, index) => (
+                      <div key={counselling.id || index} className="rounded-lg bg-indigo-50/60 p-2.5 text-sm">
+                        {counselling.date && <p className="font-semibold text-slate-700">{counselling.date}</p>}
+                        {counselling.details && <p className="mt-1 whitespace-pre-wrap text-slate-600">{counselling.details}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+              {entry.disciplinaryProceedings?.type && (
+                <section className="mt-4 rounded-xl border border-red-100 bg-white p-3">
+                  <h5 className="text-sm font-bold text-red-900">Disciplinary Proceedings: {entry.disciplinaryProceedings.type}</h5>
+                  <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                    {[
+                      ['Name', entry.disciplinaryProceedings.name],
+                      ['Father Name', entry.disciplinaryProceedings.fatherName],
+                      ['PBM Sweet Home', entry.disciplinaryProceedings.pshName],
+                      ['PBM Registration No.', entry.disciplinaryProceedings.pshRegistrationNumber],
+                      ['Class', entry.disciplinaryProceedings.className],
+                      ['Section', entry.disciplinaryProceedings.classSection],
+                      ['Roll No.', entry.disciplinaryProceedings.rollNumber],
+                      ['Attendance', entry.disciplinaryProceedings.attendance],
+                      ['Institute', entry.disciplinaryProceedings.instituteName],
+                      ['Total Marks', entry.disciplinaryProceedings.totalMarks],
+                      ['Obtained Marks', entry.disciplinaryProceedings.obtainedMarks],
+                      ['Date', entry.disciplinaryProceedings.date],
+                      ['Reason', entry.disciplinaryProceedings.reason],
+                      ['Approved', entry.disciplinaryProceedings.approved],
+                      ['Remarks', entry.disciplinaryProceedings.remarks],
+                    ].map(([label, value]) => value ? (
+                      <div key={label}>
+                        <dt className="text-xs text-slate-500">{label}</dt>
+                        <dd className="whitespace-pre-wrap font-semibold text-slate-700">{value}</dd>
+                      </div>
+                    ) : null)}
+                  </dl>
+                  {entry.disciplinaryProceedings.expulsionCommitteeMinutes && (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">
+                      <span className="font-semibold">Committee Minutes: </span>
+                      {entry.disciplinaryProceedings.expulsionCommitteeMinutes}
+                    </p>
+                  )}
+                </section>
+              )}
+              {entry.disciplinaryDocuments?.map((document) => (
+                <a
+                  key={document.id}
+                  href={`/api/pbm/career/university-progress?documentId=${encodeURIComponent(document.id)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 mr-4 inline-flex items-center gap-2 text-sm font-semibold text-red-800 underline underline-offset-2"
+                >
+                  <FileText className="h-4 w-4" /> View {document.title}: {document.fileName}
+                </a>
+              ))}
               {entry.resultDocument && (
                 <a href={`/api/pbm/career/university-progress?documentId=${encodeURIComponent(entry.resultDocument.id)}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 underline underline-offset-2">
                   <FileText className="h-4 w-4" /> View result: {entry.resultDocument.fileName}
@@ -485,6 +817,11 @@ export function UniversityLifeForm() {
   const [entries, setEntries] = useState<CollegeLifeEntry[]>([]);
   const [form, setForm] = useState<UniversityFormValues>(initialUniversityForm);
   const [courses, setCourses] = useState<UniversityCourse[]>([newUniversityCourse()]);
+  const [counsellingEntries, setCounsellingEntries] = useState<CounsellingEntry[]>([]);
+  const [disciplinaryProceeding, setDisciplinaryProceeding] = useState<CollegeDisciplinaryProceeding>(emptyDisciplinaryProceeding);
+  const [applicationFile, setApplicationFile] = useState<File | null>(null);
+  const [affidavitFile, setAffidavitFile] = useState<File | null>(null);
+  const [minutesPhotoFile, setMinutesPhotoFile] = useState<File | null>(null);
   const [resultFile, setResultFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -517,6 +854,10 @@ export function UniversityLifeForm() {
     setCourses((current) => current.map((course) => course.id === id ? { ...course, [key]: value } : course));
   };
 
+  const setDisciplinaryField = (field: DisciplinaryField, value: string) => {
+    setDisciplinaryProceeding((current) => ({ ...current, [field]: value }));
+  };
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -527,7 +868,12 @@ export function UniversityLifeForm() {
       formData.append('recordType', 'university');
       Object.entries(form).forEach(([key, value]) => formData.append(key, value));
       formData.append('courses', JSON.stringify(courses));
+      formData.append('counsellingEntries', JSON.stringify(counsellingEntries));
+      formData.append('disciplinaryProceedings', JSON.stringify(disciplinaryProceeding));
       if (resultFile) formData.append('resultFile', resultFile);
+      if (applicationFile) formData.append('applicationFile', applicationFile);
+      if (affidavitFile) formData.append('affidavitFile', affidavitFile);
+      if (minutesPhotoFile) formData.append('minutesPhotoFile', minutesPhotoFile);
 
       const response = await fetch('/api/pbm/career/university-progress', { method: 'POST', body: formData });
       const result = await response.json();
@@ -535,9 +881,18 @@ export function UniversityLifeForm() {
       setEntries((current) => [...current, result.entry]);
       setForm((current) => ({ ...initialUniversityForm, studentName: current.studentName, fatherName: current.fatherName, pshRegistrationNumber: current.pshRegistrationNumber }));
       setCourses([newUniversityCourse()]);
+      setCounsellingEntries([]);
+      setDisciplinaryProceeding(emptyDisciplinaryProceeding());
+      setApplicationFile(null);
+      setAffidavitFile(null);
+      setMinutesPhotoFile(null);
       setResultFile(null);
       const fileInput = document.getElementById('university-life-result-file');
       if (fileInput instanceof HTMLInputElement) fileInput.value = '';
+      ['university-life-application-file', 'university-life-affidavit-file', 'university-life-minutes-photo-file'].forEach((id) => {
+        const input = document.getElementById(id);
+        if (input instanceof HTMLInputElement) input.value = '';
+      });
       setSuccess('University Life semester record and transcript saved to your history.');
     } catch (saveError: unknown) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save University Life record.');
@@ -575,7 +930,7 @@ export function UniversityLifeForm() {
             <label className="block text-sm font-semibold text-slate-700">Father&apos;s Name <span className="text-red-600">*</span>
               <input required maxLength={200} value={form.fatherName} onChange={(event) => setField('fatherName', event.target.value)} className={inputClassName} />
             </label>
-            <label className="block text-sm font-semibold text-slate-700">PSH Registration No. <span className="text-red-600">*</span>
+            <label className="block text-sm font-semibold text-slate-700">PBM Registration No. <span className="text-red-600">*</span>
               <input required maxLength={100} value={form.pshRegistrationNumber} onChange={(event) => setField('pshRegistrationNumber', event.target.value)} className={inputClassName} />
             </label>
           </div>
@@ -677,6 +1032,132 @@ export function UniversityLifeForm() {
           </div>
         </section>
 
+        <section className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-slate-900">Counselling</h3>
+              <p className="mt-1 text-xs text-slate-600">Add counselling dates and details for this University Life record.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCounsellingEntries((current) => [...current, { id: crypto.randomUUID(), date: '', details: '' }])}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-800"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add New
+            </button>
+          </div>
+          {counsellingEntries.length === 0 ? (
+            <p className="text-xs text-slate-500">No counselling entries added.</p>
+          ) : (
+            <div className="space-y-3">
+              {counsellingEntries.map((entry, index) => (
+                <div key={entry.id} className="grid gap-3 rounded-xl border border-indigo-100 bg-white p-3 sm:grid-cols-[180px_1fr_auto] sm:items-start">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Counselling Date
+                    <input type="date" value={entry.date} onChange={(event) => setCounsellingEntries((current) => current.map((item) =>
+                      item.id === entry.id ? { ...item, date: event.target.value } : item
+                    ))} className={inputClassName} />
+                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Counselling Details
+                    <textarea rows={3} maxLength={3000} value={entry.details} onChange={(event) => setCounsellingEntries((current) => current.map((item) =>
+                      item.id === entry.id ? { ...item, details: event.target.value } : item
+                    ))} placeholder={`Counselling details ${index + 1}`} className={inputClassName} />
+                  </label>
+                  <button type="button" onClick={() => setCounsellingEntries((current) => current.filter((item) => item.id !== entry.id))}
+                    aria-label={`Remove counselling entry ${index + 1}`} className="mt-5 rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-700">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-red-200 bg-red-50/40 p-4 sm:p-5">
+          <div className="mb-4">
+            <h3 className="font-bold text-slate-900">Disciplinary Proceedings</h3>
+            <p className="mt-1 text-xs text-slate-600">Optional; these details will be saved with this University Life record.</p>
+          </div>
+          <label className="block max-w-sm text-sm font-semibold text-slate-700">
+            Proceeding Type
+            <select value={disciplinaryProceeding.type} onChange={(event) => {
+              const type = event.target.value as CollegeDisciplinaryProceeding['type'];
+              setDisciplinaryProceeding((current) => type ? ({
+                ...current,
+                type,
+                name: current.name || form.studentName,
+                fatherName: current.fatherName || form.fatherName,
+                pshRegistrationNumber: current.pshRegistrationNumber || form.pshRegistrationNumber,
+                className: current.className || form.classYear,
+                rollNumber: current.rollNumber || form.rollNumber,
+                instituteName: current.instituteName || form.universityName,
+                expulsionCommitteeMinutes: type === 'EXPELLED' ? current.expulsionCommitteeMinutes : '',
+              }) : emptyDisciplinaryProceeding());
+              if (!event.target.value) {
+                setApplicationFile(null);
+                setAffidavitFile(null);
+                setMinutesPhotoFile(null);
+              } else if (event.target.value !== 'EXPELLED') {
+                setMinutesPhotoFile(null);
+              }
+            }} className={inputClassName}>
+              <option value="">Select proceeding type</option>
+              <option value="DROPPED">DROPPED</option>
+              <option value="EXPELLED">EXPELLED</option>
+            </select>
+          </label>
+          {disciplinaryProceeding.type && (
+            <>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {(disciplinaryProceeding.type === 'DROPPED' ? droppedDisciplinaryFields : expelledDisciplinaryFields).map(([field, label]) => (
+                  <label key={field} className="block text-sm font-semibold text-slate-700">
+                    {label}
+                    <input type={field === 'date' ? 'date' : field === 'totalMarks' || field === 'obtainedMarks' ? 'number' : 'text'}
+                      min={field === 'totalMarks' || field === 'obtainedMarks' ? 0 : undefined}
+                      value={disciplinaryProceeding[field]} onChange={(event) => setDisciplinaryField(field, event.target.value)} className={inputClassName} />
+                  </label>
+                ))}
+                <label className="block text-sm font-semibold text-slate-700">
+                  Approved
+                  <select value={disciplinaryProceeding.approved} onChange={(event) => setDisciplinaryField('approved', event.target.value)} className={inputClassName}>
+                    <option value="">Select</option><option value="Yes">Yes</option><option value="No">No</option>
+                  </select>
+                </label>
+              </div>
+              {disciplinaryProceeding.type === 'EXPELLED' && (
+                <label className="mt-4 block text-sm font-semibold text-slate-700">
+                  Minutes of the Expulsion Committee
+                  <textarea rows={4} maxLength={5000} value={disciplinaryProceeding.expulsionCommitteeMinutes}
+                    onChange={(event) => setDisciplinaryField('expulsionCommitteeMinutes', event.target.value)} className={inputClassName} />
+                </label>
+              )}
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Application
+                  <input id="university-life-application-file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                    onChange={(event) => setApplicationFile(event.target.files?.[0] || null)} className={inputClassName} />
+                  <span className="mt-1 block text-xs font-normal text-slate-500">PDF, JPEG, PNG, or WebP; maximum 12 MB.{applicationFile ? ` Selected: ${applicationFile.name}` : ''}</span>
+                </label>
+                <label className="block text-sm font-semibold text-slate-700">
+                  Affidavit
+                  <input id="university-life-affidavit-file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                    onChange={(event) => setAffidavitFile(event.target.files?.[0] || null)} className={inputClassName} />
+                  <span className="mt-1 block text-xs font-normal text-slate-500">PDF, JPEG, PNG, or WebP; maximum 12 MB.{affidavitFile ? ` Selected: ${affidavitFile.name}` : ''}</span>
+                </label>
+                {disciplinaryProceeding.type === 'EXPELLED' && (
+                  <label className="block text-sm font-semibold text-slate-700 sm:col-span-2">
+                    Upload Photo of Written Minutes
+                    <input id="university-life-minutes-photo-file" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onChange={(event) => setMinutesPhotoFile(event.target.files?.[0] || null)} className={inputClassName} />
+                    <span className="mt-1 block text-xs font-normal text-slate-500">JPEG, PNG, or WebP; maximum 8 MB.{minutesPhotoFile ? ` Selected: ${minutesPhotoFile.name}` : ''}</span>
+                  </label>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+
         <label className="block text-sm font-semibold text-slate-700">Upload Official Semester Transcript / Result <span className="text-red-600">*</span>
           <span className="mt-1 block text-xs font-normal text-slate-500">Upload a clear university-issued transcript or result card. PDF, JPEG, PNG, or WebP; maximum 12 MB.</span>
           <span className="mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-sky-300 bg-sky-50/40 px-4 py-3"><UploadCloud className="h-5 w-5 text-sky-700" />
@@ -716,6 +1197,42 @@ export function UniversityLifeForm() {
                     <thead className="text-slate-500"><tr><th className="pb-2 pr-3">Course</th><th className="pb-2 pr-3">Credit Hours</th><th className="pb-2 pr-3">Grade</th><th className="pb-2 pr-3">Total Marks</th><th className="pb-2 pr-3">Obtained</th><th className="pb-2">Percentage</th></tr></thead>
                     <tbody>{entry.courses.map((course) => <tr key={course.id} className="border-t border-sky-100"><td className="py-2 pr-3 font-semibold text-slate-700">{course.courseName}</td><td className="py-2 pr-3">{course.creditHours || '—'}</td><td className="py-2 pr-3">{course.grade || '—'}</td><td className="py-2 pr-3">{course.totalMarks || '—'}</td><td className="py-2 pr-3">{course.obtainedMarks || '—'}</td><td className="py-2">{course.percentage ?? coursePercentage(course)}{course.percentage || coursePercentage(course) ? '%' : '—'}</td></tr>)}</tbody>
                   </table></div> : null}
+                  {entry.counsellingEntries?.length ? (
+                    <section className="mt-4 rounded-xl border border-indigo-100 bg-white p-3">
+                      <h5 className="text-sm font-bold text-indigo-900">Counselling</h5>
+                      <div className="mt-2 space-y-2">
+                        {entry.counsellingEntries.map((counselling, index) => (
+                          <div key={counselling.id || index} className="rounded-lg bg-indigo-50/60 p-2.5 text-sm">
+                            {counselling.date && <p className="font-semibold text-slate-700">{counselling.date}</p>}
+                            {counselling.details && <p className="mt-1 whitespace-pre-wrap text-slate-600">{counselling.details}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
+                  {entry.disciplinaryProceedings?.type && (
+                    <section className="mt-4 rounded-xl border border-red-100 bg-white p-3">
+                      <h5 className="text-sm font-bold text-red-900">Disciplinary Proceedings: {entry.disciplinaryProceedings.type}</h5>
+                      <dl className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                        {[
+                          ['Name', entry.disciplinaryProceedings.name], ['Father Name', entry.disciplinaryProceedings.fatherName],
+                          ['PBM Sweet Home', entry.disciplinaryProceedings.pshName], ['PBM Registration No.', entry.disciplinaryProceedings.pshRegistrationNumber],
+                          ['Class', entry.disciplinaryProceedings.className], ['Section', entry.disciplinaryProceedings.classSection],
+                          ['Roll No.', entry.disciplinaryProceedings.rollNumber], ['Attendance', entry.disciplinaryProceedings.attendance],
+                          ['Institute', entry.disciplinaryProceedings.instituteName], ['Total Marks', entry.disciplinaryProceedings.totalMarks],
+                          ['Obtained Marks', entry.disciplinaryProceedings.obtainedMarks], ['Date', entry.disciplinaryProceedings.date],
+                          ['Reason', entry.disciplinaryProceedings.reason], ['Approved', entry.disciplinaryProceedings.approved],
+                          ['Remarks', entry.disciplinaryProceedings.remarks], ['Minutes', entry.disciplinaryProceedings.expulsionCommitteeMinutes],
+                        ].map(([label, value]) => value ? <div key={label}><dt className="text-xs text-slate-500">{label}</dt><dd className="whitespace-pre-wrap font-semibold text-slate-700">{value}</dd></div> : null)}
+                      </dl>
+                    </section>
+                  )}
+                  {entry.disciplinaryDocuments?.map((document) => (
+                    <a key={document.id} href={`/api/pbm/career/university-progress?documentId=${encodeURIComponent(document.id)}`}
+                      target="_blank" rel="noreferrer" className="mt-3 mr-4 inline-flex items-center gap-2 text-sm font-semibold text-red-800 underline underline-offset-2">
+                      <FileText className="h-4 w-4" /> {document.title}: {document.fileName}
+                    </a>
+                  ))}
                   {entry.resultDocument && <a href={`/api/pbm/career/university-progress?documentId=${encodeURIComponent(entry.resultDocument.id)}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-sky-800 underline underline-offset-2"><FileText className="h-4 w-4" /> View transcript: {entry.resultDocument.fileName}</a>}
                 </article>
               ))}

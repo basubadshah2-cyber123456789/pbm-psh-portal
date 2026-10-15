@@ -93,10 +93,17 @@ Do not use `prisma db push` or `prisma migrate reset` in production. Run the see
    - `PBM_SETUP_KEY`: Separate high-entropy key for initial PBM staff setup.
    - `NEXT_PUBLIC_APP_URL`: Your Vercel deployment URL.
    - `BLOB_READ_WRITE_TOKEN`: Vercel Blob read/write token for child profile photos.
+   - `OPENAI_API_KEY`: Server-only OpenAI API key for image safety screening. Image uploads are rejected if screening is unconfigured or unavailable.
 3. Set Build Command: `npm run build`. Apply pending migrations separately with `npx prisma migrate deploy`.
 4. Click **Deploy**.
 
 ---
+
+### Uploaded Image Safety Screening
+
+JPEG, PNG, and WebP uploads are screened by OpenAI's `omni-moderation-latest` model before they are stored or linked to a child record. This applies to child photos, professional profile photos, and image files uploaded as child documents or college/university results. PDF uploads are not image-screened. The screening service is a safeguard, not a guarantee that every inappropriate image will be detected.
+
+Uploaded image data is sent to OpenAI for this screening. Configure `OPENAI_API_KEY` as a server-only Vercel environment variable (never as a `NEXT_PUBLIC_` variable), then redeploy. Until configured, or while the moderation service is unavailable, image uploads fail closed; PDF uploads retain their existing behavior.
 
 ## 6. Key Architecture & Workflows
 

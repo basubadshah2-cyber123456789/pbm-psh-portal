@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -755,9 +756,14 @@ function BrandIntroSplash({ onComplete }: { onComplete: () => void }) {
           <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-emerald-500/30 to-amber-500/30 blur-md animate-pulse" />
 
           <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-b from-[#16102e] to-[#0d091e] border-2 border-emerald-400/80 shadow-[0_0_50px_rgba(16,185,129,0.35)] flex items-center justify-center overflow-hidden">
-            <div className="text-4xl sm:text-5xl font-extrabold text-emerald-400 animate-bounce">
-              ☪
-            </div>
+            <Image
+              src="/pbm-sweet-home-seal.png"
+              alt="Pakistan Sweet Home logo"
+              width={96}
+              height={96}
+              priority
+              className="h-full w-full rounded-full object-cover"
+            />
           </div>
         </div>
 
@@ -768,11 +774,14 @@ function BrandIntroSplash({ onComplete }: { onComplete: () => void }) {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-2">
-            Pakistan Sweet Home
+            PBM SWEET HOME
           </h1>
 
           <p className="text-xs text-slate-400 tracking-wide font-medium">
             Institutional Child Welfare & Operations Portal
+          </p>
+          <p className="text-[10px] font-medium tracking-wide text-emerald-300/80">
+            Developed by Haider Bhatti
           </p>
         </div>
 
@@ -1259,15 +1268,21 @@ export default function StandalonePSHAdmissionWebsite() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
             {/* Official Emblem & Branding */}
             <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center text-white text-xl font-bold shrink-0 shadow-inner">
-                ☪
+              <div className="h-11 w-11 overflow-hidden rounded-full border-2 border-white/30 bg-white shrink-0 shadow-inner">
+                <Image
+                  src="/pbm-sweet-home-seal.png"
+                  alt="PBM Sweet Home logo"
+                  width={44}
+                  height={44}
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div>
                 <div className="text-[11px] uppercase tracking-widest text-emerald-200 font-semibold leading-tight">
                   Sponsored by Pakistan Bait-ul-Mal • Regional Office Multan
                 </div>
                 <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white leading-tight">
-                  Pakistan Sweet Home (PSH) Admission Portal
+                  PBM SWEET HOME
                 </h1>
               </div>
             </div>
@@ -1443,7 +1458,7 @@ export default function StandalonePSHAdmissionWebsite() {
             <div className="bg-white rounded-xl border border-slate-200 p-5 sm:p-8 shadow-sm animate-fade-in-up">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-6 border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-2 text-slate-800 font-bold text-base sm:text-lg">
-                  <span className="text-[#C86A28]">Pakistan Sweet Home</span>
+                  <span className="text-[#C86A28]">PBM SWEET HOME</span>
                   <span>• {editingChild ? 'Edit Child Dossier' : 'Child Admission Form'}</span>
                 </div>
                 {editingChild && (

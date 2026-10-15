@@ -176,7 +176,7 @@ export function ProfessionalLifeForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             {renderInput('studentName', 'Full Name', { required: true, maxLength: 200 })}
             {renderInput('fatherName', 'Father’s Name', { required: true, maxLength: 200 })}
-            {renderInput('pshRegistrationNumber', 'PSH Registration No.', { required: true, maxLength: 100 })}
+            {renderInput('pshRegistrationNumber', 'PBM Registration No.', { required: true, maxLength: 100 })}
             <label className="block text-sm font-semibold text-slate-700">Marital Status <span className="text-red-600">*</span>
               <select required value={form.maritalStatus} onChange={(event) => setField('maritalStatus', event.target.value)} className={inputClassName}>
                 <option value="">Select marital status</option>
@@ -255,7 +255,7 @@ export function ProfessionalLifeForm() {
                   </div>
                   <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                     {[
-                      ['Father', entry.fatherName], ['PSH Registration No.', entry.pshRegistrationNumber], ['Work Status', entry.workStatus],
+                      ['Father', entry.fatherName], ['PBM Registration No.', entry.pshRegistrationNumber], ['Work Status', entry.workStatus],
                       ['Job Title / Occupation', entry.jobTitle], ['Employment Sector', entry.employmentType], ['Employer / Business', entry.employer],
                       ['Work City', entry.workCity], ['Work Start Date', entry.workStartDate], ['Highest Qualification', entry.highestQualification],
                       ['Marital Status', entry.maritalStatus], ['Marriage Year', entry.marriageYear],

@@ -7,7 +7,9 @@ import {
   fetchChildPhoto,
   isPersistedChildPhotoUrl,
   CHILD_PHOTO_MAX_BYTES,
+  detectChildPhotoType,
 } from '@/lib/child-photo';
+import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 const PHOTO_MANAGEMENT_ROLES: Role[] = [Role.INCHARGE, Role.ACCOUNT_ASSISTANT, Role.CLERK];
 const PHOTO_VIEW_ROLES: Role[] = [Role.INCHARGE, Role.ACCOUNT_ASSISTANT, Role.CLERK, Role.MOTHER_MAID];
@@ -85,9 +87,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Photo must be 4 MB or smaller' }, { status: 400 });
     }
 
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const signature = detectChildPhotoType(bytes);
+    if (!signature || signature.mimeType !== file.type) {
+      return NextResponse.json({ error: 'Only valid JPEG, PNG, and WebP images are allowed' }, { status: 400 });
+    }
+    await moderateImage(bytes, file.type);
     const url = await storeChildPhoto(file, childId);
     return NextResponse.json({ success: true, url });
   } catch (error) {
+    const moderationFailure = imageModerationFailure(error);
+    if (moderationFailure) return moderationFailure;
     if (error instanceof Error) {
       if (error.message === 'CHILD_PHOTO_STORAGE_NOT_CONFIGURED') {
         return NextResponse.json(

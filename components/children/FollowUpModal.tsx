@@ -23,8 +23,8 @@ const fields: { key: Exclude<keyof FollowUpRecord, 'id'>; label: string }[] = [
   { key: 'passingYear', label: 'Passing Year' },
   { key: 'totalMarks', label: 'Total Marks' },
   { key: 'obtainedMarks', label: 'Obtained Marks' },
-  { key: 'pshRegistrationNumber', label: 'PSH Registration Number' },
-  { key: 'passedFromPsh', label: 'Passed From Which PSH' },
+  { key: 'pshRegistrationNumber', label: 'PBM Registration Number' },
+  { key: 'passedFromPsh', label: 'Passed From Which PBM' },
 ];
 
 export function FollowUpModal({

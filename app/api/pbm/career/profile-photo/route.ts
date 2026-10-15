@@ -8,6 +8,7 @@ import {
 } from '@/lib/child-photo';
 import { verifyPbmChildSession } from '@/lib/pbm-auth';
 import { getPbmPrismaReady } from '@/lib/pbm-db';
+import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 function getPhotoUrl(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Choose an image no larger than 4 MB.' }, { status: 400 });
     }
 
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    await moderateImage(bytes, file.type);
     const newPhotoUrl = await storeChildPhoto(file, graduate.child.id);
     uploadedPhotoUrl = newPhotoUrl;
     const client = await getPbmPrismaReady();
@@ -86,6 +89,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error) {
     if (uploadedPhotoUrl) await removeChildPhoto(uploadedPhotoUrl);
+    const moderationFailure = imageModerationFailure(error);
+    if (moderationFailure) return moderationFailure;
     if (error instanceof Error && error.message === 'PBM_CHILD_SESSION_EXPIRED') {
       return NextResponse.json({ error: 'Your session is no longer valid. Please sign in again.' }, { status: 401 });
     }

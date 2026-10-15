@@ -352,7 +352,7 @@ function AddressFields({
       {values.addressType === 'Village' ? (
         <>
           <FormInput
-            label="Village Name"
+            label="Village Name/No."
             value={values.villageName}
             onChange={(event) => onChange('villageName', event.target.value)}
             disabled={disabled}
@@ -476,6 +476,7 @@ function FormInput({
   onChange,
   required = false,
   disabled = false,
+  readOnly = false,
   className = '',
   name,
   min,
@@ -489,6 +490,7 @@ function FormInput({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
   className?: string;
   name?: string;
   min?: number;
@@ -509,6 +511,7 @@ function FormInput({
         onChange={onChange}
         required={required}
         disabled={disabled}
+        readOnly={readOnly}
         min={min}
         max={max}
         step={step}
@@ -517,6 +520,63 @@ function FormInput({
       />
     </div>
   );
+}
+
+function getAgeAtDateOf(dateOfBirth: string, comparisonDate: string): string {
+  const parseDate = (value: string) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return null;
+
+    const [, year, month, day] = match;
+    return { year: Number(year), month: Number(month), day: Number(day) };
+  };
+
+  const birthDate = parseDate(dateOfBirth);
+  const admission = parseDate(comparisonDate);
+  if (!birthDate || !admission) return '';
+
+  const toTimestamp = (date: { year: number; month: number; day: number }) =>
+    Date.UTC(date.year, date.month - 1, date.day);
+  const birthTimestamp = toTimestamp(birthDate);
+  const admissionTimestamp = toTimestamp(admission);
+  if (
+    new Date(birthTimestamp).toISOString().slice(0, 10) !== dateOfBirth ||
+    new Date(admissionTimestamp).toISOString().slice(0, 10) !== comparisonDate ||
+    admissionTimestamp < birthTimestamp
+  ) {
+    return '';
+  }
+
+  const addMonths = (date: { year: number; month: number; day: number }, months: number) => {
+    const monthIndex = date.year * 12 + date.month - 1 + months;
+    const year = Math.floor(monthIndex / 12);
+    const month = monthIndex % 12 + 1;
+    const day = Math.min(date.day, new Date(Date.UTC(year, month, 0)).getUTCDate());
+    return { year, month, day };
+  };
+  const isAfter = (
+    left: { year: number; month: number; day: number },
+    right: { year: number; month: number; day: number }
+  ) => toTimestamp(left) > toTimestamp(right);
+
+  let years = admission.year - birthDate.year;
+  let yearDate = addMonths(birthDate, years * 12);
+  if (isAfter(yearDate, admission)) {
+    years -= 1;
+    yearDate = addMonths(birthDate, years * 12);
+  }
+
+  let months = (admission.year - yearDate.year) * 12 + admission.month - yearDate.month;
+  let monthDate = addMonths(yearDate, months);
+  if (isAfter(monthDate, admission)) {
+    months -= 1;
+    monthDate = addMonths(yearDate, months);
+  }
+
+  const days = (admissionTimestamp - toTimestamp(monthDate)) / 86_400_000;
+  const formatUnit = (value: number, unit: string) => `${value} ${unit}${value === 1 ? '' : 's'}`;
+
+  return `${formatUnit(years, 'year')}, ${formatUnit(months, 'month')}, ${formatUnit(days, 'day')}`;
 }
 
 // Simple Outlined Select with Crisp Dark Border & Floating Label
@@ -681,7 +741,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [bFormNo, setBFormNo] = useState<string>('');
   const [bFormFrontFile, setBFormFrontFile] = useState<File | null>(null);
   const [bFormBackFile, setBFormBackFile] = useState<File | null>(null);
-  const [dateOfBirth, setDateOfBirth] = useState<string>('2016-01-15');
+  const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [gender, setGender] = useState<string>('');
   const [familyCast, setFamilyCast] = useState<string>('');
   const [motherLanguage, setMotherLanguage] = useState<string>('');
@@ -705,6 +765,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [appearanceMeasurements, setAppearanceMeasurements] = useState<AppearanceMeasurement[]>([
     { id: '1', year: String(new Date().getFullYear()), height: '', weight: '', age: '' },
   ]);
+  const admissionAge = initialChild ? '' : getAgeAtDateOf(dateOfBirth, admissionDate);
 
   const addAppearanceMeasurement = () => {
     setAppearanceMeasurements((current) => [
@@ -1707,7 +1768,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setAttachments((current) =>
         Object.fromEntries(Object.entries(current).map(([key, item]) => [key, { ...item, file: null }]))
       );
-      setDateOfBirth(initialChild.dateOfBirth || '2016-01-15');
+      setDateOfBirth(initialChild.dateOfBirth || '');
       setGender(initialChild.gender || 'MALE');
       setBloodGroup(initialChild.bloodGroup || 'B+');
       setAppearanceMeasurements([{
@@ -2100,7 +2161,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setAttachments((current) =>
       Object.fromEntries(Object.entries(current).map(([key, item]) => [key, { ...item, file: null }]))
     );
-    setDateOfBirth('2016-01-15');
+    setDateOfBirth('');
     setGender('');
     setFamilyCast('');
     setMotherLanguage('');
@@ -2863,13 +2924,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       }
 
       const savedAppearanceMeasurements = appearanceMeasurements
-        .filter((measurement) => measurement.height || measurement.weight || measurement.age)
+        .filter((measurement, index) =>
+          measurement.height ||
+          measurement.weight ||
+          (index === 0 && !initialChild ? admissionAge : measurement.age)
+        )
         .map((measurement, index) => ({
           id: measurement.id,
           year: getYearValue(measurement.year),
           height: measurement.height,
           weight: measurement.weight,
-          age: measurement.age,
+          age: index === 0 && !initialChild ? admissionAge : measurement.age,
           index,
         }))
         .sort((left, right) => right.year - left.year || right.index - left.index)
@@ -3846,12 +3911,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                   onChange={(e) => updateAppearanceMeasurement(measurement.id, 'weight', e.target.value)}
                 />
                 <FormInput
-                  label="Age"
+                  label={index === 0 && !initialChild ? 'Age at Admission' : 'Age'}
                   name={`age-${measurement.id}`}
-                  type="number"
-                  min={0}
-                  step="1"
-                  value={measurement.age}
+                  type={index === 0 && !initialChild ? 'text' : 'number'}
+                  min={index === 0 && !initialChild ? undefined : 0}
+                  step={index === 0 && !initialChild ? undefined : '1'}
+                  value={index === 0 && !initialChild ? admissionAge : measurement.age}
+                  readOnly={index === 0 && !initialChild}
                   onChange={(e) => updateAppearanceMeasurement(measurement.id, 'age', e.target.value)}
                 />
               </div>

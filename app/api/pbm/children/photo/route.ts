@@ -9,6 +9,7 @@ import {
 } from '@/lib/child-photo';
 import { getPbmStaffSession } from '@/lib/pbm-auth';
 import { getPbmPrismaReady } from '@/lib/pbm-db';
+import { imageModerationFailure, moderateImage } from '@/lib/image-moderation';
 
 export async function GET(request: Request) {
   try {
@@ -48,11 +49,17 @@ export async function POST(request: Request) {
     if (file.size <= 0 || file.size > CHILD_PHOTO_MAX_BYTES) {
       return NextResponse.json({ error: 'Photo must be greater than 0 bytes and no larger than 4 MB.' }, { status: 400 });
     }
-    const signature = detectChildPhotoType(new Uint8Array(await file.arrayBuffer()));
-    if (!signature) return NextResponse.json({ error: 'Only valid JPEG, PNG, or WebP images are allowed.' }, { status: 400 });
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const signature = detectChildPhotoType(bytes);
+    if (!signature || signature.mimeType !== file.type) {
+      return NextResponse.json({ error: 'Only valid JPEG, PNG, or WebP images are allowed.' }, { status: 400 });
+    }
+    await moderateImage(bytes, file.type);
     const photoUrl = await storeChildPhoto(file, `pbm-${randomUUID()}`);
     return NextResponse.json({ success: true, url: photoUrl });
   } catch (error) {
+    const moderationFailure = imageModerationFailure(error);
+    if (moderationFailure) return moderationFailure;
     if (error instanceof Error && error.message === 'CHILD_PHOTO_STORAGE_NOT_CONFIGURED') {
       return NextResponse.json({ error: 'PBM photo storage is not configured.' }, { status: 503 });
     }
