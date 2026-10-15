@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { BriefcaseBusiness, KeyRound, UserRound } from 'lucide-react';
+import { KeyRound, UserRound } from 'lucide-react';
 
 export default function ProfessionalCareerLoginPage() {
   const router = useRouter();
@@ -36,14 +37,23 @@ export default function ProfessionalCareerLoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-slate-100 px-4 py-12">
       <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-xl sm:p-9">
         <div className="mb-7 flex items-center gap-3">
-          <span className="rounded-2xl bg-emerald-100 p-3 text-emerald-800"><BriefcaseBusiness className="h-6 w-6" /></span>
+          <span className="rounded-full bg-emerald-100 p-1.5">
+            <Image
+              src="/pbm-sweet-home-seal.png"
+              alt="PBM Sweet Home logo"
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-full object-contain"
+            />
+          </span>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">Pakistan Sweet Home</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">PBM SWEET HOME</p>
             <h1 className="mt-1 text-2xl font-extrabold text-slate-900">Professional Career</h1>
+            <p className="mt-1 text-xs font-medium text-slate-500">Developed by Haider Bhatti</p>
           </div>
         </div>
         <p className="mb-6 text-sm leading-6 text-slate-600">
-          Sign in to share your education and career progress with Pakistan Sweet Home.
+          Sign in to share your education and career progress with PBM Sweet Home.
         </p>
 
         {error && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
@@ -87,7 +97,7 @@ export default function ProfessionalCareerLoginPage() {
           </button>
         </form>
         <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-          If you need login details, contact your Pakistan Sweet Home staff member.
+          If you need login details, contact your PBM Sweet Home staff member.
         </p>
       </section>
     </main>
