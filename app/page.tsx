@@ -20,7 +20,6 @@ import {
   Heart,
   Award,
   BookOpen,
-  GraduationCap,
   Sparkles,
   Search,
   Filter,
@@ -1265,9 +1264,9 @@ export default function StandalonePSHAdmissionWebsite() {
 
         {/* Official Government / PBM Header Banner */}
         <header className="bg-gradient-to-r from-[#0D5C3A] via-[#09482D] to-[#0D5C3A] text-white shadow-md sticky top-0 z-40 border-b-4 border-[#C86A28]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
             {/* Official Emblem & Branding */}
-            <div className="flex items-center gap-3">
+            <div className="min-w-0 flex items-center gap-3">
               <div className="h-11 w-11 overflow-hidden rounded-full border-2 border-white/30 bg-white shrink-0 shadow-inner">
                 <Image
                   src="/pbm-sweet-home-seal.png"
@@ -1277,8 +1276,8 @@ export default function StandalonePSHAdmissionWebsite() {
                   className="h-full w-full object-contain"
                 />
               </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-widest text-emerald-200 font-semibold leading-tight">
+              <div className="min-w-0">
+                <div className="text-[9px] sm:text-[11px] uppercase tracking-[0.12em] sm:tracking-widest text-emerald-200 font-semibold leading-tight">
                   Sponsored by Pakistan Bait-ul-Mal • Regional Office Multan
                 </div>
                 <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white leading-tight">
@@ -1288,82 +1287,75 @@ export default function StandalonePSHAdmissionWebsite() {
             </div>
 
             {/* Top Navigation Tabs */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/academic"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
-              >
-                <GraduationCap className="h-4 w-4" />
-                Academic
-              </Link>
-              <Link
-                href="/professional-career"
-                className="rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
-              >
-                Graduate Career Login
-              </Link>
-              {isPbmAdmin && (
-                <Link
-                  href="/pbm-staff/users"
-                  className="rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
+            <nav aria-label="Portal navigation" className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJustSubmittedChild(null);
+                    setEditingChild(null);
+                    setActiveTab('form');
+                  }}
+                  className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center text-[11px] font-bold leading-tight transition-all cursor-pointer sm:w-auto sm:px-3.5 sm:py-1.5 sm:text-xs ${
+                    activeTab === 'form' && !justSubmittedChild
+                      ? 'bg-white text-[#0D5C3A] shadow-xs'
+                      : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
                 >
-                  Staff Accounts
-                </Link>
-              )}
-              <span className="hidden text-xs text-emerald-100 sm:inline">{staffName}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  void (async () => {
-                    try {
-                      const response = await fetch('/api/pbm/staff/session', { method: 'DELETE' });
-                      if (!response.ok) throw new Error('Unable to sign out.');
-                      router.replace('/pbm-staff/login');
-                    } catch {
-                      showToast('Unable to sign out. Please try again.');
-                    }
-                  })();
-                }}
-                className="rounded-lg border border-white/30 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-white/10"
-              >
-                Sign out
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setJustSubmittedChild(null);
-                  setEditingChild(null);
-                  setActiveTab('form');
-                }}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'form' && !justSubmittedChild
-                    ? 'bg-white text-[#0D5C3A] shadow-xs'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>{editingChild ? 'Edit Dossier' : 'New Admission Form'}</span>
-              </button>
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span>{editingChild ? 'Edit Dossier' : 'New Admission Form'}</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setJustSubmittedChild(null);
-                  setActiveTab('records');
-                }}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'records'
-                    ? 'bg-white text-[#0D5C3A] shadow-xs'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Admitted Records</span>
-                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-[#C86A28] text-white font-black">
-                  {enrolledChildren.length}
-                </span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  aria-label={`Admitted Records, ${enrolledChildren.length} children`}
+                  onClick={() => {
+                    setJustSubmittedChild(null);
+                    setActiveTab('records');
+                  }}
+                  className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-center text-[11px] font-bold leading-tight transition-all cursor-pointer sm:w-auto sm:px-3.5 sm:py-1.5 sm:text-xs ${
+                    activeTab === 'records'
+                      ? 'bg-white text-[#0D5C3A] shadow-xs'
+                      : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
+                >
+                  <Users className="h-4 w-4 shrink-0" />
+                  <span>Admitted Records</span>
+                  <span className="rounded-full bg-[#C86A28] px-1.5 py-0.5 text-[10px] font-black text-white">
+                    {enrolledChildren.length}
+                  </span>
+                </button>
+              </div>
+
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
+                {isPbmAdmin && (
+                  <Link
+                    href="/pbm-staff/users"
+                    className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-white/30 px-2.5 py-2 text-center text-[11px] font-bold leading-tight text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-3.5 sm:py-1.5 sm:text-xs"
+                  >
+                    Staff Accounts
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    void (async () => {
+                      try {
+                        const response = await fetch('/api/pbm/staff/session', { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Unable to sign out.');
+                        router.replace('/pbm-staff/login');
+                      } catch {
+                        showToast('Unable to sign out. Please try again.');
+                      }
+                    })();
+                  }}
+                  className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-white/30 px-2.5 py-2 text-center text-[11px] font-bold leading-tight text-white transition-colors hover:bg-white/10 sm:w-auto sm:px-3.5 sm:py-1.5 sm:text-xs"
+                >
+                  Sign out
+                </button>
+                <span className="hidden text-xs text-emerald-100 sm:inline">{staffName}</span>
+              </div>
+            </nav>
           </div>
         </header>
 

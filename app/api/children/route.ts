@@ -131,6 +131,11 @@ export async function POST(request: Request) {
     const trimmedFullName = typeof fullName === 'string' ? fullName.trim() : '';
     const trimmedFatherName = typeof fatherGuardianName === 'string' ? fatherGuardianName.trim() : '';
     const trimmedAdmissionNo = typeof admissionNo === 'string' ? admissionNo.trim() : '';
+    const normalizedGender = typeof gender === 'string' ? gender.trim().toUpperCase() : '';
+
+    if (normalizedGender !== 'MALE') {
+      return NextResponse.json({ error: 'Only boys are eligible for admission to Pakistan Sweet Home Multan.' }, { status: 400 });
+    }
 
     if (!trimmedFullName || !trimmedFatherName || !dateOfBirth || !trimmedAdmissionNo) {
       return NextResponse.json(
@@ -250,7 +255,7 @@ export async function POST(request: Request) {
         fullName: trimmedFullName,
         fatherGuardianName: trimmedFatherName,
         dateOfBirth: parsedDob,
-        gender,
+        gender: normalizedGender,
         bFormNo: bFormNo ? String(bFormNo).trim() : null,
         admissionNo: trimmedAdmissionNo,
         admissionDate: parsedAdmissionDate,

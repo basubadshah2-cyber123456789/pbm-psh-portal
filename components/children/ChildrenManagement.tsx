@@ -621,15 +621,12 @@ export function ChildrenManagement() {
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Gender *</label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-300 rounded-md focus:ring-2 focus:ring-emerald-500 outline-hidden"
-                  >
-                    <option value="MALE">Male</option>
-                    <option value="FEMALE">Female</option>
-                    <option value="OTHER">Other</option>
-                  </select>
+                  <input
+                    value="Male"
+                    readOnly
+                    aria-readonly="true"
+                    className="w-full p-2 bg-slate-100 border border-slate-300 rounded-md text-slate-700"
+                  />
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">B-Form / CNIC</label>

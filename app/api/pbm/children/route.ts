@@ -81,6 +81,12 @@ export async function POST(request: Request) {
     if (!payload) {
       return NextResponse.json({ error: 'Child name, admission number, and dossier details are required.' }, { status: 400 });
     }
+    if (
+      request.headers.get('x-pbm-admission') === 'new' &&
+      (typeof payload.gender !== 'string' || payload.gender.trim().toUpperCase() !== 'MALE')
+    ) {
+      return NextResponse.json({ error: 'Only boys are eligible for admission to Pakistan Sweet Home Multan.' }, { status: 400 });
+    }
 
     const id = randomUUID();
     const admissionNo = (payload.admissionNo as string).trim();

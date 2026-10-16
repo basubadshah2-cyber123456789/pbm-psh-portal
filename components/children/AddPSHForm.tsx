@@ -742,7 +742,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [bFormFrontFile, setBFormFrontFile] = useState<File | null>(null);
   const [bFormBackFile, setBFormBackFile] = useState<File | null>(null);
   const [dateOfBirth, setDateOfBirth] = useState<string>('');
-  const [gender, setGender] = useState<string>('');
+  const [gender, setGender] = useState<string>('MALE');
   const [familyCast, setFamilyCast] = useState<string>('');
   const [motherLanguage, setMotherLanguage] = useState<string>('');
   const [birthDistrict, setBirthDistrict] = useState<string>('');
@@ -2162,7 +2162,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       Object.fromEntries(Object.entries(current).map(([key, item]) => [key, { ...item, file: null }]))
     );
     setDateOfBirth('');
-    setGender('');
+    setGender('MALE');
     setFamilyCast('');
     setMotherLanguage('');
     setBirthDistrict('');
@@ -2312,10 +2312,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       const adm = `ADM-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
       setRegistrationNo(adm);
       setAdmissionDate('2026-09-10');
-      setFullName('Fatima Zahra');
-      setBFormNo('31201-7654321-2');
+      setFullName('Muhammad Zahid');
+      setBFormNo('31201-7654321-1');
       setDateOfBirth('2017-06-18');
-      setGender('FEMALE');
+      setGender('MALE');
       setFamilyCast('Arain');
       setMotherLanguage('Saraiki');
       setBirthDistrict('Bahawalpur');
@@ -2426,7 +2426,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         },
       ]);
 
-      setResultSchool('Govt Girls Primary School Bahawalpur');
+      setResultSchool('Govt Primary School Bahawalpur');
       setResultClass('Class 3');
       setResultExamDate('2026-03-15');
       setResultExamType('Mid-Term Examination');
@@ -3209,7 +3209,10 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         hasPersistedChildId ? `/api/pbm/children/${initialChild.id}` : '/api/pbm/children',
         {
           method: hasPersistedChildId ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(!hasPersistedChildId ? { 'x-pbm-admission': 'new' } : {}),
+          },
           body: JSON.stringify(payload),
         }
       );
@@ -3363,8 +3366,8 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       data-repeatable-field-group={repeatableFieldGroupId}
       className="space-y-6 text-slate-800"
     >
-      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-4 sm:p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-3 sm:p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-xs sm:text-sm text-slate-700">
             {initialChild ? (
               <span className="flex items-center gap-2 font-extrabold text-emerald-700">
@@ -3378,7 +3381,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <button
               type="button"
               onClick={() => {
@@ -3388,7 +3391,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                 setFormSuccess(null);
               }}
               disabled={isSubmitting || Boolean(initialChild)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-violet-300 bg-violet-600 px-3 py-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-violet-300 bg-violet-600 px-2 py-2 text-center text-[11px] font-bold leading-tight text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-3"
               title={initialChild ? 'Demo data is available only when creating a new child dossier' : 'Fill this form with sample data to demonstrate it'}
             >
               <Sparkles className="h-4 w-4" />
@@ -3398,7 +3401,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               type="button"
               onClick={() => openCareerAccountSetup()}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50"
+              className="col-span-2 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-2 py-2 text-center text-[11px] font-bold leading-tight text-emerald-800 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 sm:col-span-1 sm:w-auto sm:px-3"
             >
               <Award className="h-4 w-4" />
               Professional Career Setup
@@ -3407,7 +3410,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               <button
                 type="button"
                 onClick={onCancel}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                className="col-span-2 min-h-10 w-full rounded-xl border border-slate-200 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 shadow-sm transition hover:bg-slate-100 sm:col-span-1 sm:w-auto sm:px-3 sm:py-1.5"
               >
                 ✕ Cancel Edit
               </button>
@@ -3415,7 +3418,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             <button
               type="button"
               onClick={handleClearForm}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100"
+              className="min-h-10 w-full rounded-xl border border-slate-200 bg-white px-2 py-2 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:bg-slate-100 sm:w-auto sm:px-3 sm:py-1.5"
               title="Reset all form fields"
             >
               🧹 Clear Form
@@ -3424,28 +3427,28 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
         </div>
 
         <div className="mt-4 border-t border-slate-200 pt-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+          <div className="grid grid-cols-2 items-center gap-2 text-xs sm:flex sm:flex-wrap">
+            <span className="col-span-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 sm:col-span-1">
               Quick Presets:
             </span>
             <button
               type="button"
               onClick={() => handleAutoFillDemo('orphan')}
-              className="rounded-lg bg-amber-500 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-amber-600"
+              className="min-h-10 rounded-lg bg-amber-500 px-2 py-1.5 text-center font-bold text-white shadow-sm transition hover:bg-amber-600 sm:px-2.5"
             >
               ⚡ Orphan
             </button>
             <button
               type="button"
               onClick={() => handleAutoFillDemo('poor')}
-              className="rounded-lg bg-emerald-600 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-emerald-700"
+              className="min-h-10 rounded-lg bg-emerald-600 px-2 py-1.5 text-center font-bold text-white shadow-sm transition hover:bg-emerald-700 sm:px-2.5"
             >
               ⚡ Poorest of Poor
             </button>
             <button
               type="button"
               onClick={() => handleAutoFillDemo('replace')}
-              className="rounded-lg bg-sky-600 px-2.5 py-1.5 font-bold text-white shadow-sm transition hover:bg-sky-700"
+              className="min-h-10 rounded-lg bg-sky-600 px-2 py-1.5 text-center font-bold text-white shadow-sm transition hover:bg-sky-700 sm:px-2.5"
             >
               ⚡ Replace Seat
             </button>
@@ -3675,11 +3678,11 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             onChange={(e) => setDateOfBirth(e.target.value)}
             required
           />
-          <FormSelect
-            label="Gender"
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            options={['Male', 'Female', 'Other']}
+          <FormInput
+            label={initialChild && gender.toUpperCase() !== 'MALE' ? 'Gender (saved record)' : 'Gender'}
+            value={gender.toUpperCase() === 'MALE' ? 'Male' : gender}
+            onChange={() => {}}
+            readOnly
           />
 
           {/* Row 3 */}
