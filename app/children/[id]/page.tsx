@@ -312,11 +312,36 @@ export default async function ChildProfilePage({ params }: { params: Promise<{ i
               <div>
                 <dt className="text-slate-400">Sponsorship Status</dt>
                 <dd className="font-semibold text-slate-800">
-                  {psh?.basicInfo?.isSponsored === 'Yes'
-                    ? `Sponsored (Rs. ${psh.basicInfo.sponsorshipAmount || '15,000'}/mo)`
+                  {psh?.basicInfo?.isSponsored && psh?.basicInfo?.isSponsored !== 'No'
+                    ? `${psh.basicInfo.isSponsored !== 'Yes' ? psh.basicInfo.isSponsored : 'Sponsored'} (Rs. ${psh.basicInfo.sponsorshipAmount || '15,000'}/mo)`
                     : 'Institutional Support'}
                 </dd>
               </div>
+              {(psh?.donorInfo?.name || psh?.basicInfo?.donorName) && (
+                <div className="sm:col-span-2 p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-100">
+                  <dt className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider mb-1.5">
+                    Donor Details ({psh?.basicInfo?.isSponsored || 'SPONSORED BY DONOR'})
+                  </dt>
+                  <dd className="text-xs text-slate-700 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div><span className="text-slate-400 block text-[10px]">Donor Name:</span> <span className="font-semibold text-slate-800">{psh?.donorInfo?.name || psh?.basicInfo?.donorName}</span></div>
+                    <div><span className="text-slate-400 block text-[10px]">Father Name:</span> <span className="font-semibold text-slate-800">{psh?.donorInfo?.fatherName || psh?.basicInfo?.donorFatherName || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block text-[10px]">ID Card No:</span> <span className="font-semibold font-mono text-slate-800">{psh?.donorInfo?.cnic || psh?.basicInfo?.donorCnic || 'N/A'}</span></div>
+                    <div><span className="text-slate-400 block text-[10px]">Marital Status:</span> <span className="font-semibold text-slate-800">{psh?.donorInfo?.maritalStatus || psh?.basicInfo?.donorMaritalStatus || 'N/A'}</span></div>
+                    {(psh?.donorInfo?.address || psh?.basicInfo?.donorAddress) && (
+                      <div className="col-span-2"><span className="text-slate-400 block text-[10px]">Address:</span> <span className="font-semibold text-slate-800">{psh?.donorInfo?.address || psh?.basicInfo?.donorAddress}</span></div>
+                    )}
+                    {(psh?.donorInfo?.contactNo || psh?.basicInfo?.donorContactNo) && (
+                      <div><span className="text-slate-400 block text-[10px]">Contact No:</span> <span className="font-semibold text-slate-800">{psh?.donorInfo?.contactNo || psh?.basicInfo?.donorContactNo}</span></div>
+                    )}
+                    {(psh?.donorInfo?.email || psh?.basicInfo?.donorEmail) && (
+                      <div><span className="text-slate-400 block text-[10px]">Email:</span> <span className="font-semibold text-slate-800">{psh?.donorInfo?.email || psh?.basicInfo?.donorEmail}</span></div>
+                    )}
+                    {(psh?.donorInfo?.document?.fileName || psh?.donorInfo?.fileName) && (
+                      <div><span className="text-slate-400 block text-[10px]">Document:</span> <span className="font-semibold text-emerald-700 underline">{psh?.donorInfo?.document?.fileName || psh?.donorInfo?.fileName}</span></div>
+                    )}
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt className="text-slate-400">Previous School</dt>
                 <dd className="font-semibold text-slate-800">{psh?.basicInfo?.previousSchool || 'Not recorded'}</dd>

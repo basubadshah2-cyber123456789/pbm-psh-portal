@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { FileText, GraduationCap, Plus, Trash2, UploadCloud } from 'lucide-react';
+import { FileText, GraduationCap, Plus, Trash2, UploadCloud, HeartHandshake } from 'lucide-react';
+import { formatCNIC, formatPhone } from '@/lib/formatters';
 
 interface SubjectMark {
   id: string;
@@ -23,6 +24,15 @@ interface CollegeLifeEntry {
   collegeName?: string;
   program?: string;
   sponsorshipSource?: string;
+  donorInfo?: {
+    name?: string;
+    fatherName?: string;
+    cnic?: string;
+    maritalStatus?: string;
+    address?: string;
+    contactNo?: string;
+    email?: string;
+  } | null;
   classYear?: string;
   rollNumber?: string;
   academicPeriod?: string;
@@ -115,6 +125,13 @@ interface FormValues {
   collegeName: string;
   program: string;
   sponsorshipSource: string;
+  donorName: string;
+  donorFatherName: string;
+  donorCnic: string;
+  donorMaritalStatus: string;
+  donorAddress: string;
+  donorContactNo: string;
+  donorEmail: string;
   classYear: string;
   rollNumber: string;
   academicPeriod: string;
@@ -129,6 +146,13 @@ const initialForm: FormValues = {
   collegeName: '',
   program: '',
   sponsorshipSource: '',
+  donorName: '',
+  donorFatherName: '',
+  donorCnic: '',
+  donorMaritalStatus: '',
+  donorAddress: '',
+  donorContactNo: '',
+  donorEmail: '',
   classYear: '',
   rollNumber: '',
   academicPeriod: '',
@@ -204,6 +228,7 @@ export function CollegeLifeForm() {
   const [affidavitFile, setAffidavitFile] = useState<File | null>(null);
   const [minutesPhotoFile, setMinutesPhotoFile] = useState<File | null>(null);
   const [resultFile, setResultFile] = useState<File | null>(null);
+  const [donorDocumentFile, setDonorDocumentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -254,6 +279,7 @@ export function CollegeLifeForm() {
       if (applicationFile) formData.append('applicationFile', applicationFile);
       if (affidavitFile) formData.append('affidavitFile', affidavitFile);
       if (minutesPhotoFile) formData.append('minutesPhotoFile', minutesPhotoFile);
+      if (donorDocumentFile) formData.append('donorDocumentFile', donorDocumentFile);
 
       const response = await fetch('/api/pbm/career/university-progress', {
         method: 'POST',
@@ -270,6 +296,7 @@ export function CollegeLifeForm() {
       setAffidavitFile(null);
       setMinutesPhotoFile(null);
       setResultFile(null);
+      setDonorDocumentFile(null);
       const fileInput = document.getElementById('college-life-result-file');
       if (fileInput instanceof HTMLInputElement) fileInput.value = '';
       ['college-life-application-file', 'college-life-affidavit-file', 'college-life-minutes-photo-file'].forEach((id) => {
@@ -309,6 +336,91 @@ export function CollegeLifeForm() {
       {success && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
 
       <form onSubmit={submit} className="space-y-6">
+        {form.sponsorshipSource === 'Sponsored by Donor' && (
+          <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-slate-50 p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-700 font-bold text-white shadow-xs">
+                  <HeartHandshake className="h-4.5 w-4.5" />
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Donor Information</h4>
+                  <p className="text-[11px] text-slate-500">Provide personal & contact details of the sponsoring donor</p>
+                </div>
+              </div>
+              <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold uppercase text-emerald-800">
+                Sponsored by Donor
+              </span>
+            </div>
+
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="block text-xs font-semibold text-slate-700">
+                Donor Name <span className="text-red-600">*</span>
+                <input required maxLength={200} placeholder="Full Name" value={form.donorName} onChange={(e) => setForm((c) => ({ ...c, donorName: e.target.value }))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Father Name <span className="text-red-600">*</span>
+                <input required maxLength={200} placeholder="Father Name" value={form.donorFatherName} onChange={(e) => setForm((c) => ({ ...c, donorFatherName: e.target.value }))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                ID Card No (CNIC) <span className="text-red-600">*</span>
+                <input required maxLength={15} placeholder="XXXXX-XXXXXXX-X" value={form.donorCnic} onChange={(e) => setForm((c) => ({ ...c, donorCnic: formatCNIC(e.target.value) }))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Marital Status <span className="text-red-600">*</span>
+                <select required value={form.donorMaritalStatus} onChange={(e) => setForm((c) => ({ ...c, donorMaritalStatus: e.target.value }))} className={inputClassName}>
+                  <option value="">Select status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widow">Widow</option>
+                </select>
+              </label>
+
+              <label className="block text-xs font-semibold text-slate-700 sm:col-span-2">
+                Address
+                <input maxLength={300} placeholder="Residential Address" value={form.donorAddress} onChange={(e) => setForm((c) => ({ ...c, donorAddress: e.target.value }))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Contact No.
+                <input maxLength={15} placeholder="03XX-XXXXXXX" value={form.donorContactNo} onChange={(e) => setForm((c) => ({ ...c, donorContactNo: formatPhone(e.target.value) }))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Email
+                <input type="email" maxLength={100} placeholder="donor@example.com" value={form.donorEmail} onChange={(e) => setForm((c) => ({ ...c, donorEmail: e.target.value }))} className={inputClassName} />
+              </label>
+
+              <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span className="block text-xs font-bold text-slate-800">Donor Document / Photo</span>
+                  <span className="text-[11px] text-slate-500">Upload CNIC, Photo, or Sponsorship Document (PDF / Image)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-xs">
+                    <UploadCloud className="h-4 w-4 text-emerald-600" />
+                    <span>{donorDocumentFile ? 'Change File' : 'Upload File'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => setDonorDocumentFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  {donorDocumentFile && (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span className="max-w-[150px] truncate">{donorDocumentFile.name}</span>
+                      <button type="button" onClick={() => setDonorDocumentFile(null)} className="text-red-500 hover:text-red-700 ml-1">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-semibold text-slate-700">
             Student Name <span className="text-red-600">*</span>
@@ -655,6 +767,20 @@ export function CollegeLifeForm() {
                   </div>
                 ) : null)}
               </dl>
+              {entry.donorInfo && (
+                <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-slate-700">
+                  <span className="block font-bold text-emerald-900 mb-1.5">Donor Details (SPONSORED BY DONOR):</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div><span className="text-slate-500 block text-[10px]">Name:</span> <span className="font-semibold">{entry.donorInfo.name || 'N/A'}</span></div>
+                    <div><span className="text-slate-500 block text-[10px]">Father:</span> <span className="font-semibold">{entry.donorInfo.fatherName || 'N/A'}</span></div>
+                    <div><span className="text-slate-500 block text-[10px]">CNIC:</span> <span className="font-semibold font-mono">{entry.donorInfo.cnic || 'N/A'}</span></div>
+                    <div><span className="text-slate-500 block text-[10px]">Status:</span> <span className="font-semibold">{entry.donorInfo.maritalStatus || 'N/A'}</span></div>
+                    {entry.donorInfo.contactNo && <div><span className="text-slate-500 block text-[10px]">Contact:</span> <span className="font-semibold">{entry.donorInfo.contactNo}</span></div>}
+                    {entry.donorInfo.email && <div><span className="text-slate-500 block text-[10px]">Email:</span> <span className="font-semibold">{entry.donorInfo.email}</span></div>}
+                    {entry.donorInfo.address && <div className="col-span-2"><span className="text-slate-500 block text-[10px]">Address:</span> <span className="font-semibold">{entry.donorInfo.address}</span></div>}
+                  </div>
+                </div>
+              )}
               {entry.subjects?.length ? (
                 <div className="mt-4 overflow-x-auto">
                   <table className="w-full min-w-[700px] text-left text-xs">
@@ -739,6 +865,14 @@ interface UniversityFormValues {
   studentName: string;
   fatherName: string;
   pshRegistrationNumber: string;
+  sponsorshipSource: string;
+  donorName: string;
+  donorFatherName: string;
+  donorCnic: string;
+  donorMaritalStatus: string;
+  donorAddress: string;
+  donorContactNo: string;
+  donorEmail: string;
   institutionType: string;
   universityName: string;
   campus: string;
@@ -763,6 +897,14 @@ const initialUniversityForm: UniversityFormValues = {
   studentName: '',
   fatherName: '',
   pshRegistrationNumber: '',
+  sponsorshipSource: 'Sponsored by PBM',
+  donorName: '',
+  donorFatherName: '',
+  donorCnic: '',
+  donorMaritalStatus: '',
+  donorAddress: '',
+  donorContactNo: '',
+  donorEmail: '',
   institutionType: '',
   universityName: '',
   campus: '',
@@ -823,6 +965,7 @@ export function UniversityLifeForm() {
   const [affidavitFile, setAffidavitFile] = useState<File | null>(null);
   const [minutesPhotoFile, setMinutesPhotoFile] = useState<File | null>(null);
   const [resultFile, setResultFile] = useState<File | null>(null);
+  const [donorDocumentFile, setDonorDocumentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -874,6 +1017,7 @@ export function UniversityLifeForm() {
       if (applicationFile) formData.append('applicationFile', applicationFile);
       if (affidavitFile) formData.append('affidavitFile', affidavitFile);
       if (minutesPhotoFile) formData.append('minutesPhotoFile', minutesPhotoFile);
+      if (donorDocumentFile) formData.append('donorDocumentFile', donorDocumentFile);
 
       const response = await fetch('/api/pbm/career/university-progress', { method: 'POST', body: formData });
       const result = await response.json();
@@ -887,6 +1031,7 @@ export function UniversityLifeForm() {
       setAffidavitFile(null);
       setMinutesPhotoFile(null);
       setResultFile(null);
+      setDonorDocumentFile(null);
       const fileInput = document.getElementById('university-life-result-file');
       if (fileInput instanceof HTMLInputElement) fileInput.value = '';
       ['university-life-application-file', 'university-life-affidavit-file', 'university-life-minutes-photo-file'].forEach((id) => {
@@ -908,12 +1053,22 @@ export function UniversityLifeForm() {
   return (
     <section className="mt-6 rounded-3xl border border-sky-200 bg-white p-5 shadow-sm sm:p-8">
       <div className="mb-6 rounded-2xl bg-sky-50 p-4 sm:p-5">
-        <div className="flex items-center gap-3">
-          <span className="rounded-xl bg-sky-100 p-2.5 text-sky-800"><GraduationCap className="h-5 w-5" /></span>
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900">University Life</h2>
-            <p className="mt-1 text-sm text-sky-800">Record your university admission, degree progress, semester results, and achievements.</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="rounded-xl bg-sky-100 p-2.5 text-sky-800"><GraduationCap className="h-5 w-5" /></span>
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">University Life</h2>
+              <p className="mt-1 text-sm text-sky-800">Record your university admission, degree progress, semester results, and achievements.</p>
+            </div>
           </div>
+          <label className="block w-full text-sm font-semibold text-slate-700 sm:w-64">
+            Sponsored By <span className="text-red-600">*</span>
+            <select required value={form.sponsorshipSource || 'Sponsored by PBM'} onChange={(event) => setField('sponsorshipSource', event.target.value)} className={inputClassName}>
+              <option value="">Select sponsor</option>
+              <option value="Sponsored by PBM">Sponsored by PBM</option>
+              <option value="Sponsored by Donor">Sponsored by Donor</option>
+            </select>
+          </label>
         </div>
       </div>
 
@@ -921,6 +1076,90 @@ export function UniversityLifeForm() {
       {success && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
 
       <form onSubmit={submit} className="space-y-6">
+        {form.sponsorshipSource === 'Sponsored by Donor' && (
+          <div className="rounded-2xl border-2 border-sky-200 bg-gradient-to-br from-sky-50/70 via-white to-slate-50 p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-700 font-bold text-white shadow-xs">
+                  <HeartHandshake className="h-4.5 w-4.5" />
+                </span>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Donor Information</h4>
+                  <p className="text-[11px] text-slate-500">Provide personal & contact details of the sponsoring donor</p>
+                </div>
+              </div>
+              <span className="rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-extrabold uppercase text-sky-800">
+                Sponsored by Donor
+              </span>
+            </div>
+
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="block text-xs font-semibold text-slate-700">
+                Donor Name <span className="text-red-600">*</span>
+                <input required maxLength={200} placeholder="Full Name" value={form.donorName} onChange={(e) => setField('donorName', e.target.value)} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Father Name <span className="text-red-600">*</span>
+                <input required maxLength={200} placeholder="Father Name" value={form.donorFatherName} onChange={(e) => setField('donorFatherName', e.target.value)} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                ID Card No (CNIC) <span className="text-red-600">*</span>
+                <input required maxLength={15} placeholder="XXXXX-XXXXXXX-X" value={form.donorCnic} onChange={(e) => setField('donorCnic', formatCNIC(e.target.value))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Marital Status <span className="text-red-600">*</span>
+                <select required value={form.donorMaritalStatus} onChange={(e) => setField('donorMaritalStatus', e.target.value)} className={inputClassName}>
+                  <option value="">Select status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Divorced">Divorced</option>
+                  <option value="Widow">Widow</option>
+                </select>
+              </label>
+
+              <label className="block text-xs font-semibold text-slate-700 sm:col-span-2">
+                Address
+                <input maxLength={300} placeholder="Residential Address" value={form.donorAddress} onChange={(e) => setField('donorAddress', e.target.value)} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Contact No.
+                <input maxLength={15} placeholder="03XX-XXXXXXX" value={form.donorContactNo} onChange={(e) => setField('donorContactNo', formatPhone(e.target.value))} className={inputClassName} />
+              </label>
+              <label className="block text-xs font-semibold text-slate-700">
+                Email
+                <input type="email" maxLength={100} placeholder="donor@example.com" value={form.donorEmail} onChange={(e) => setField('donorEmail', e.target.value)} className={inputClassName} />
+              </label>
+
+              <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-sky-100 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span className="block text-xs font-bold text-slate-800">Donor Document / Photo</span>
+                  <span className="text-[11px] text-slate-500">Upload CNIC, Photo, or Sponsorship Document (PDF / Image)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition-colors shadow-xs">
+                    <UploadCloud className="h-4 w-4 text-sky-600" />
+                    <span>{donorDocumentFile ? 'Change File' : 'Upload File'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => setDonorDocumentFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  {donorDocumentFile && (
+                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-900">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span className="max-w-[150px] truncate">{donorDocumentFile.name}</span>
+                      <button type="button" onClick={() => setDonorDocumentFile(null)} className="text-red-500 hover:text-red-700 ml-1">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <section>
           <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-700">Student information</h3>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1189,10 +1428,25 @@ export function UniversityLifeForm() {
                       ['University Type', entry.institutionType], ['Campus', entry.campus], ['City / Region', [entry.city, entry.province].filter(Boolean).join(', ')],
                       ['Degree Level', entry.degreeLevel], ['Major / Specialization', entry.majorSubjects], ['University Registration No.', entry.universityRegistrationNumber],
                       ['University Roll No.', entry.rollNumber], ['Admission Year', entry.admissionYear], ['Enrollment Status', entry.currentStatus],
+                      ['Sponsored By', entry.sponsorshipSource],
                       ['Semester GPA', entry.gpa], ['Cumulative GPA', entry.cgpa], ['Year of Completion', entry.passingYear],
                       ['Remarks', entry.remarks],
                     ].map(([label, value]) => value ? <div key={label}><dt className="text-xs text-slate-500">{label}</dt><dd className="font-semibold text-slate-700">{value}</dd></div> : null)}
                   </dl>
+                  {entry.donorInfo && (
+                    <div className="mt-3 rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs text-slate-700">
+                      <span className="block font-bold text-sky-900 mb-1.5">Donor Details (SPONSORED BY DONOR):</span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div><span className="text-slate-500 block text-[10px]">Name:</span> <span className="font-semibold">{entry.donorInfo.name || 'N/A'}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">Father:</span> <span className="font-semibold">{entry.donorInfo.fatherName || 'N/A'}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">CNIC:</span> <span className="font-semibold font-mono">{entry.donorInfo.cnic || 'N/A'}</span></div>
+                        <div><span className="text-slate-500 block text-[10px]">Status:</span> <span className="font-semibold">{entry.donorInfo.maritalStatus || 'N/A'}</span></div>
+                        {entry.donorInfo.contactNo && <div><span className="text-slate-500 block text-[10px]">Contact:</span> <span className="font-semibold">{entry.donorInfo.contactNo}</span></div>}
+                        {entry.donorInfo.email && <div><span className="text-slate-500 block text-[10px]">Email:</span> <span className="font-semibold">{entry.donorInfo.email}</span></div>}
+                        {entry.donorInfo.address && <div className="col-span-2"><span className="text-slate-500 block text-[10px]">Address:</span> <span className="font-semibold">{entry.donorInfo.address}</span></div>}
+                      </div>
+                    </div>
+                  )}
                   {entry.courses?.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[640px] text-left text-xs">
                     <thead className="text-slate-500"><tr><th className="pb-2 pr-3">Course</th><th className="pb-2 pr-3">Credit Hours</th><th className="pb-2 pr-3">Grade</th><th className="pb-2 pr-3">Total Marks</th><th className="pb-2 pr-3">Obtained</th><th className="pb-2">Percentage</th></tr></thead>
                     <tbody>{entry.courses.map((course) => <tr key={course.id} className="border-t border-sky-100"><td className="py-2 pr-3 font-semibold text-slate-700">{course.courseName}</td><td className="py-2 pr-3">{course.creditHours || '—'}</td><td className="py-2 pr-3">{course.grade || '—'}</td><td className="py-2 pr-3">{course.totalMarks || '—'}</td><td className="py-2 pr-3">{course.obtainedMarks || '—'}</td><td className="py-2">{course.percentage ?? coursePercentage(course)}{course.percentage || coursePercentage(course) ? '%' : '—'}</td></tr>)}</tbody>

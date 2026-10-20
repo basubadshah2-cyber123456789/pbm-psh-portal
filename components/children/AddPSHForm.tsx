@@ -12,6 +12,8 @@ import {
   Award,
   Camera,
   Eye,
+  HeartHandshake,
+  FileText,
 } from 'lucide-react';
 import { ChildPhotoPicker } from './ChildPhotoPicker';
 import { ProfessionalCareerAccountModal } from './ProfessionalCareerAccountModal';
@@ -482,6 +484,7 @@ function FormInput({
   min,
   max,
   step,
+  maxLength,
 }: {
   label?: string;
   placeholder?: string;
@@ -496,6 +499,7 @@ function FormInput({
   min?: number;
   max?: number;
   step?: string;
+  maxLength?: number;
 }) {
   return (
     <div className={`relative ${className}`}>
@@ -515,6 +519,7 @@ function FormInput({
         min={min}
         max={max}
         step={step}
+        maxLength={maxLength}
         placeholder={placeholder || (label ? '' : undefined)}
         className="w-full h-12 sm:h-11 px-3.5 py-2 bg-slate-50/90 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 shadow-[0_1px_0_rgba(15,23,42,0.02)] focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed transition-all duration-200"
       />
@@ -750,6 +755,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
   const [nextOfKin, setNextOfKin] = useState<string>('');
   const [isSponsored, setIsSponsored] = useState<string>('');
   const [sponsorshipAmount, setSponsorshipAmount] = useState<string>('');
+  const [donorName, setDonorName] = useState<string>('');
+  const [donorFatherName, setDonorFatherName] = useState<string>('');
+  const [donorCnic, setDonorCnic] = useState<string>('');
+  const [donorMaritalStatus, setDonorMaritalStatus] = useState<string>('');
+  const [donorAddress, setDonorAddress] = useState<string>('');
+  const [donorContactNo, setDonorContactNo] = useState<string>('');
+  const [donorEmail, setDonorEmail] = useState<string>('');
+  const [donorDocumentFile, setDonorDocumentFile] = useState<File | null>(null);
+  const [donorDocumentPreview, setDonorDocumentPreview] = useState<string>('');
+  const [savedDonorDocumentName, setSavedDonorDocumentName] = useState<string>('');
+  const [savedDonorDocumentUrl, setSavedDonorDocumentUrl] = useState<string>('');
   const [status, setStatus] = useState<string>('');
   const [dateOfStatus, setDateOfStatus] = useState<string>(new Date().toISOString().split('T')[0]);
   const [statusRemarks, setStatusRemarks] = useState<string>('');
@@ -1811,8 +1827,16 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           setBirthDistrict(psh.basicInfo.birthDistrict || '');
           setIdentificationMark(psh.basicInfo.identificationMark || '');
           setNextOfKin(psh.basicInfo.nextOfKin || '');
-          setIsSponsored(psh.basicInfo.isSponsored || '');
+          setIsSponsored(psh.basicInfo.isSponsored === 'Yes' ? 'SPONSORED BY PBM' : (psh.basicInfo.isSponsored || ''));
           setSponsorshipAmount(psh.basicInfo.sponsorshipAmount || '');
+          setDonorName(psh.donorInfo?.name || psh.basicInfo.donorName || '');
+          setDonorFatherName(psh.donorInfo?.fatherName || psh.basicInfo.donorFatherName || '');
+          setDonorCnic(psh.donorInfo?.cnic || psh.basicInfo.donorCnic || '');
+          setDonorMaritalStatus(psh.donorInfo?.maritalStatus || psh.basicInfo.donorMaritalStatus || '');
+          setDonorAddress(psh.donorInfo?.address || psh.basicInfo.donorAddress || '');
+          setDonorContactNo(psh.donorInfo?.contactNo || psh.basicInfo.donorContactNo || '');
+          setDonorEmail(psh.donorInfo?.email || psh.basicInfo.donorEmail || '');
+          setSavedDonorDocumentName(psh.donorInfo?.document?.fileName || psh.donorInfo?.fileName || '');
           setDateOfStatus(psh.basicInfo.dateOfStatus || new Date().toISOString().split('T')[0]);
           setStatusRemarks(psh.basicInfo.statusRemarks || '');
         }
@@ -2170,6 +2194,17 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setNextOfKin('');
     setIsSponsored('');
     setSponsorshipAmount('');
+    setDonorName('');
+    setDonorFatherName('');
+    setDonorCnic('');
+    setDonorMaritalStatus('');
+    setDonorAddress('');
+    setDonorContactNo('');
+    setDonorEmail('');
+    setDonorDocumentFile(null);
+    setDonorDocumentPreview('');
+    setSavedDonorDocumentName('');
+    setSavedDonorDocumentUrl('');
     setStatus('ACTIVE');
     setDateOfStatus(new Date().toISOString().split('T')[0]);
     setStatusRemarks('');
@@ -2321,7 +2356,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setBirthDistrict('Bahawalpur');
       setIdentificationMark('Birthmark on left arm');
       setNextOfKin('Ghulam Rasool (Father)');
-      setIsSponsored('Yes');
+      setIsSponsored('SPONSORED BY PBM');
       setSponsorshipAmount('12000');
       setStatus('ACTIVE');
       setDateOfStatus('2026-09-10');
@@ -2464,7 +2499,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setBirthDistrict('Multan');
       setIdentificationMark('Scar on forehead');
       setNextOfKin('Nasreen Bibi (Mother)');
-      setIsSponsored('No');
+      setIsSponsored('');
       setSponsorshipAmount('');
       setStatus('ACTIVE');
       setDateOfStatus('2026-09-15');
@@ -2608,8 +2643,12 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
       setBirthDistrict('Muzaffargarh');
       setIdentificationMark('Small scar on right eyebrow');
       setNextOfKin('Kalsoom Akhtar (Mother)');
-      setIsSponsored('Yes');
+      setIsSponsored('SPONSORED BY DONOR');
       setSponsorshipAmount('12000');
+      setDonorName('Haji Abdul Rehman');
+      setDonorFatherName('Muhammad Din');
+      setDonorCnic('32304-7788990-1');
+      setDonorMaritalStatus('Married');
       setStatus('ACTIVE');
       setDateOfStatus('2026-09-18');
       setStatusRemarks('Posthumous welfare admission quota');
@@ -2751,7 +2790,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
     setBirthDistrict('Multan');
     setIdentificationMark('Mole on right cheek');
     setNextOfKin('Muhammad Tariq (Uncle)');
-    setIsSponsored('Yes');
+    setIsSponsored('SPONSORED BY PBM');
     setSponsorshipAmount('15000');
     setStatus('ACTIVE');
     setDateOfStatus('2026-09-01');
@@ -3028,12 +3067,29 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
           identificationMark,
           nextOfKin,
           isSponsored,
-          sponsorshipAmount: isSponsored === 'Yes' ? sponsorshipAmount : null,
+          sponsorshipAmount: isSponsored && isSponsored !== 'No' ? sponsorshipAmount : null,
+          donorName: isSponsored === 'SPONSORED BY DONOR' ? donorName : null,
+          donorFatherName: isSponsored === 'SPONSORED BY DONOR' ? donorFatherName : null,
+          donorCnic: isSponsored === 'SPONSORED BY DONOR' ? donorCnic : null,
+          donorMaritalStatus: isSponsored === 'SPONSORED BY DONOR' ? donorMaritalStatus : null,
+          donorAddress: isSponsored === 'SPONSORED BY DONOR' ? donorAddress : null,
+          donorContactNo: isSponsored === 'SPONSORED BY DONOR' ? donorContactNo : null,
+          donorEmail: isSponsored === 'SPONSORED BY DONOR' ? donorEmail : null,
           status: disciplinaryProceeding.type || status || 'ACTIVE',
           dateOfStatus,
           statusRemarks,
         },
         disciplinaryProceedings: disciplinaryProceeding.type ? disciplinaryProceeding : null,
+        donorInfo: isSponsored === 'SPONSORED BY DONOR' ? {
+          name: donorName,
+          fatherName: donorFatherName,
+          cnic: donorCnic,
+          maritalStatus: donorMaritalStatus,
+          address: donorAddress,
+          contactNo: donorContactNo,
+          email: donorEmail,
+          document: donorDocumentFile ? { fileName: donorDocumentFile.name } : savedDonorDocumentName ? { fileName: savedDonorDocumentName } : null,
+        } : null,
         healthInfo: {
           isDisable,
           bloodGroup,
@@ -3270,6 +3326,13 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
               file: schoolLeavingCertificateFile,
               title: 'School Leaving Certificate',
               documentType: 'SCHOOL_LEAVING_CERTIFICATE',
+            }]
+          : []),
+        ...(isSponsored === 'SPONSORED BY DONOR' && donorDocumentFile
+          ? [{
+              file: donorDocumentFile,
+              title: 'Donor Document / Photo',
+              documentType: 'DONOR_DOCUMENT',
             }]
           : []),
       ];
@@ -3717,7 +3780,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             label="Sponsorship?"
             value={isSponsored}
             onChange={(e) => setIsSponsored(e.target.value)}
-            options={['No', 'Yes']}
+            options={['SPONSORED BY PBM', 'SPONSORED BY DONOR']}
           />
 
           {/* Row 5 */}
@@ -3725,8 +3788,136 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             placeholder="Sponsorship Amount"
             value={sponsorshipAmount}
             onChange={(e) => setSponsorshipAmount(e.target.value)}
-            disabled={isSponsored !== 'Yes'}
+            disabled={!isSponsored || isSponsored === 'No'}
           />
+
+          {/* Dynamic Donor Form: Appears when SPONSORED BY DONOR is selected */}
+          {isSponsored === 'SPONSORED BY DONOR' && (
+            <div className="md:col-span-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/40 border-2 border-indigo-200/90 shadow-xs space-y-4 animate-in fade-in-50 duration-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                    <HeartHandshake className="w-4.5 h-4.5" />
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Donor Information</h4>
+                    <p className="text-[11px] text-slate-500">Provide personal and identification details of the sponsoring donor</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  Donor Sponsered
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <FormInput
+                  label="Donor Name"
+                  placeholder="Donor Full Name"
+                  value={donorName}
+                  onChange={(e) => setDonorName(e.target.value)}
+                  required={isSponsored === 'SPONSORED BY DONOR'}
+                />
+                <FormInput
+                  label="Father Name"
+                  placeholder="Father Name"
+                  value={donorFatherName}
+                  onChange={(e) => setDonorFatherName(e.target.value)}
+                  required={isSponsored === 'SPONSORED BY DONOR'}
+                />
+                <FormInput
+                  label="ID Card No"
+                  placeholder="XXXXX-XXXXXXX-X"
+                  value={donorCnic}
+                  onChange={(e) => setDonorCnic(formatCNIC(e.target.value))}
+                  maxLength={15}
+                  required={isSponsored === 'SPONSORED BY DONOR'}
+                />
+                <FormSelect
+                  label="Marital Status"
+                  value={donorMaritalStatus}
+                  onChange={(e) => setDonorMaritalStatus(e.target.value)}
+                  options={['Single', 'Married', 'Divorced', 'Widow']}
+                  required={isSponsored === 'SPONSORED BY DONOR'}
+                />
+
+                {/* Additional Requested Fields: Address, Contact No, Email */}
+                <FormInput
+                  label="Address"
+                  placeholder="Residential Address"
+                  value={donorAddress}
+                  onChange={(e) => setDonorAddress(e.target.value)}
+                  className="sm:col-span-2"
+                />
+                <FormInput
+                  label="Contact No."
+                  placeholder="03XX-XXXXXXX"
+                  value={donorContactNo}
+                  onChange={(e) => setDonorContactNo(formatPhone(e.target.value))}
+                  maxLength={12}
+                />
+                <FormInput
+                  label="Email"
+                  type="email"
+                  placeholder="donor@example.com"
+                  value={donorEmail}
+                  onChange={(e) => setDonorEmail(e.target.value)}
+                />
+
+                {/* Document / Photo Upload */}
+                <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-indigo-100 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800">
+                      Donor Document / Photo (شناختی دستاویز یا تصویر)
+                    </label>
+                    <p className="text-[11px] text-slate-500">Upload CNIC copy, photo, or pledge document (Image or PDF)</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <label className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors border border-indigo-200 shadow-xs">
+                      <Upload className="w-4 h-4 text-indigo-600" />
+                      <span>{donorDocumentFile || savedDonorDocumentName ? 'Change File' : 'Upload Document / Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] || null;
+                          setDonorDocumentFile(f);
+                          if (f && f.type.startsWith('image/')) {
+                            setDonorDocumentPreview(URL.createObjectURL(f));
+                          } else {
+                            setDonorDocumentPreview('');
+                          }
+                        }}
+                      />
+                    </label>
+                    {(donorDocumentFile || savedDonorDocumentName) && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
+                        {donorDocumentPreview ? (
+                          <img src={donorDocumentPreview} alt="Preview" className="w-5 h-5 rounded object-cover border border-emerald-300" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-emerald-600" />
+                        )}
+                        <span className="max-w-[200px] truncate">{donorDocumentFile?.name || savedDonorDocumentName}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDonorDocumentFile(null);
+                            setDonorDocumentPreview('');
+                            setSavedDonorDocumentName('');
+                            setSavedDonorDocumentUrl('');
+                          }}
+                          className="text-red-500 hover:text-red-700 ml-1"
+                          title="Remove file"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <FormSelect
             label="Status"
             value={status}

@@ -877,8 +877,16 @@ export function ChildrenManagement() {
                       </div>
                       <div>
                         <span className="text-slate-400 block text-[11px]">Sponsorship:</span>
-                        <span className="font-semibold text-slate-800">{psh?.basicInfo?.isSponsored === 'Yes' ? `Sponsored (PKR ${psh.basicInfo.sponsorshipAmount || '15,000'}/mo)` : 'No (Institutional)'}</span>
+                        <span className="font-semibold text-slate-800">{psh?.basicInfo?.isSponsored && psh?.basicInfo?.isSponsored !== 'No' ? `${psh.basicInfo.isSponsored !== 'Yes' ? psh.basicInfo.isSponsored : 'Sponsored'} (PKR ${psh.basicInfo.sponsorshipAmount || '15,000'}/mo)` : 'No (Institutional)'}</span>
                       </div>
+                      {(psh?.donorInfo?.name || psh?.basicInfo?.donorName) && (
+                        <div className="col-span-full p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs">
+                          <span className="text-[10px] font-bold text-indigo-900 block mb-1">Donor Information:</span>
+                          <span className="text-slate-700 font-medium">
+                            {psh?.donorInfo?.name || psh?.basicInfo?.donorName} (Father: {psh?.donorInfo?.fatherName || psh?.basicInfo?.donorFatherName || 'N/A'} • CNIC: {psh?.donorInfo?.cnic || psh?.basicInfo?.donorCnic || 'N/A'} • Marital: {psh?.donorInfo?.maritalStatus || psh?.basicInfo?.donorMaritalStatus || 'N/A'}{(psh?.donorInfo?.contactNo || psh?.basicInfo?.donorContactNo) ? ` • Contact: ${psh?.donorInfo?.contactNo || psh?.basicInfo?.donorContactNo}` : ''}{(psh?.donorInfo?.address || psh?.basicInfo?.donorAddress) ? ` • Address: ${psh?.donorInfo?.address || psh?.basicInfo?.donorAddress}` : ''})
+                          </span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-slate-400 block text-[11px]">Date of Admission:</span>
                         <span className="font-semibold text-slate-800">{formatDate(selectedChild.admissionDate)}</span>

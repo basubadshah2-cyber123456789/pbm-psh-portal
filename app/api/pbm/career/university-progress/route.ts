@@ -339,6 +339,7 @@ export async function POST(request: Request) {
       passingYear: readText(formData, 'passingYear', 4),
     };
     const universityData = {
+      sponsorshipSource: readText(formData, 'sponsorshipSource', 30) || 'Sponsored by PBM',
       institutionType: readText(formData, 'institutionType', 30),
       universityName: readText(formData, 'universityName', 200),
       campus: readText(formData, 'campus', 200),
@@ -457,6 +458,13 @@ export async function POST(request: Request) {
         allowedTypes: new Set(['image/jpeg', 'image/png', 'image/webp']),
         maxBytes: 8 * 1024 * 1024,
       },
+      {
+        key: 'donorDocumentFile',
+        title: 'Donor Document / Photo',
+        documentType: recordType === 'college' ? 'COLLEGE_LIFE_DONOR_DOCUMENT' : 'UNIVERSITY_LIFE_DONOR_DOCUMENT',
+        allowedTypes,
+        maxBytes: MAX_DOCUMENT_BYTES,
+      },
     ];
     const optionalDocuments: UploadedDisciplinaryDocument[] = [];
     for (const attachment of disciplinaryFiles) {
@@ -465,10 +473,10 @@ export async function POST(request: Request) {
       if (!(value instanceof File)) {
         return NextResponse.json({ error: `Choose a valid ${attachment.title.toLowerCase()} file.` }, { status: 400 });
       }
-      if (!disciplinaryProceedings) {
+      if (attachment.key !== 'donorDocumentFile' && !disciplinaryProceedings) {
         return NextResponse.json({ error: 'Select a proceeding type before adding disciplinary attachments.' }, { status: 400 });
       }
-      if (attachment.key === 'minutesPhotoFile' && disciplinaryProceedings.type !== 'EXPELLED') {
+      if (attachment.key === 'minutesPhotoFile' && disciplinaryProceedings?.type !== 'EXPELLED') {
         return NextResponse.json({ error: 'Expulsion committee minutes can only be added for an expelled proceeding.' }, { status: 400 });
       }
       if (value.size <= 0 || value.size > attachment.maxBytes || !attachment.allowedTypes.has(value.type)) {
@@ -516,12 +524,24 @@ export async function POST(request: Request) {
     const entryId = randomUUID();
     const documentId = randomUUID();
     const resultDocument = { id: documentId, fileName: file.name.slice(0, 255) };
+    const sponsorship = recordType === 'college' ? collegeData.sponsorshipSource : universityData.sponsorshipSource;
+    const donorInfo = sponsorship === 'Sponsored by Donor' ? {
+      name: readText(formData, 'donorName', 200) || '',
+      fatherName: readText(formData, 'donorFatherName', 200) || '',
+      cnic: readText(formData, 'donorCnic', 30) || '',
+      maritalStatus: readText(formData, 'donorMaritalStatus', 30) || '',
+      address: readText(formData, 'donorAddress', 500) || '',
+      contactNo: readText(formData, 'donorContactNo', 50) || '',
+      email: readText(formData, 'donorEmail', 100) || '',
+    } : null;
+
     const entry = recordType === 'college'
       ? {
           id: entryId,
           recordType,
           ...commonData,
           ...collegeData,
+          donorInfo,
           subjects: subjects!,
           totalMarks: String(subjects!.reduce((sum, subject) => sum + Number(subject.totalMarks), 0)),
           obtainedMarks: String(subjects!.reduce((sum, subject) => sum + Number(subject.obtainedMarks), 0)),
@@ -536,6 +556,7 @@ export async function POST(request: Request) {
           recordType,
           ...commonData,
           ...universityData,
+          donorInfo,
           courses: courses!,
           resultDocument,
           counsellingEntries,

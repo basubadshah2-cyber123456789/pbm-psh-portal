@@ -1155,7 +1155,8 @@ export default function StandalonePSHAdmissionWebsite() {
       else if (cat === 'Divorce') divorce++;
       else if (cat === 'Posthumous') posthumous++;
 
-      if (psh?.basicInfo?.isSponsored === 'Yes') {
+      const isChildSponsored = psh?.basicInfo?.isSponsored && psh?.basicInfo?.isSponsored !== 'No';
+      if (isChildSponsored) {
         sponsoredCount++;
         const amt = parseInt(psh?.basicInfo?.sponsorshipAmount || '0', 10);
         if (!isNaN(amt)) totalSponsorshipPKR += amt;
@@ -1210,8 +1211,9 @@ export default function StandalonePSHAdmissionWebsite() {
         }
 
         // Sponsorship filter
-        if (sponsorshipFilter === 'SPONSORED' && isSponsored !== 'Yes') return false;
-        if (sponsorshipFilter === 'UNSPONSORED' && isSponsored === 'Yes') return false;
+        const isChildSponsored = isSponsored && isSponsored !== 'No';
+        if (sponsorshipFilter === 'SPONSORED' && !isChildSponsored) return false;
+        if (sponsorshipFilter === 'UNSPONSORED' && isChildSponsored) return false;
 
         return true;
       })
@@ -1769,7 +1771,7 @@ export default function StandalonePSHAdmissionWebsite() {
                         {filteredChildren.map((child) => {
                           const psh = parseDossierNotes(child.notes);
                           const cat = psh?.category?.type || 'Orphan';
-                          const isSponsored = psh?.basicInfo?.isSponsored === 'Yes';
+                          const isSponsored = psh?.basicInfo?.isSponsored && psh?.basicInfo?.isSponsored !== 'No';
                           const sponsorAmt = psh?.basicInfo?.sponsorshipAmount;
                           const followUpCount = Array.isArray(psh?.followUps) ? psh.followUps.length : 0;
                           const canAddFollowUp = isFollowUpAvailable(child.status, psh?.disciplinaryProceedings?.type);
@@ -1829,7 +1831,11 @@ export default function StandalonePSHAdmissionWebsite() {
                                 {isSponsored ? (
                                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span>Rs. {sponsorAmt || '12,000'}/mo</span>
+                                    <span>
+                                      {psh?.basicInfo?.isSponsored && psh?.basicInfo?.isSponsored !== 'Yes'
+                                        ? `${psh.basicInfo.isSponsored}${sponsorAmt ? ` (Rs. ${sponsorAmt}/mo)` : ''}`
+                                        : `Rs. ${sponsorAmt || '12,000'}/mo`}
+                                    </span>
                                   </span>
                                 ) : (
                                   <span className="text-[11px] text-slate-400">Unsponsored</span>
