@@ -3791,89 +3791,139 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
             disabled={!isSponsored || isSponsored === 'No'}
           />
 
-          {/* Dynamic Donor Form: Appears when SPONSORED BY DONOR is selected */}
+          {/* Animated Sponsorship Status Indicator */}
           {isSponsored === 'SPONSORED BY DONOR' && (
-            <div className="md:col-span-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/40 border-2 border-indigo-200/90 shadow-xs space-y-4 animate-in fade-in-50 duration-200">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
-                    <HeartHandshake className="w-4.5 h-4.5" />
+            <div className="md:col-span-3 -mt-1 p-3 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 border border-indigo-300/80 shadow-xs flex items-center justify-between gap-3 animate-fade-in-down">
+              <div className="flex items-center gap-2.5 text-xs font-semibold text-indigo-900">
+                <span className="relative flex h-3 w-3 shrink-0">
+                  <span className="animate-radar-ping absolute inline-flex h-full w-full rounded-full bg-indigo-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-600"></span>
+                </span>
+                <span>✨ <strong>Donor Sponsorship Mode:</strong> Please complete the donor verification details below.</span>
+              </div>
+              <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200 uppercase tracking-wider shrink-0">
+                Active
+              </span>
+            </div>
+          )}
+
+          {isSponsored === 'SPONSORED BY PBM' && (
+            <div className="md:col-span-3 -mt-1 p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold flex items-center gap-2 animate-fade-in-down">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span>🏛️ <strong>Institutional Support Mode:</strong> Pakistan Bait-ul-Mal institutional funding selected.</span>
+            </div>
+          )}
+
+          {/* Dynamic Donor Form: Fully Animated */}
+          {isSponsored === 'SPONSORED BY DONOR' && (
+            <div className="md:col-span-3 p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-50/90 via-white to-blue-50/60 border-2 border-indigo-300 shadow-md animate-donor-reveal animate-donor-glow space-y-5 transition-all duration-300 relative overflow-hidden">
+              {/* Decorative Ambient Glow */}
+              <div className="absolute -top-14 -right-14 w-36 h-36 bg-indigo-400/20 rounded-full blur-2xl pointer-events-none animate-pulse" />
+              <div className="absolute -bottom-14 -left-14 w-36 h-36 bg-blue-400/15 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-indigo-100/90 pb-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white flex items-center justify-center font-bold text-sm shadow-sm transition-transform duration-300 hover:scale-110">
+                    <HeartHandshake className="w-5 h-5 animate-pulse" />
                   </span>
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Donor Information</h4>
-                    <p className="text-[11px] text-slate-500">Provide personal and identification details of the sponsoring donor</p>
+                    <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                      Donor Information
+                      <span className="text-[11px] font-normal text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-md">ڈونر تفصیلات</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500">Provide verified personal, contact, and identification details of the sponsor</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200">
-                  Donor Sponsered
-                </span>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100/90 text-indigo-900 border border-indigo-200 shadow-xs">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-radar-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-600"></span>
+                  </span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                    Donor Sponsored
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                <FormInput
-                  label="Donor Name"
-                  placeholder="Donor Full Name"
-                  value={donorName}
-                  onChange={(e) => setDonorName(e.target.value)}
-                  required={isSponsored === 'SPONSORED BY DONOR'}
-                />
-                <FormInput
-                  label="Father Name"
-                  placeholder="Father Name"
-                  value={donorFatherName}
-                  onChange={(e) => setDonorFatherName(e.target.value)}
-                  required={isSponsored === 'SPONSORED BY DONOR'}
-                />
-                <FormInput
-                  label="ID Card No"
-                  placeholder="XXXXX-XXXXXXX-X"
-                  value={donorCnic}
-                  onChange={(e) => setDonorCnic(formatCNIC(e.target.value))}
-                  maxLength={15}
-                  required={isSponsored === 'SPONSORED BY DONOR'}
-                />
-                <FormSelect
-                  label="Marital Status"
-                  value={donorMaritalStatus}
-                  onChange={(e) => setDonorMaritalStatus(e.target.value)}
-                  options={['Single', 'Married', 'Divorced', 'Widow']}
-                  required={isSponsored === 'SPONSORED BY DONOR'}
-                />
+              <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                <div className="donor-item-stagger-1">
+                  <FormInput
+                    label="Donor Name"
+                    placeholder="Donor Full Name"
+                    value={donorName}
+                    onChange={(e) => setDonorName(e.target.value)}
+                    required={isSponsored === 'SPONSORED BY DONOR'}
+                  />
+                </div>
+                <div className="donor-item-stagger-2">
+                  <FormInput
+                    label="Father Name"
+                    placeholder="Father Name"
+                    value={donorFatherName}
+                    onChange={(e) => setDonorFatherName(e.target.value)}
+                    required={isSponsored === 'SPONSORED BY DONOR'}
+                  />
+                </div>
+                <div className="donor-item-stagger-3">
+                  <FormInput
+                    label="ID Card No"
+                    placeholder="XXXXX-XXXXXXX-X"
+                    value={donorCnic}
+                    onChange={(e) => setDonorCnic(formatCNIC(e.target.value))}
+                    maxLength={15}
+                    required={isSponsored === 'SPONSORED BY DONOR'}
+                  />
+                </div>
+                <div className="donor-item-stagger-4">
+                  <FormSelect
+                    label="Marital Status"
+                    value={donorMaritalStatus}
+                    onChange={(e) => setDonorMaritalStatus(e.target.value)}
+                    options={['Single', 'Married', 'Divorced', 'Widow']}
+                    required={isSponsored === 'SPONSORED BY DONOR'}
+                  />
+                </div>
 
-                {/* Additional Requested Fields: Address, Contact No, Email */}
-                <FormInput
-                  label="Address"
-                  placeholder="Residential Address"
-                  value={donorAddress}
-                  onChange={(e) => setDonorAddress(e.target.value)}
-                  className="sm:col-span-2"
-                />
-                <FormInput
-                  label="Contact No."
-                  placeholder="03XX-XXXXXXX"
-                  value={donorContactNo}
-                  onChange={(e) => setDonorContactNo(formatPhone(e.target.value))}
-                  maxLength={12}
-                />
-                <FormInput
-                  label="Email"
-                  type="email"
-                  placeholder="donor@example.com"
-                  value={donorEmail}
-                  onChange={(e) => setDonorEmail(e.target.value)}
-                />
+                {/* Additional Fields: Address, Contact No, Email */}
+                <div className="sm:col-span-2 donor-item-stagger-5">
+                  <FormInput
+                    label="Address"
+                    placeholder="Residential Address"
+                    value={donorAddress}
+                    onChange={(e) => setDonorAddress(e.target.value)}
+                  />
+                </div>
+                <div className="donor-item-stagger-6">
+                  <FormInput
+                    label="Contact No."
+                    placeholder="03XX-XXXXXXX"
+                    value={donorContactNo}
+                    onChange={(e) => setDonorContactNo(formatPhone(e.target.value))}
+                    maxLength={12}
+                  />
+                </div>
+                <div className="donor-item-stagger-7">
+                  <FormInput
+                    label="Email"
+                    type="email"
+                    placeholder="donor@example.com"
+                    value={donorEmail}
+                    onChange={(e) => setDonorEmail(e.target.value)}
+                  />
+                </div>
 
-                {/* Document / Photo Upload */}
-                <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-indigo-100 flex flex-wrap items-center justify-between gap-3">
+                {/* Document / Photo Upload Zone */}
+                <div className="sm:col-span-2 lg:col-span-4 pt-3.5 border-t border-indigo-100 flex flex-wrap items-center justify-between gap-3 donor-item-stagger-8">
                   <div>
                     <label className="block text-xs font-bold text-slate-800">
                       Donor Document / Photo (شناختی دستاویز یا تصویر)
                     </label>
-                    <p className="text-[11px] text-slate-500">Upload CNIC copy, photo, or pledge document (Image or PDF)</p>
+                    <p className="text-[11px] text-slate-500">Attach CNIC scan, photo, or pledge document (Image or PDF)</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2.5">
-                    <label className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors border border-indigo-200 shadow-xs">
-                      <Upload className="w-4 h-4 text-indigo-600" />
+                    <label className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-indigo-50 text-indigo-700 rounded-2xl text-xs font-bold cursor-pointer transition-all duration-200 border-2 border-dashed border-indigo-300 hover:border-indigo-500 shadow-xs hover:shadow-md hover:-translate-y-0.5">
+                      <Upload className="w-4 h-4 text-indigo-600 transition-transform duration-200 group-hover:scale-125" />
                       <span>{donorDocumentFile || savedDonorDocumentName ? 'Change File' : 'Upload Document / Photo'}</span>
                       <input
                         type="file"
@@ -3891,9 +3941,9 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                       />
                     </label>
                     {(donorDocumentFile || savedDonorDocumentName) && (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
+                      <div className="animate-pop-success flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-xs text-emerald-800 font-semibold shadow-xs">
                         {donorDocumentPreview ? (
-                          <img src={donorDocumentPreview} alt="Preview" className="w-5 h-5 rounded object-cover border border-emerald-300" />
+                          <img src={donorDocumentPreview} alt="Preview" className="w-6 h-6 rounded-lg object-cover border border-emerald-400 shadow-xs" />
                         ) : (
                           <FileText className="w-4 h-4 text-emerald-600" />
                         )}
@@ -3906,7 +3956,7 @@ export function AddPSHForm({ onSuccess, onCancel, initialChild }: AddPSHFormProp
                             setSavedDonorDocumentName('');
                             setSavedDonorDocumentUrl('');
                           }}
-                          className="text-red-500 hover:text-red-700 ml-1"
+                          className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors ml-1"
                           title="Remove file"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

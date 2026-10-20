@@ -499,6 +499,125 @@ input:focus-visible {
 }
 
 /* ==============================================================================
+ * DONOR FORM DYNAMIC ANIMATIONS
+ * ============================================================================== */
+
+@keyframes donorReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.97);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translateY(2px) scale(1.004);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes donorCardGlow {
+  0%, 100% {
+    box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.16), 0 0 0 1px rgba(129, 140, 248, 0.35);
+  }
+  50% {
+    box-shadow: 0 12px 32px 0 rgba(99, 102, 241, 0.28), 0 0 0 2px rgba(99, 102, 241, 0.6);
+  }
+}
+
+@keyframes donorCardGlowEmerald {
+  0%, 100% {
+    box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.16), 0 0 0 1px rgba(52, 211, 153, 0.35);
+  }
+  50% {
+    box-shadow: 0 12px 32px 0 rgba(16, 185, 129, 0.28), 0 0 0 2px rgba(16, 185, 129, 0.6);
+  }
+}
+
+@keyframes donorCardGlowSky {
+  0%, 100% {
+    box-shadow: 0 8px 24px -4px rgba(14, 165, 233, 0.16), 0 0 0 1px rgba(56, 189, 248, 0.35);
+  }
+  50% {
+    box-shadow: 0 12px 32px 0 rgba(14, 165, 233, 0.28), 0 0 0 2px rgba(14, 165, 233, 0.6);
+  }
+}
+
+@keyframes donorItemFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popSuccess {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes radarPing {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.animate-donor-reveal {
+  animation: donorReveal 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-donor-glow {
+  animation: donorCardGlow 4s ease-in-out infinite;
+}
+
+.animate-donor-glow-emerald {
+  animation: donorCardGlowEmerald 4s ease-in-out infinite;
+}
+
+.animate-donor-glow-sky {
+  animation: donorCardGlowSky 4s ease-in-out infinite;
+}
+
+.animate-pop-success {
+  animation: popSuccess 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-radar-ping {
+  animation: radarPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.donor-item-stagger-1 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
+.donor-item-stagger-2 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both; }
+.donor-item-stagger-3 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
+.donor-item-stagger-4 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both; }
+.donor-item-stagger-5 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
+.donor-item-stagger-6 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both; }
+.donor-item-stagger-7 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 280ms both; }
+.donor-item-stagger-8 { animation: donorItemFadeUp 360ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both; }
+
+/* ==============================================================================
  * ACCESSIBILITY: Reduced Motion Support
  * ============================================================================== */
 @media (prefers-reduced-motion: reduce) {

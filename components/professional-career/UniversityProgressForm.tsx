@@ -336,37 +336,74 @@ export function CollegeLifeForm() {
       {success && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
 
       <form onSubmit={submit} className="space-y-6">
+        {/* Animated Sponsorship Status Indicator */}
         {form.sponsorshipSource === 'Sponsored by Donor' && (
-          <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-slate-50 p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-700 font-bold text-white shadow-xs">
-                  <HeartHandshake className="h-4.5 w-4.5" />
+          <div className="rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border border-emerald-300/80 p-3 shadow-xs flex items-center justify-between gap-3 animate-fade-in-down">
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-emerald-900">
+              <span className="relative flex h-3 w-3 shrink-0">
+                <span className="animate-radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
+              </span>
+              <span>✨ <strong>Donor Sponsorship Mode:</strong> Please complete the donor verification details below for college sponsorship.</span>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider shrink-0">
+              Active
+            </span>
+          </div>
+        )}
+
+        {form.sponsorshipSource === 'Sponsored by PBM' && (
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold p-2.5 flex items-center gap-2 animate-fade-in-down">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span>🏛️ <strong>Institutional Support Mode:</strong> Pakistan Bait-ul-Mal institutional funding selected.</span>
+          </div>
+        )}
+
+        {form.sponsorshipSource === 'Sponsored by Donor' && (
+          <div className="rounded-3xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/60 p-5 sm:p-6 shadow-md animate-donor-reveal animate-donor-glow-emerald space-y-5 transition-all duration-300 relative overflow-hidden">
+            {/* Decorative Ambient Glow */}
+            <div className="absolute -top-14 -right-14 w-36 h-36 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none animate-pulse" />
+            <div className="absolute -bottom-14 -left-14 w-36 h-36 bg-teal-400/15 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100/90 pb-3.5">
+              <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold text-sm shadow-sm transition-transform duration-300 hover:scale-110">
+                  <HeartHandshake className="w-5 h-5 animate-pulse" />
                 </span>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">Donor Information</h4>
+                  <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    Donor Information
+                    <span className="text-[11px] font-normal text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md">ڈونر تفصیلات</span>
+                  </h4>
                   <p className="text-[11px] text-slate-500">Provide personal & contact details of the sponsoring donor</p>
                 </div>
               </div>
-              <span className="rounded-full border border-emerald-200 bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold uppercase text-emerald-800">
-                Sponsored by Donor
-              </span>
+
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100/90 text-emerald-900 border border-emerald-200 shadow-xs">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-radar-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
+                </span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                  Sponsored by Donor
+                </span>
+              </div>
             </div>
 
-            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block text-xs font-semibold text-slate-700">
+            <div className="relative grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-1">
                 Donor Name <span className="text-red-600">*</span>
                 <input required maxLength={200} placeholder="Full Name" value={form.donorName} onChange={(e) => setForm((c) => ({ ...c, donorName: e.target.value }))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-2">
                 Father Name <span className="text-red-600">*</span>
                 <input required maxLength={200} placeholder="Father Name" value={form.donorFatherName} onChange={(e) => setForm((c) => ({ ...c, donorFatherName: e.target.value }))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-3">
                 ID Card No (CNIC) <span className="text-red-600">*</span>
                 <input required maxLength={15} placeholder="XXXXX-XXXXXXX-X" value={form.donorCnic} onChange={(e) => setForm((c) => ({ ...c, donorCnic: formatCNIC(e.target.value) }))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-4">
                 Marital Status <span className="text-red-600">*</span>
                 <select required value={form.donorMaritalStatus} onChange={(e) => setForm((c) => ({ ...c, donorMaritalStatus: e.target.value }))} className={inputClassName}>
                   <option value="">Select status</option>
@@ -377,28 +414,28 @@ export function CollegeLifeForm() {
                 </select>
               </label>
 
-              <label className="block text-xs font-semibold text-slate-700 sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 sm:col-span-2 donor-item-stagger-5">
                 Address
                 <input maxLength={300} placeholder="Residential Address" value={form.donorAddress} onChange={(e) => setForm((c) => ({ ...c, donorAddress: e.target.value }))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-6">
                 Contact No.
                 <input maxLength={15} placeholder="03XX-XXXXXXX" value={form.donorContactNo} onChange={(e) => setForm((c) => ({ ...c, donorContactNo: formatPhone(e.target.value) }))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-7">
                 Email
                 <input type="email" maxLength={100} placeholder="donor@example.com" value={form.donorEmail} onChange={(e) => setForm((c) => ({ ...c, donorEmail: e.target.value }))} className={inputClassName} />
               </label>
 
-              <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="sm:col-span-2 lg:col-span-4 pt-3.5 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-3 donor-item-stagger-8">
                 <div>
-                  <span className="block text-xs font-bold text-slate-800">Donor Document / Photo</span>
+                  <span className="block text-xs font-bold text-slate-800">Donor Document / Photo (شناختی دستاویز یا تصویر)</span>
                   <span className="text-[11px] text-slate-500">Upload CNIC, Photo, or Sponsorship Document (PDF / Image)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition-colors shadow-xs">
-                    <UploadCloud className="h-4 w-4 text-emerald-600" />
-                    <span>{donorDocumentFile ? 'Change File' : 'Upload File'}</span>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <label className="group inline-flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-dashed border-emerald-300 bg-white px-4 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50 hover:border-emerald-500 transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5">
+                    <UploadCloud className="h-4 w-4 text-emerald-600 transition-transform duration-200 group-hover:scale-125" />
+                    <span>{donorDocumentFile ? 'Change File' : 'Upload Document / Photo'}</span>
                     <input
                       type="file"
                       accept="image/*,.pdf"
@@ -407,11 +444,11 @@ export function CollegeLifeForm() {
                     />
                   </label>
                   {donorDocumentFile && (
-                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-900">
-                      <FileText className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-900 shadow-xs animate-pop-success">
+                      <FileText className="h-4 w-4 text-emerald-700" />
                       <span className="max-w-[150px] truncate">{donorDocumentFile.name}</span>
-                      <button type="button" onClick={() => setDonorDocumentFile(null)} className="text-red-500 hover:text-red-700 ml-1">
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <button type="button" onClick={() => setDonorDocumentFile(null)} className="text-red-500 hover:text-red-700 ml-1 transition-colors" title="Remove file">
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </span>
                   )}
@@ -1076,37 +1113,74 @@ export function UniversityLifeForm() {
       {success && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{success}</div>}
 
       <form onSubmit={submit} className="space-y-6">
+        {/* Animated Sponsorship Status Indicator */}
         {form.sponsorshipSource === 'Sponsored by Donor' && (
-          <div className="rounded-2xl border-2 border-sky-200 bg-gradient-to-br from-sky-50/70 via-white to-slate-50 p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sky-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-700 font-bold text-white shadow-xs">
-                  <HeartHandshake className="h-4.5 w-4.5" />
+          <div className="rounded-2xl bg-gradient-to-r from-sky-500/10 via-blue-500/10 to-sky-500/10 border border-sky-300/80 p-3 shadow-xs flex items-center justify-between gap-3 animate-fade-in-down">
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-sky-900">
+              <span className="relative flex h-3 w-3 shrink-0">
+                <span className="animate-radar-ping absolute inline-flex h-full w-full rounded-full bg-sky-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-600"></span>
+              </span>
+              <span>✨ <strong>Donor Sponsorship Mode:</strong> Please complete the donor verification details below for university sponsorship.</span>
+            </div>
+            <span className="text-[10px] font-bold text-sky-700 bg-sky-100/80 px-2 py-0.5 rounded-full border border-sky-200 uppercase tracking-wider shrink-0">
+              Active
+            </span>
+          </div>
+        )}
+
+        {form.sponsorshipSource === 'Sponsored by PBM' && (
+          <div className="rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 text-xs font-semibold p-2.5 flex items-center gap-2 animate-fade-in-down">
+            <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse shrink-0" />
+            <span>🏛️ <strong>Institutional Support Mode:</strong> Pakistan Bait-ul-Mal institutional funding selected.</span>
+          </div>
+        )}
+
+        {form.sponsorshipSource === 'Sponsored by Donor' && (
+          <div className="rounded-3xl border-2 border-sky-300 bg-gradient-to-br from-sky-50/90 via-white to-blue-50/60 p-5 sm:p-6 shadow-md animate-donor-reveal animate-donor-glow-sky space-y-5 transition-all duration-300 relative overflow-hidden">
+            {/* Decorative Ambient Glow */}
+            <div className="absolute -top-14 -right-14 w-36 h-36 bg-sky-400/20 rounded-full blur-2xl pointer-events-none animate-pulse" />
+            <div className="absolute -bottom-14 -left-14 w-36 h-36 bg-blue-400/15 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-sky-100/90 pb-3.5">
+              <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 text-white flex items-center justify-center font-bold text-sm shadow-sm transition-transform duration-300 hover:scale-110">
+                  <HeartHandshake className="w-5 h-5 animate-pulse" />
                 </span>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">Donor Information</h4>
+                  <h4 className="text-sm font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    Donor Information
+                    <span className="text-[11px] font-normal text-sky-700 bg-sky-100/80 px-2 py-0.5 rounded-md">ڈونر تفصیلات</span>
+                  </h4>
                   <p className="text-[11px] text-slate-500">Provide personal & contact details of the sponsoring donor</p>
                 </div>
               </div>
-              <span className="rounded-full border border-sky-200 bg-sky-100 px-2.5 py-1 text-[10px] font-extrabold uppercase text-sky-800">
-                Sponsored by Donor
-              </span>
+
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-100/90 text-sky-900 border border-sky-200 shadow-xs">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-radar-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-600"></span>
+                </span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">
+                  Sponsored by Donor
+                </span>
+              </div>
             </div>
 
-            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block text-xs font-semibold text-slate-700">
+            <div className="relative grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-1">
                 Donor Name <span className="text-red-600">*</span>
                 <input required maxLength={200} placeholder="Full Name" value={form.donorName} onChange={(e) => setField('donorName', e.target.value)} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-2">
                 Father Name <span className="text-red-600">*</span>
                 <input required maxLength={200} placeholder="Father Name" value={form.donorFatherName} onChange={(e) => setField('donorFatherName', e.target.value)} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-3">
                 ID Card No (CNIC) <span className="text-red-600">*</span>
                 <input required maxLength={15} placeholder="XXXXX-XXXXXXX-X" value={form.donorCnic} onChange={(e) => setField('donorCnic', formatCNIC(e.target.value))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-4">
                 Marital Status <span className="text-red-600">*</span>
                 <select required value={form.donorMaritalStatus} onChange={(e) => setField('donorMaritalStatus', e.target.value)} className={inputClassName}>
                   <option value="">Select status</option>
@@ -1117,28 +1191,28 @@ export function UniversityLifeForm() {
                 </select>
               </label>
 
-              <label className="block text-xs font-semibold text-slate-700 sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 sm:col-span-2 donor-item-stagger-5">
                 Address
                 <input maxLength={300} placeholder="Residential Address" value={form.donorAddress} onChange={(e) => setField('donorAddress', e.target.value)} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-6">
                 Contact No.
                 <input maxLength={15} placeholder="03XX-XXXXXXX" value={form.donorContactNo} onChange={(e) => setField('donorContactNo', formatPhone(e.target.value))} className={inputClassName} />
               </label>
-              <label className="block text-xs font-semibold text-slate-700">
+              <label className="block text-xs font-semibold text-slate-700 donor-item-stagger-7">
                 Email
                 <input type="email" maxLength={100} placeholder="donor@example.com" value={form.donorEmail} onChange={(e) => setField('donorEmail', e.target.value)} className={inputClassName} />
               </label>
 
-              <div className="sm:col-span-2 lg:col-span-4 pt-3 border-t border-sky-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="sm:col-span-2 lg:col-span-4 pt-3.5 border-t border-sky-100 flex flex-wrap items-center justify-between gap-3 donor-item-stagger-8">
                 <div>
-                  <span className="block text-xs font-bold text-slate-800">Donor Document / Photo</span>
+                  <span className="block text-xs font-bold text-slate-800">Donor Document / Photo (شناختی دستاویز یا تصویر)</span>
                   <span className="text-[11px] text-slate-500">Upload CNIC, Photo, or Sponsorship Document (PDF / Image)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-sky-800 hover:bg-sky-100 transition-colors shadow-xs">
-                    <UploadCloud className="h-4 w-4 text-sky-600" />
-                    <span>{donorDocumentFile ? 'Change File' : 'Upload File'}</span>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <label className="group inline-flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-dashed border-sky-300 bg-white px-4 py-2.5 text-xs font-bold text-sky-800 hover:bg-sky-50 hover:border-sky-500 transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5">
+                    <UploadCloud className="h-4 w-4 text-sky-600 transition-transform duration-200 group-hover:scale-125" />
+                    <span>{donorDocumentFile ? 'Change File' : 'Upload Document / Photo'}</span>
                     <input
                       type="file"
                       accept="image/*,.pdf"
@@ -1147,11 +1221,11 @@ export function UniversityLifeForm() {
                     />
                   </label>
                   {donorDocumentFile && (
-                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-900">
-                      <FileText className="h-3.5 w-3.5" />
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-sky-100 border border-sky-200 px-3 py-1.5 text-xs font-semibold text-sky-900 shadow-xs animate-pop-success">
+                      <FileText className="h-4 w-4 text-sky-700" />
                       <span className="max-w-[150px] truncate">{donorDocumentFile.name}</span>
-                      <button type="button" onClick={() => setDonorDocumentFile(null)} className="text-red-500 hover:text-red-700 ml-1">
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <button type="button" onClick={() => setDonorDocumentFile(null)} className="text-red-500 hover:text-red-700 ml-1 transition-colors" title="Remove file">
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </span>
                   )}
